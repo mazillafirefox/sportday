@@ -219,6 +219,7 @@ body.tvmode main{max-width:none;padding:24px 32px}
 .fld.inline{flex:none}
 .self-end{align-self:flex-end}
 .seedgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.seedgrid[hidden]{display:none}
 .pvlist{max-height:260px;overflow:auto;margin-top:8px}
 .mlt th{font:500 12px var(--display);color:var(--muted);text-align:left;padding:6px;border-bottom:1px solid var(--line)}
 .mlt td{padding:4px;border-bottom:1px solid var(--line)}
@@ -385,6 +386,35 @@ body.tvmode{background:linear-gradient(160deg,#fff 0,#E6ECFB 100%)}
 [data-tip]{cursor:help}.click[data-tip],a[data-tip],button [data-tip],.click [data-tip]{cursor:pointer}
 @media (prefers-reduced-motion:reduce){.node.match.islive,.livedot,.livechip{animation:none}.livebadge i,.livetag i,.livechip i{animation:none}}
 
+/* ===== v1.5 ===== */
+#foot{max-width:1180px;margin:0 auto;padding:4px 16px 28px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+#foot [data-tip]{border-bottom:1px dashed var(--line)}
+body.tvmode #foot{display:none}
+.mrow.ed{grid-template-columns:52px minmax(170px,1fr) auto auto auto}.mrow .pill.overdue{overflow:visible}
+.cirow.ed{grid-template-columns:78px minmax(160px,1fr) auto auto auto}
+.rowbtn{white-space:nowrap}
+.pill.overdue{border-color:#F1C38A;color:#9A5A00;background:#FFF6E6}
+.mrow.overdue,.cirow.overdue{box-shadow:inset 3px 0 0 #E59A2A}
+.mrow.overdue .tt{color:#B26B00}
+.node.match.overdue{border-color:#E59A2A;border-style:dashed}
+.odtag{position:absolute;top:-10px;right:10px;background:#FFF1DC;color:#9A5A00;border:1px solid #F1C38A;font:600 10px var(--display);padding:1px 8px;border-radius:999px}
+.mdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 2px 0 6px}.mdot.g{background:var(--gold)}.mdot.s{background:var(--silver)}.mdot.b{background:var(--bronze)}
+.medal td.num[data-tip],.tvc .m[data-tip]{cursor:help}
+.medal td.num[data-tip]:hover{background:var(--blue-l)}
+.tr.vl{align-items:flex-start}.tr.vl b{text-align:left;font-size:12px}.tr.vl span{min-width:38px}
+.steps{display:flex;gap:4px;list-style:none;padding:0;margin:8px 0 2px;flex-wrap:wrap}
+.steps li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);padding:3px 10px 3px 4px;border-radius:999px;background:var(--panel2);position:relative}
+.steps li+li::before{content:"";position:absolute;left:-6px;top:50%;width:6px;height:1px;background:var(--line)}
+.steps .sn{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:600 11px var(--display);background:#fff;border:1px solid var(--line);color:var(--muted)}
+.steps li.done{color:var(--ok)}.steps li.done .sn{background:var(--ok);border-color:var(--ok);color:#fff}
+.steps li.cur{background:var(--blue);color:#fff}.steps li.cur .sn{background:#fff;border-color:#fff;color:var(--blue)}
+.steps li.done.cur{background:var(--ok)}.steps li.done.cur .sn{color:var(--ok)}
+.dlg .steps{margin:0 0 10px}
+.howto{background:var(--blue-l);margin:4px 0 10px}
+.howlist{margin:4px 0 6px 18px;padding:0;display:grid;gap:4px;font-size:14px}
+fieldset.win.col{flex-direction:column;gap:10px}fieldset.win.col label{display:block}
+@media (max-width:720px){.mrow.ed{grid-template-columns:46px 1fr}.mrow.ed .rowbtn{grid-column:1/-1;justify-self:start}.cirow.ed .rowbtn{grid-column:1/-1;justify-self:start}}
+
 @media (max-width:560px){.brand small{display:none}.brand img{width:38px}.brand b{font-size:17px}#status{font-size:11px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -468,6 +498,7 @@ body.tvmode{background:linear-gradient(160deg,#fff 0,#E6ECFB 100%)}
   <nav id="nav" aria-label="เมนู"></nav>
 </header>
 <main id="main"></main>
+<footer id="foot"></footer>
 <div id="modal" hidden></div>
 <div id="toast" hidden role="status"></div>
 <div id="tip" hidden role="tooltip"></div>
@@ -481,6 +512,15 @@ const TEMPLATE = {"sports":{"football":{"name":"ฟุตบอล","unit":"ป�
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
+const APP_VERSION = '1.5.0', APP_DATE = '2026-11-11';
+const CHANGELOG = [
+  ['1.5.0', 'ขั้นตอนเพิ่มรายการแบบทีละขั้น · ล้างข้อมูลเริ่มใหม่ · ปุ่มบันทึกผลท้ายรายการ · สถานะเลยเวลา · รายละเอียดเมื่อวางเมาส์บนจำนวนเหรียญ'],
+  ['1.4.1', 'การ์ดข้อมูลเมื่อวางเมาส์ · สถานะกำลังแข่ง (LIVE)'],
+  ['1.4.0', 'ไฟล์เดียวสำหรับ GitHub · โทนน้ำเงิน-ขาว · ผังพอดีจอ · รองรับ Firebase'],
+  ['1.3.0', 'ไอคอนอัญมณีคณะสีและไอคอนชนิดกีฬา'],
+  ['1.2.0', 'สิทธิ์ผู้ใช้ · วินัย/ประท้วง · ตรวจเวลาชน · ส่งออกไฟล์ · คะแนนรวม'],
+  ['1.1.0', 'จัดการชนิดกีฬา · จับคู่ · ส่งรายชื่อ · รายงานตัว · ผัง mind map']
+];
 const CONFIG = {
   firebase: null,
   adminEmails: []
@@ -503,7 +543,7 @@ function sIcon(sid, cls = '') { const ic = S.sports[sid]?.icon || (SPORT_ICONS[s
 
 /* ===================== สถานะ ===================== */
 let S = { sports: {}, events: {}, rosters: {}, meta: {} };
-let db = null, auth = null, canWrite = false, mode = 'connecting', editOn = false; const UNSUB = {};
+let WIZ = null; let db = null, auth = null, canWrite = false, mode = 'connecting', editOn = false; const UNSUB = {};
 const ME = { id: null, owner: false, editor: false }; let LOG = []; const NAMES = {};
 const ROLE_N = { admin: 'ผู้ดูแลระบบ', scorer: 'กรรมการบันทึกผล', color: 'ครูคณะสี', viewer: 'ดูอย่างเดียว' };
 function myRole() {
@@ -891,6 +931,11 @@ function isLive(m) {
   if (!m.date || !m.time || m.date !== todayStr()) return false;
   const n = nowMin(), t = toMin(m.time); return t <= n && n < t + (S.meta.matchMin ?? 40);
 }
+function isOverdue(m) {
+  if (!m || sideWin(m) || isLive(m) || !m.date || !m.time) return false;
+  const t = todayStr(); return m.date < t || (m.date === t && nowMin() >= toMin(m.time) + (S.meta.matchMin ?? 40));
+}
+const OVERB = '<span class="pill overdue">เลยเวลา · รอบันทึกผล</span>';
 const liveList = () => allMatches().filter(x => isLive(x.m));
 const LIVEB = '<span class="livebadge"><i></i>กำลังแข่ง</span>';
 function liveBoard(big) {
@@ -922,6 +967,7 @@ function render() {
   $('#nav').innerHTML = VIEWS.filter(([k]) => (k !== 'admin' || isAdmin()) && !(priv && ['register', 'checkin', 'athletes'].includes(k))).map(([k, n]) => `<a href="#${k}" class="${k === UI.view ? 'on' : ''}">${n}</a>`).join('');
   const st = { connecting: ['กำลังเชื่อมต่อ…', 'd-wait'], shared: ['ออนไลน์ · อัปเดตสด', 'd-ok'], local: ['โหมดทดลอง · ข้อมูลอยู่ในเครื่องนี้', 'd-warn'] }[mode];
   $('#status').innerHTML = `<span class="dot ${st[1]}"></span>${st[0]}${mode === 'shared' && ME.id ? ` · ${ROLE_N[myRole().role]}${myRole().role === 'color' ? ' ' + COLORS[myRole().c]?.n : ''}` : ''}`;
+  $('#foot').innerHTML = `<span data-tip="version">เวอร์ชัน ${APP_VERSION} · ปรับปรุง ${fmtDate(APP_DATE, true)}</span><span>${esc(S.meta.title || 'กีฬาอัญมณี 2569')} · ${esc(S.meta.school || 'โรงเรียนสิงห์สมุทร')}</span>`;
   const nLive = mode === 'connecting' ? 0 : liveList().length;
   $('#livechip').innerHTML = nLive ? `<a href="#schedule" class="livechip" data-tip="livelist"><i></i>กำลังแข่ง ${nLive} นัด</a>` : '';
   $('#authbox').innerHTML = mode === 'shared' && auth ? (ME.id ? `<span class="who" title="${esc(ME.id)}">${esc(ME.name || ME.id)}</span><button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm ghost" data-act="login">เข้าสู่ระบบ (ครู/กรรมการ)</button>') : '';
@@ -954,7 +1000,7 @@ function vMedals() {
     <p class="muted">ตัดสินแล้ว <b class="num">${done}</b> จาก <b class="num">${evs.length}</b> รายการ · เรียงตามเหรียญทอง เงิน ทองแดง</p>
     <div class="prog"><span style="width:${(done / Math.max(1, evs.length) * 100).toFixed(1)}%"></span></div></section>
   <table class="medal"><thead><tr><th>อันดับ</th><th>คณะสี</th><th class="g">ทอง</th><th class="s">เงิน</th><th class="b">ทองแดง</th><th>รวม</th><th class="barcol"></th></tr></thead>
-  <tbody>${t.map(x => `<tr style="--tc:${COLORS[x.c].c}"><td class="rk num">${x.rank}</td><td><span class="mcol">${gem(x.c, 'lg')}<b>${COLORS[x.c].n}</b></span></td><td class="num g">${x.g}</td><td class="num s">${x.s}</td><td class="num b">${x.b}</td><td class="num tot">${x.t}</td>
+  <tbody>${t.map(x => `<tr style="--tc:${COLORS[x.c].c}"><td class="rk num">${x.rank}</td><td><span class="mcol">${gem(x.c, 'lg')}<b>${COLORS[x.c].n}</b></span></td><td class="num g"${tip('medals', x.c, 'g')}>${x.g}</td><td class="num s"${tip('medals', x.c, 's')}>${x.s}</td><td class="num b"${tip('medals', x.c, 'b')}>${x.b}</td><td class="num tot"${tip('medals', x.c, 't')}>${x.t}</td>
     <td class="barcol"><div class="bar"><span class="g" style="width:${x.g / max * 100}%"></span><span class="s" style="width:${x.s / max * 100}%"></span><span class="b" style="width:${x.b / max * 100}%"></span></div></td></tr>`).join('')}</tbody></table>
   ${ov ? `<section class="card"><h2>คะแนนรวมคณะสี</h2><p class="muted sm">เหรียญทอง ${S.meta.scoring.g} · เงิน ${S.meta.scoring.s} · ทองแดง ${S.meta.scoring.b} คะแนน + คะแนนอันดับกิจกรรมคณะสี (${(S.meta.scoring.act || []).join('/')})</p>
     <div class="scroll"><table class="std"><thead><tr><th>#</th><th>คณะสี</th><th>จากเหรียญ</th><th>จากกิจกรรม</th><th>รวม</th></tr></thead><tbody>${ov.map((x, i) => `<tr><td class="num">${i + 1}</td><td>${chip(x.c)}</td><td class="num">${x.med}</td><td class="num">${x.act}</td><td class="num tot">${x.t}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
@@ -982,12 +1028,14 @@ function matchRow(ev, m, compact) {
   const lv = isLive(m);
   const score = s ? `<span class="sc num">${esc(m.sa ?? '')}<i>–</i>${esc(m.sb ?? '')}</span>` : lv && (m.sa !== undefined && m.sa !== '' || m.sb !== undefined && m.sb !== '') ? `<span class="sc num lvsc">${esc(m.sa || 0)}<i>–</i>${esc(m.sb || 0)}</span>` : '<span class="sc vs">VS</span>';
   const ready = t.a >= 0 && t.b >= 0;
-  const tag = s ? `<span class="pill done">${esc(m.note || (s === 'd' ? 'เสมอ' : 'จบแล้ว'))}</span>` : lv ? LIVEB : ready ? '<span class="pill live">รอแข่ง</span>' : '<span class="pill">รอคู่</span>';
+  const od = isOverdue(m);
+  const tag = s ? `<span class="pill done">${esc(m.note || (s === 'd' ? 'เสมอ' : 'จบแล้ว'))}</span>` : lv ? LIVEB : od ? OVERB : ready ? '<span class="pill live">รอแข่ง</span>' : '<span class="pill">รอคู่</span>';
   const ed = editOn && canScore(ev.sport); const flags = matchFlags(m);
-  return `<div class="mrow${compact ? ' compact' : ''}${ed ? ' click' : ''}${lv ? ' islive' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}>
+  const btn = ed && !compact ? `<button class="btn sm rowbtn${s ? ' ghost' : ''}" data-res="${ev.id}|${m.id}">${s ? 'แก้ผล' : lv ? 'อัปเดตผล' : 'บันทึกผล'}</button>` : '';
+  return `<div class="mrow${compact ? ' compact' : ''}${ed ? ' click' : ''}${ed && !compact ? ' ed' : ''}${lv ? ' islive' : ''}${od ? ' overdue' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}>
     <span class="tt num">${esc(m.time || '–')}</span>
     <span class="ml"${tip('match', ev.id, m.id)}>${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}${compact && lv ? ' ' + LIVEB : ''}<small> · คู่ ${m.no} ${esc(m.round || '')}${m.venue || ev.venue ? ' · ' + esc(m.venue || ev.venue) : ''}</small></span>
-    <span class="vsline">${chip(t.a, { ph: slotLabel(ev, m.a), tip: slotTip(ev, m.a), win: s === 'a', lose: s === 'b' })}${score}${chip(t.b, { ph: slotLabel(ev, m.b), tip: slotTip(ev, m.b), win: s === 'b', lose: s === 'a' })}${flags}</span>${compact ? '' : tag}</div>`;
+    <span class="vsline">${chip(t.a, { ph: slotLabel(ev, m.a), tip: slotTip(ev, m.a), win: s === 'a', lose: s === 'b' })}${score}${chip(t.b, { ph: slotLabel(ev, m.b), tip: slotTip(ev, m.b), win: s === 'b', lose: s === 'a' })}${flags}</span>${compact ? '' : tag}${btn}</div>`;
 }
 
 function vSchedule() {
@@ -1001,7 +1049,7 @@ function vSchedule() {
   if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(e => {
     const r = (e.rounds || []).filter(r => r.date === d).map(r => `${r.label} ${r.time}`).join(' · ');
     const m = medalsOf(e);
-    return `<div class="mrow click" data-open="${e.id}" tabindex="0"><span class="tt num">${esc(e.time || (e.rounds || []).find(r => r.date === d)?.time || '–')}</span><span class="ml">${sIcon(e.sport, 'sm')}<b>${esc(sportName(e.sport))}</b> ${esc(e.label)}<small>${r ? ' · ' + esc(r) : ''}</small></span><span class="vsline">${e.medal ? medalLine(m) : ''}</span><span class="pill">${FORMATS[e.format]}</span></div>`;
+    return `<div class="mrow click${editOn && canScore(e.sport) ? ' ed' : ''}" data-open="${e.id}" tabindex="0"><span class="tt num">${esc(e.time || (e.rounds || []).find(r => r.date === d)?.time || '–')}</span><span class="ml">${sIcon(e.sport, 'sm')}<b>${esc(sportName(e.sport))}</b> ${esc(e.label)}<small>${r ? ' · ' + esc(r) : ''}</small></span><span class="vsline">${e.medal ? medalLine(m) : ''}</span><span class="pill">${FORMATS[e.format]}</span>${editOn && canScore(e.sport) ? `<button class="btn sm rowbtn" ${e.format === 'points' ? `data-open="${e.id}"` : `data-evres="${e.id}"`}>${e.format === 'points' ? 'กรอกคะแนน' : 'บันทึกผล'}</button>` : ''}</div>`;
   }).join('')}</section>`;
   return `<section class="hero"><h1>โปรแกรมและผลการแข่งขัน</h1><p class="muted">${editOn ? 'แตะที่นัดเพื่อบันทึกผล ผู้ชนะจะถูกส่งเข้านัดถัดไปอัตโนมัติ' : 'เปิดโหมดแก้ไขเพื่อบันทึกผล (เฉพาะผู้มีสิทธิ์)'}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-day="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div>
@@ -1104,8 +1152,9 @@ function matchNode(ev, m, x, y, isFinal, cls) {
   const lv = isLive(m);
   const line = side => `<div class="bl ${s === side ? 'w' : s && s !== 'd' ? 'l' : ''}">${chip(t[side], { ph: slotLabel(ev, m[side]), tip: slotTip(ev, m[side]) })}<span class="num">${s || lv ? esc(m['s' + side] ?? '') : ''}</span></div>`;
   const ed = editOn && canScore(ev.sport);
-  return `<div class="node match${isFinal ? ' final' : ''}${cls ? ' ' + cls : ''}${ed ? ' click' : ''}${lv ? ' islive' : ''}${m.protest?.status === 'pending' ? ' prot' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}${tip('match', ev.id, m.id)} style="left:${x - G.NW / 2}px;top:${y - G.MH / 2}px;width:${G.NW}px;min-height:${G.MH}px">
-    ${lv ? '<span class="livetag"><i></i>LIVE</span>' : ''}<div class="bh"><span>คู่ ${m.no}${G.v ? '' : ' · ' + esc(m.round || '')}</span><span class="num">${m.date ? fmtDate(m.date) : ''} ${esc(m.time || '')}</span></div>${line('a')}${line('b')}</div>`;
+  const od = isOverdue(m);
+  return `<div class="node match${isFinal ? ' final' : ''}${cls ? ' ' + cls : ''}${ed ? ' click' : ''}${lv ? ' islive' : ''}${od ? ' overdue' : ''}${m.protest?.status === 'pending' ? ' prot' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}${tip('match', ev.id, m.id)} style="left:${x - G.NW / 2}px;top:${y - G.MH / 2}px;width:${G.NW}px;min-height:${G.MH}px">
+    ${lv ? '<span class="livetag"><i></i>LIVE</span>' : od ? '<span class="odtag">รอบันทึกผล</span>' : ''}<div class="bh"><span>คู่ ${m.no}${G.v ? '' : ' · ' + esc(m.round || '')}</span><span class="num">${m.date ? fmtDate(m.date) : ''} ${esc(m.time || '')}</span></div>${line('a')}${line('b')}</div>`;
 }
 function leafNode(n) {
   return `<div class="node leaf"${n.slot?.seed ? tip('seed', UI.mapEv, n.slot.seed) : ''} style="left:${n.x - G.LW / 2}px;top:${n.y - G.LH / 2}px;width:${G.LW}px;min-height:${G.LH}px">${chip(n.team, { ph: n.label })}${n.slot?.seed && n.team >= 0 && !G.v ? `<small>อันดับ ${n.slot.seed}</small>` : ''}</div>`;
@@ -1188,10 +1237,10 @@ function vCheckin() {
   return `<section class="hero"><h1>รายงานตัวนักกีฬา</h1><p class="muted">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${mins} นาที ไม่มาภายใน 10 นาทีหลังเวลาแข่งถือว่าสละสิทธิ์ · ตัวเลขคือ รายงานตัวแล้ว/ตัวจริงขั้นต่ำ${editOn ? ' · แตะนัดเพื่อเช็คชื่อ' : ''}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-ciday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div></div>
   <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button></div>
-  <section class="card">${items.map(({ ev, m }) => { const t = teamsOf(ev, m); const ed = editOn && canScore(ev.sport); return `<div class="cirow${ed ? ' click' : ''}${isLive(m) ? ' islive' : ''}" ${ed ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}>
+  <section class="card">${items.map(({ ev, m }) => { const t = teamsOf(ev, m); const ed = editOn && canScore(ev.sport); return `<div class="cirow${ed ? ' click ed' : ''}${isLive(m) ? ' islive' : ''}" ${ed ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}>
     <span class="tt num">${esc(m.time || '–')}<small>รายงานตัว ${m.time ? toTime(toMin(m.time) - mins) : '–'}</small></span>
     <span class="ml">${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}<small> · คู่ ${m.no}</small></span>
-    <span class="vsline">${side(ev, m, 'a', t.a)}${side(ev, m, 'b', t.b)}</span>${sideWin(m) ? '<span class="pill done">แข่งแล้ว</span>' : isLive(m) ? LIVEB : ''}</div>`; }).join('') || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>'}
+    <span class="vsline">${side(ev, m, 'a', t.a)}${side(ev, m, 'b', t.b)}</span>${sideWin(m) ? '<span class="pill done">แข่งแล้ว</span>' : isLive(m) ? LIVEB : '<span></span>'}${ed ? `<button class="btn sm rowbtn ghost" data-ci="${ev.id}|${m.id}">เช็คชื่อ</button>` : ''}</div>`; }).join('') || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>'}
   ${others.length ? `<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>${others.map(ev => `<div class="cirow${editOn && canScore(ev.sport) ? ' click' : ''}" ${editOn && canScore(ev.sport) ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tt num">${esc(ev.time || '–')}</span><span class="ml">${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}</span>
     <span class="vsline">${(ev.teams || []).map(c => { const n = (ev.ci?.[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span></div>`).join('')}` : ''}</section>`;
 }
@@ -1277,6 +1326,21 @@ function exportSheets() {
 }
 
 /* ---------- จัดการการแข่งขัน ---------- */
+function evSteps(e) {
+  const matchy = ['ko', 'rr', 'rrko'].includes(e.format); const ms = e.matches || [];
+  if (!matchy) { const hasTime = e.format === 'points' ? (e.rounds || []).length && (e.rounds || []).every(r => r.date) : !!e.date; return [
+    { k: 'set', n: 'ตั้งค่ารายการ', done: (e.teams || []).length >= 2, act: `data-editev="${e.id}"` },
+    { k: 'time', n: e.format === 'points' ? 'กำหนดรอบและวัน' : 'กำหนดวันแข่ง', done: !!hasTime, act: `data-editev="${e.id}"` }]; }
+  return [
+    { k: 'set', n: 'ตั้งค่ารายการ', done: (e.teams || []).length >= 2, act: `data-editev="${e.id}"` },
+    { k: 'draw', n: 'จับคู่', done: ms.length > 0, act: `data-draw="${e.id}"` },
+    { k: 'time', n: 'จัดเวลา', done: ms.length > 0 && ms.every(m => m.date && m.time), act: `data-sched="${e.id}"` },
+    { k: 'check', n: 'ตรวจตารางคู่', done: e.reviewed !== false && ms.length > 0 && ms.every(m => m.date && m.time), act: `data-mlist="${e.id}"` }];
+}
+function stepper(e, cur) {
+  const st = evSteps(e); const next = st.find(x => !x.done);
+  return `<ol class="steps">${st.map((x, i) => `<li class="${x.done ? 'done' : ''}${cur ? (x.k === cur ? ' cur' : '') : x === next ? ' cur' : ''}"><span class="sn">${x.done ? '✓' : i + 1}</span>${x.n}</li>`).join('')}<li class="${next ? '' : 'done cur'}"><span class="sn">${next ? st.length + 1 : '✓'}</span>พร้อมแข่ง</li></ol>`;
+}
 function vAdmin() {
   if (!isAdmin()) return '<p class="muted">หน้านี้สำหรับผู้ดูแลระบบ</p>';
   const sps = sportsList(); if (!UI.adSport || !S.sports[UI.adSport]) UI.adSport = sps[0]?.id;
@@ -1291,14 +1355,19 @@ function vAdmin() {
     <div class="actions"><button class="btn sm" data-act="addsport">+ เพิ่มชนิดกีฬา</button></div></section>
   <section class="card">${sp ? `<div class="maphead"><div><h2 class="sh">${sIcon(sp.id, 'tile')}${esc(sp.name)}</h2><p class="muted sm">หน่วยคะแนน ${esc(sp.unit || '-')} · ส่งรายชื่อได้ ${sp.rosterMax ?? 0} คน · ตัวจริง ${sp.starters ?? 0} คน</p></div>
     <div class="actions m0"><button class="btn sm ghost" data-editsport="${sp.id}">แก้ไขชนิดกีฬา</button><button class="btn sm danger" data-delsport="${sp.id}">ลบ</button></div></div>
-    <div class="evtable">${evs.map(e => { const nm = (e.matches || []).length; const noTime = (e.matches || []).filter(m => !m.date || !m.time).length; return `<div class="evrow">
-      <div><b>${esc(e.label)}</b><small class="muted"> · ${FORMATS[e.format]}${e.medal ? '' : ' · ไม่นับเหรียญ'} · ${(e.teams || []).length} ทีม${nm ? ` · ${nm} นัด` : ''}</small>${noTime ? `<small class="warnt"> · ${noTime} นัดยังไม่กำหนดเวลา</small>` : ''}${dupColors(e).length ? '<small class="warnt"> · สีซ้ำในสาย</small>' : ''}</div>
-      <div class="actions m0">${['ko', 'rr', 'rrko'].includes(e.format) ? `<button class="btn sm" data-draw="${e.id}">จับคู่</button><button class="btn sm ghost" data-sched="${e.id}">จัดเวลา</button><button class="btn sm ghost" data-mlist="${e.id}">ตารางคู่</button>` : ''}
-      <button class="btn sm ghost" data-editev="${e.id}">ตั้งค่า</button><button class="btn sm danger" data-delev="${e.id}" aria-label="ลบรายการ">ลบ</button></div></div>`; }).join('') || '<p class="muted">ยังไม่มีรายการ</p>'}</div>
+    <details class="howto" ${evs.length ? '' : 'open'}><summary><span>ขั้นตอนเพิ่มรายการแข่งขัน</span><span class="muted sm">ดูวิธีใช้</span></summary>
+      <ol class="howlist"><li><b>เพิ่มรายการ</b> ตั้งชื่อรุ่น เลือกรูปแบบการแข่งและคณะสีที่ร่วมแข่ง</li><li><b>จับคู่</b> ให้ระบบสุ่ม หรือกำหนดลำดับทีมเอง</li><li><b>จัดเวลา</b> ระบบไล่ใส่วัน เวลา และสนามให้ทุกคู่</li><li><b>ตรวจตารางคู่</b> แก้รายคู่ได้ แล้วกด “ยืนยันพร้อมแข่ง”</li></ol>
+      <p class="muted sm">หลังกดเพิ่มรายการ ระบบจะพาไปทีละขั้นให้เอง และกลับมาทำขั้นที่ค้างได้จากปุ่ม “ขั้นต่อไป” ของแต่ละรายการ · รายการแบบจัดอันดับ (กรีฑา) และกรรมการให้คะแนน ไม่ต้องจับคู่ แค่กำหนดวันแข่ง</p></details>
+    <div class="evtable">${evs.map(e => { const nm = (e.matches || []).length; const noTime = (e.matches || []).filter(m => !m.date || !m.time).length; const nx = evSteps(e).find(x => !x.done); return `<div class="evrow">
+      <div><b>${esc(e.label)}</b><small class="muted"> · ${FORMATS[e.format]}${e.medal ? '' : ' · ไม่นับเหรียญ'} · ${(e.teams || []).length} ทีม${nm ? ` · ${nm} นัด` : ''}</small>${noTime ? `<small class="warnt"> · ${noTime} นัดยังไม่กำหนดเวลา</small>` : ''}${dupColors(e).length ? '<small class="warnt"> · สีซ้ำในสาย</small>' : ''}${stepper(e)}</div>
+      <div class="actions m0">${nx ? `<button class="btn sm" ${nx.act} data-wiz="1">ขั้นต่อไป: ${nx.n}</button>` : '<span class="pill done">พร้อมแข่ง</span>'}
+      ${['ko', 'rr', 'rrko'].includes(e.format) ? `<button class="btn sm ghost" data-draw="${e.id}">จับคู่</button><button class="btn sm ghost" data-sched="${e.id}">จัดเวลา</button><button class="btn sm ghost" data-mlist="${e.id}">ตารางคู่</button>` : ''}
+      <button class="btn sm ghost" data-editev="${e.id}">ตั้งค่า</button>${hasResults(e) ? `<button class="btn sm ghost" data-clrev="${e.id}">ล้างผล</button>` : ''}<button class="btn sm danger" data-delev="${e.id}" aria-label="ลบรายการ">ลบ</button></div></div>`; }).join('') || '<p class="muted">ยังไม่มีรายการ</p>'}</div>
     <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button></div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
   ${conflicts.length ? `<section class="card"><details><summary><span>ตรวจสนามซ้ำเวลา</span><span class="muted num">${conflicts.length} ช่วงเวลา</span></summary><p class="muted sm">หลายรายการใช้สนามเดียวกันในเวลาเดียวกัน ตรวจว่าสนามมีหลายคอร์ทพอหรือไม่</p>${conflicts.map(c => `<div class="feed sm"><span class="fl">${fmtDate(c.date)} ${c.time} · ${esc(c.venue)}</span><span class="muted sm">${c.list.map(x => esc(evTitle(x.ev)) + ' คู่ ' + x.m.no).join(' / ')}</span></div>`).join('')}</details></section>` : ''}
   ${rolesCard()}${scoringCard()}
-  <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button></div></section>
+  <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button><button class="btn danger" data-act="reset">ล้างข้อมูล / เริ่มใหม่</button></div>
+    <p class="muted sm" data-tip="version">เวอร์ชัน ${APP_VERSION} · ปรับปรุง ${fmtDate(APP_DATE, true)}</p></section>
   ${logCard()}`;
 }
 function rolesCard() {
@@ -1333,6 +1402,41 @@ function openRole(id) {
     put('meta', 'config', m); logIt('กำหนดสิทธิ์ผู้ใช้', `${id} → ${ROLE_N[role]}`); closeModal();
   };
 }
+function openReset() {
+  modal(`<form class="dlg wide" id="rsf"><h3>ล้างข้อมูลเพื่อเริ่มใหม่</h3>
+    <p class="warn">การล้างข้อมูลย้อนกลับไม่ได้ ควรดาวน์โหลดไฟล์สำรองไว้ก่อน <button type="button" class="btn sm ghost" id="rsbk">ดาวน์โหลดไฟล์สำรอง</button></p>
+    <fieldset class="win col"><legend>เลือกสิ่งที่ต้องการล้าง</legend>
+      <label><input type="radio" name="rs" value="results" checked> <b>ล้างผลการแข่งขันทั้งหมด</b> <small class="muted">คงโปรแกรม คู่ วันเวลา และรายชื่อไว้ เหมาะกับหลังซ้อมกรอกผล</small></label>
+      <label><input type="radio" name="rs" value="rosters"> <b>ล้างรายชื่อนักกีฬาและการรายงานตัว</b> <small class="muted">คงโปรแกรมและผลไว้</small></label>
+      <label><input type="radio" name="rs" value="template"> <b>กลับเป็นโปรแกรมจากสูจิบัตร 2569</b> <small class="muted">ลบทุกอย่างแล้วนำเข้าโปรแกรมตั้งต้นใหม่</small></label>
+      <label><input type="radio" name="rs" value="empty"> <b>ล้างทั้งหมด เริ่มจากศูนย์</b> <small class="muted">ไม่มีชนิดกีฬาและรายการ สร้างเองทั้งหมด</small></label>
+    </fieldset>
+    <label class="fld">พิมพ์คำว่า <b>ล้างข้อมูล</b> เพื่อยืนยัน<input id="rsc" autocomplete="off"></label>
+    <p class="err" id="err"></p><div class="actions"><button class="btn danger" id="rsgo" disabled>ล้างข้อมูล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+  $('#rsbk').onclick = () => download(`สำรองข้อมูล-กีฬาสี-${todayStr()}.json`, JSON.stringify(S));
+  $('#rsc').oninput = () => { $('#rsgo').disabled = $('#rsc').value.trim() !== 'ล้างข้อมูล'; };
+  $('#rsf').onsubmit = async e => {
+    e.preventDefault(); const what = $('#rsf').rs.value; closeModal(); toast('กำลังล้างข้อมูล…');
+    await resetData(what); logIt('ล้างข้อมูล', { results: 'ผลการแข่งขัน', rosters: 'รายชื่อนักกีฬา', template: 'กลับเป็นโปรแกรมสูจิบัตร', empty: 'ทั้งหมด' }[what]);
+    toast('ล้างข้อมูลเรียบร้อย'); UI.mapSport = null; UI.mapEv = null; render();
+  };
+}
+function stripResults(e) {
+  (e.matches || []).forEach(m => ['w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at'].forEach(k => delete m[k]));
+  delete e.res; delete e.ci; return e;
+}
+async function resetData(what) {
+  if (what === 'results') { for (const [id, e] of Object.entries(S.events)) if (hasResults(e) || (e.matches || []).some(m => m.ci || m.live != null || m.cards) || e.ci) await put('events', id, stripResults(clone(e))); return; }
+  if (what === 'rosters') {
+    for (const id of Object.keys(S.rosters)) await put('rosters', id, null);
+    for (const [id, e] of Object.entries(S.events)) if (e.ci || (e.matches || []).some(m => m.ci)) { const c = clone(e); delete c.ci; (c.matches || []).forEach(m => delete m.ci); await put('events', id, c); }
+    return;
+  }
+  const keepRoles = S.meta.roles; const keepDays = S.meta.days;
+  for (const col of ['rosters', 'events', 'sports']) for (const id of Object.keys(S[col])) await put(col, id, null);
+  if (what === 'template') { const t = clone(TEMPLATE); if (keepRoles) t.meta.roles = keepRoles; await importAll({ sports: t.sports, events: t.events, meta: t.meta }, 'นำเข้าโปรแกรม'); }
+  else { const m = { title: S.meta.title || 'กีฬาอัญมณี 2569', school: S.meta.school || 'โรงเรียนสิงห์สมุทร', days: keepDays || [], classes: S.meta.classes || {}, maxSports: 2, maxAthletics: 2, checkinMin: 20 }; if (keepRoles) m.roles = keepRoles; await put('meta', 'config', m); }
+}
 function venueConflicts() {
   const g = {}; allMatches().forEach(x => { const v = x.m.venue || x.ev.venue; if (!v || !x.m.date || !x.m.time) return; const k = x.m.date + '|' + x.m.time + '|' + v; (g[k] = g[k] || []).push(x); });
   return Object.entries(g).filter(([, l]) => l.length > 1 && new Set(l.map(x => x.ev.id)).size > 1).map(([k, list]) => { const [date, time, venue] = k.split('|'); return { date, time, venue, list }; }).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -1341,7 +1445,7 @@ function venueConflicts() {
 function vTV() {
   const t = medalTable(); const recent = medalEvents().filter(e => medalsOf(e).g >= 0).sort((a, b) => lastAt(b) - lastAt(a)).slice(0, 6);
   return `<div class="tv"><header><div class="tvt"><img src="${document.querySelector('.brand img')?.src || ''}" alt=""><div><small>${esc(S.meta.title || 'กีฬาอัญมณี 2569')} · ${esc(S.meta.school || '')}</small><h1>ตารางเหรียญรางวัล</h1><small><span style="color:var(--gold-t)">ทอง</span> · <span style="color:var(--silver-t)">เงิน</span> · <span style="color:var(--bronze-t)">ทองแดง</span></small></div></div><a href="#medals" class="btn ghost">ออกจากจอประกาศ</a></header>
-  <div class="tvgrid">${t.map(x => `<div class="tvc" style="--tc:${COLORS[x.c].c}"><span class="rk num">${x.rank}</span><span class="nm">${gem(x.c, 'xl')}${COLORS[x.c].n}</span><span class="m g num">${x.g}</span><span class="m s num">${x.s}</span><span class="m b num">${x.b}</span></div>`).join('')}</div>
+  <div class="tvgrid">${t.map(x => `<div class="tvc" style="--tc:${COLORS[x.c].c}"><span class="rk num">${x.rank}</span><span class="nm">${gem(x.c, 'xl')}${COLORS[x.c].n}</span><span class="m g num"${tip('medals', x.c, 'g')}>${x.g}</span><span class="m s num"${tip('medals', x.c, 's')}>${x.s}</span><span class="m b num"${tip('medals', x.c, 'b')}>${x.b}</span></div>`).join('')}</div>
   ${S.meta.scoring?.on ? `<div class="tvov">${overallTable().map((x, i) => `<span style="--tc:${COLORS[x.c].c}"><b class="num">${i + 1}</b> ${COLORS[x.c].n} <b class="num">${x.t}</b> คะแนน</span>`).join('')}</div>` : ''}
   ${liveBoard(true)}
   <div class="tvfeed">${recent.map(e => `<div><span>${esc(evTitle(e))}</span><span class="pod">${medalLine(medalsOf(e))}</span></div>`).join('') || '<div><span>รอผลนัดชิงชนะเลิศ</span></div>'}</div></div>`;
@@ -1520,7 +1624,7 @@ function openSport(id) {
 function openEvent(id, sportId) {
   const e = id ? S.events[id] : { sport: sportId, label: '', age: null, gender: 'ชาย', format: 'ko', medal: true, teams: [0, 1, 2, 3, 4, 5], bronze: true };
   const sp = S.sports[e.sport] || {};
-  modal(`<form class="dlg" id="evf"><h3>${id ? 'ตั้งค่ารายการ' : 'เพิ่มรายการ'} · ${esc(sp.name || '')}</h3>
+  modal(`<form class="dlg" id="evf">${!id ? stepper({ teams: [], matches: [], format: e.format }, 'set') : ''}<h3>${id ? 'ตั้งค่ารายการ' : 'ขั้นที่ 1 · เพิ่มรายการ'} · ${esc(sp.name || '')}</h3>
     <label class="fld">ชื่อรายการ<input id="el" required value="${esc(e.label)}" placeholder="เช่น รุ่น 14 ปี ชาย / 01 วิ่ง 100 เมตร ชาย 14 ปี"></label>
     <div class="ov"><label class="fld">รุ่นอายุ<select id="ea"><option value="">ไม่จำกัดรุ่น</option>${[14, 15, 16, 17, 18].map(a => `<option value="${a}" ${e.age === a ? 'selected' : ''}>ไม่เกิน ${a} ปี (ม.${AGE_GRADES[a].join(',')})</option>`).join('')}</select></label>
     <label class="fld">เพศ<select id="eg">${['ชาย', 'หญิง', 'ผสม'].map(g => `<option ${e.gender === g ? 'selected' : ''}>${g}</option>`).join('')}</select></label></div>
@@ -1539,19 +1643,20 @@ function openEvent(id, sportId) {
     ['rosterMax', 'starters'].forEach((k, i) => { const v = [$('#er'), $('#es')][i].value; if (v === '') delete d[k]; else d[k] = +v; });
     const nR = +$('#eR').value || 0;
     if (d.format === 'points' && nR) { const old = d.rounds || []; d.rounds = Array.from({ length: nR }, (_, i) => old[i] || { label: `รอบที่ ${i + 1}`, date: d.date || days()[0] || '', time: '' }); }
-    putEvent({ id: id || uid('e'), ...d }); logIt(id ? 'แก้ตั้งค่ารายการ' : 'เพิ่มรายการ', `${sportName(d.sport)} ${d.label}`); closeModal(); toast('บันทึกรายการแล้ว');
+    const nid = id || uid('e'); putEvent({ id: nid, ...d }); logIt(id ? 'แก้ตั้งค่ารายการ' : 'เพิ่มรายการ', `${sportName(d.sport)} ${d.label}`); closeModal();
+    if ((!id || WIZ) && ['ko', 'rr', 'rrko'].includes(d.format) && !(d.matches || []).length) { WIZ = nid; openDraw(nid); } else { WIZ = null; toast(id ? 'บันทึกการตั้งค่าแล้ว' : 'เพิ่มรายการแล้ว'); }
   };
 }
 function hasResults(ev) { return (ev.matches || []).some(m => m.w) || !!ev.res; }
 function openDraw(eid) {
   const ev = evById(eid); const teams = ev.teams || [];
-  modal(`<form class="dlg" id="df"><h3>จับคู่ · ${esc(evTitle(ev))}</h3><p class="muted sm">รูปแบบ: ${FORMATS[ev.format]} · ${teams.length} คณะสี</p>
+  modal(`<form class="dlg" id="df">${stepper(ev, 'draw')}<h3>ขั้นที่ 2 · จับคู่ · ${esc(evTitle(ev))}</h3><p class="muted sm">รูปแบบ: ${FORMATS[ev.format]} · ${teams.length} คณะสี</p>
     ${hasResults(ev) ? '<p class="warn">รายการนี้มีผลการแข่งขันแล้ว การจับคู่ใหม่จะลบผลและตารางเวลาเดิมทั้งหมด</p>' : ''}
     <fieldset class="win"><legend>วิธีจับคู่</legend><label><input type="radio" name="mode" value="random" checked> สุ่มอัตโนมัติ</label><label><input type="radio" name="mode" value="manual"> กำหนดลำดับเอง</label></fieldset>
     <div id="seeds" class="seedgrid" hidden>${teams.map((_, i) => `<label class="fld">ลำดับ ${i + 1}${ev.format === 'ko' && i < (2 ** Math.ceil(Math.log2(teams.length)) - teams.length) ? ' <small class="okt">ได้บาย</small>' : ''}<select class="sd">${COLORS.map((k, c) => teams.includes(c) ? `<option value="${c}" ${teams[i] === c ? 'selected' : ''}>${k.n}</option>` : '').join('')}</select></label>`).join('')}</div>
     <p class="muted sm">${ev.format === 'ko' ? 'สายแพ้คัดออก: ลำดับต้นได้บายเมื่อจำนวนทีมไม่ครบกำลังสอง (6 ทีม: ลำดับ 1–2 ได้บาย เหมือนสูจิบัตร)' : ev.format === 'rrko' ? 'พบกันหมดก่อน แล้ว 4 อันดับแรกเข้ารอบรอง (ที่1 พบ ที่4, ที่2 พบ ที่3)' : 'ทุกคณะพบกันหมด ระบบจัดรอบให้แต่ละคณะได้พักสลับกัน'}</p>
     <div id="prev"></div><p class="err" id="err"></p>
-    <div class="actions"><button type="button" class="btn ghost" id="pv">ดูตัวอย่าง</button><button class="btn">สร้างคู่แข่งขัน</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+    <div class="actions"><button type="button" class="btn ghost" id="pv">ดูตัวอย่าง</button><button class="btn">สร้างคู่แล้วไปขั้นจัดเวลา →</button><button type="button" class="btn ghost" data-close>ไว้ทีหลัง</button></div></form>`);
   let preview = null;
   const order = () => { if ($('#df').mode.value === 'random') return shuffle(teams); const o = [...document.querySelectorAll('.sd')].map(s => +s.value); return o; };
   const make = () => { const o = order(); if (new Set(o).size !== o.length) { $('#err').textContent = 'มีคณะสีซ้ำในลำดับ'; return null; } $('#err').textContent = ''; const ms = ev.format === 'ko' ? genKO(o, ev.bronze !== false) : ev.format === 'rr' ? genRR(o) : genRRKO(o, ev.bronze !== false); ms.forEach((m, i) => m.no = i + 1); return ms; };
@@ -1559,22 +1664,22 @@ function openDraw(eid) {
   $('#pv').onclick = () => { preview = make(); if (!preview) return; const tmp = { ...ev, matches: preview }; $('#prev').innerHTML = `<div class="pvlist">${preview.map(m => `<div class="feed sm"><span class="fl">คู่ ${m.no} · ${esc(m.round)}</span><span class="pod">${chip(resolveSlot(tmp, m.a), { ph: slotLabel(tmp, m.a) })}<span class="muted">VS</span>${chip(resolveSlot(tmp, m.b), { ph: slotLabel(tmp, m.b) })}</span></div>`).join('')}</div>`; };
   $('#df').onsubmit = e => {
     e.preventDefault(); const ms = preview || make(); if (!ms) return;
-    const go = () => { const e2 = clone(S.events[eid]); e2.matches = ms; delete e2.res; putEvent({ id: eid, ...e2 }); logIt('จับคู่ใหม่', `${evTitle(ev)} ${ms.length} คู่`); closeModal(); toast(`สร้าง ${ms.length} คู่แล้ว ต่อไปกด “จัดเวลา”`); };
+    const go = () => { const e2 = clone(S.events[eid]); e2.matches = ms; delete e2.res; e2.reviewed = false; putEvent({ id: eid, ...e2 }); logIt('จับคู่ใหม่', `${evTitle(ev)} ${ms.length} คู่`); closeModal(); toast(`สร้าง ${ms.length} คู่แล้ว`); WIZ = eid; openSchedule(eid); };
     if (hasResults(ev)) { closeModal(); ask('ลบผลเดิมและสร้างคู่ใหม่?', go, 'สร้างคู่ใหม่'); } else go();
   };
 }
 function openSchedule(eid) {
   const ev = evById(eid);
-  modal(`<form class="dlg" id="scf"><h3>จัดเวลาอัตโนมัติ · ${esc(evTitle(ev))}</h3><p class="muted sm">เรียงตามลำดับคู่ (รอบแรกก่อนรอบถัดไป) ถ้าเกินเวลาเลิกจะต่อวันถัดไป</p>
+  modal(`<form class="dlg" id="scf">${stepper(ev, 'time')}<h3>ขั้นที่ 3 · จัดเวลาอัตโนมัติ · ${esc(evTitle(ev))}</h3><p class="muted sm">เรียงตามลำดับคู่ (รอบแรกก่อนรอบถัดไป) ถ้าเกินเวลาเลิกจะต่อวันถัดไป</p>
     <div class="ov"><label class="fld">เริ่มวัน<select id="sd">${days().map(d => `<option value="${d}">${fmtDate(d, true)}</option>`).join('')}</select></label><label class="fld">เวลาเริ่ม<input id="st" type="time" value="09:00"></label><label class="fld">เลิก<input id="se" type="time" value="15:30"></label></div>
     <div class="ov"><label class="fld">นาทีต่อคู่<input id="si" type="number" min="5" value="40"></label><label class="fld">สนาม<input id="sv" value="${esc(ev.venue || '')}"></label></div>
     <label class="ck"><input type="checkbox" id="sl" checked> พักกลางวัน 12.00–13.00 น.</label>
     <label class="ck"><input type="checkbox" id="sk"> จัดเฉพาะคู่ที่ยังไม่มีเวลา</label>
-    <div class="actions"><button class="btn">จัดเวลา</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+    <div class="actions"><button class="btn">จัดเวลาแล้วไปขั้นตรวจ →</button><button type="button" class="btn ghost" data-close>ไว้ทีหลัง</button></div></form>`);
   $('#scf').onsubmit = e => {
     e.preventDefault(); const e2 = clone(S.events[eid]); const list = $('#sk').checked ? e2.matches.filter(m => !m.date || !m.time) : e2.matches;
     autoSchedule(list, { date: $('#sd').value, start: $('#st').value, end: $('#se').value, interval: $('#si').value, venue: $('#sv').value.trim(), lunch: $('#sl').checked });
-    putEvent({ id: eid, ...e2 }); logIt('จัดเวลาอัตโนมัติ', evTitle(ev)); closeModal(); toast('จัดเวลาแล้ว ปรับรายคู่ได้ที่ “ตารางคู่”');
+    putEvent({ id: eid, ...e2 }); logIt('จัดเวลาอัตโนมัติ', evTitle(ev)); closeModal(); toast('จัดเวลาแล้ว'); openMatchList(eid);
   };
 }
 function openMatchList(eid) {
@@ -1589,7 +1694,7 @@ function openMatchList(eid) {
   };
   const parse = v => !v ? null : v[0] === 'c' ? { c: +v.slice(1) } : v[0] === 's' ? { seed: +v.slice(1) } : { m: v.slice(2), r: v[0] };
   const draw = () => {
-    $('#modal').innerHTML = `<div class="dlg xwide"><h3>ตารางคู่ · ${esc(evTitle(ev))}</h3><p class="muted sm">กำหนดทีม วัน เวลา สนามของแต่ละคู่เอง · “ผู้ชนะคู่ X” จะเติมทีมให้อัตโนมัติเมื่อมีผล</p>
+    $('#modal').innerHTML = `<div class="dlg xwide">${stepper(evById(eid), 'check')}<h3>ขั้นที่ 4 · ตรวจตารางคู่ · ${esc(evTitle(ev))}</h3><p class="muted sm">กำหนดทีม วัน เวลา สนามของแต่ละคู่เอง · “ผู้ชนะคู่ X” จะเติมทีมให้อัตโนมัติเมื่อมีผล</p>
     <div class="scroll"><table class="mlt"><thead><tr><th>คู่</th><th>รอบ</th><th>ประเภทนัด</th><th>ฝั่งซ้าย</th><th>ฝั่งขวา</th><th>วัน</th><th>เวลา</th><th>สนาม</th><th></th></tr></thead><tbody>
     ${ms.map((m, i) => `<tr><td class="num">${m.no}</td><td><input data-mf="${i}|round" value="${esc(m.round || '')}" size="9"></td>
       <td><select data-mf="${i}|kind"><option value="">ปกติ</option><option value="bronze" ${m.kind === 'bronze' ? 'selected' : ''}>ชิงที่ 3</option><option value="final" ${m.kind === 'final' ? 'selected' : ''}>ชิงชนะเลิศ</option></select>${ev.format !== 'ko' ? `<select data-mf="${i}|stage"><option value="rr" ${m.stage === 'rr' ? 'selected' : ''}>พบกันหมด</option><option value="ko" ${m.stage === 'ko' ? 'selected' : ''}>น็อกเอาต์</option></select>` : ''}</td>
@@ -1598,7 +1703,7 @@ function openMatchList(eid) {
       <td><input type="time" data-mf="${i}|time" value="${esc(m.time || '')}"></td><td><input data-mf="${i}|venue" value="${esc(m.venue || '')}" placeholder="${esc(ev.venue || '')}" size="10"></td>
       <td><button class="x" data-mrm="${i}" aria-label="ลบคู่ ${m.no}">×</button></td></tr>`).join('')}</tbody></table></div>
     <div class="actions"><button class="btn sm ghost" id="addm">+ เพิ่มคู่</button><button class="btn sm ghost" id="sortm">เรียงตามวันเวลา</button></div>
-    <p class="err" id="err"></p><div class="actions"><button class="btn" id="savem">บันทึกตารางคู่</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`;
+    <p class="err" id="err"></p><div class="actions"><button class="btn" id="savem">ยืนยันพร้อมแข่ง ✓</button><button class="btn ghost" data-close>ไว้ทีหลัง</button></div></div>`;
   };
   $('#modal').hidden = false; draw();
   $('#modal').onchange = e => { const f = e.target.dataset.mf; if (!f) return; const [i, k] = f.split('|'); const m = ms[+i]; const v = e.target.value;
@@ -1612,7 +1717,9 @@ function openMatchList(eid) {
       const bad = ms.find(m => [m.a, m.b].some(s => s?.m && !ms.find(x => x.id === s.m)));
       if (bad) { $('#err').textContent = `คู่ ${bad.no} อ้างถึงคู่ที่ถูกลบ`; return; }
       if (ms.filter(m => m.kind === 'final').length > 1) { $('#err').textContent = 'มีนัดชิงชนะเลิศได้คู่เดียว'; return; }
-      const e2 = clone(S.events[eid]); e2.matches = ms; putEvent({ id: eid, ...e2 }); logIt('แก้ตารางคู่', evTitle(ev)); closeModal(); toast('บันทึกตารางคู่แล้ว');
+      const noT = ms.filter(m => !m.date || !m.time).length;
+      const e2 = clone(S.events[eid]); e2.matches = ms; e2.reviewed = !noT; putEvent({ id: eid, ...e2 }); logIt('แก้ตารางคู่', evTitle(ev)); closeModal(); WIZ = null;
+      toast(noT ? `บันทึกแล้ว ยังมี ${noT} คู่ที่ไม่มีวันเวลา` : `${evTitle(ev)} พร้อมแข่งแล้ว`);
     }
   };
 }
@@ -1669,7 +1776,7 @@ function rosterText(c) {
 }
 
 /* ===================== การ์ดข้อมูลเมื่อวางเมาส์ ===================== */
-const STATUS = m => sideWin(m) ? '<span class="pill done">จบแล้ว</span>' : isLive(m) ? LIVEB : '<span class="pill">รอแข่ง</span>';
+const STATUS = m => sideWin(m) ? '<span class="pill done">จบแล้ว</span>' : isLive(m) ? LIVEB : isOverdue(m) ? OVERB : '<span class="pill">รอแข่ง</span>';
 function nextFor(c) {
   const now = todayStr() + toTime(nowMin());
   return allMatches().filter(x => !sideWin(x.m) && x.m.date && x.m.time && (x.m.date + x.m.time) >= now.slice(0, 10) + '00:00' && (() => { const t = teamsOf(x.ev, x.m); return t.a === c || t.b === c; })())
@@ -1745,6 +1852,16 @@ function tipHTML(spec) {
       ${canWrite && came.length ? `<div class="tt-sec">มาแล้ว: ${came.map(p => esc((p.num ? '#' + p.num + ' ' : '') + normName(p.name))).join(', ')}</div>` : ''}
       ${canWrite && miss.length ? `<div class="tt-mut">ยังไม่มา: ${miss.map(p => esc(normName(p.name))).join(', ')}</div>` : ''}`;
   }
+  if (k === 'medals') {
+    const ci = +a; const kind = b; const NM = { g: 'เหรียญทอง', s: 'เหรียญเงิน', b: 'เหรียญทองแดง', t: 'เหรียญทั้งหมด' };
+    const list = [];
+    sportsList().forEach(sp => eventsOf(sp.id).filter(e => e.medal).forEach(e => { const m = medalsOf(e); const got = m.g === ci ? 'g' : m.s === ci ? 's' : m.b.includes(ci) ? 'b' : null; if (got && (kind === 't' || kind === got)) list.push({ e, got }); }));
+    const head = `<div class="tt-h">${gem(ci, 'lg')}<div><b>คณะ${COLORS[ci].n} · ${NM[kind]} ${list.length}</b><small>${list.length ? 'รายการที่ได้รับ' : 'ยังไม่ได้รับ'}</small></div></div>`;
+    if (kind === 't') { const by = {}; list.forEach(x => { const k2 = x.e.sport; (by[k2] = by[k2] || { g: 0, s: 0, b: 0 })[x.got]++; });
+      return head + (Object.entries(by).map(([sid, v]) => `<div class="tr"><span>${sIcon(sid, 'sm')}${esc(sportName(sid))}</span><b class="num"><i class="mdot g"></i>${v.g} <i class="mdot s"></i>${v.s} <i class="mdot b"></i>${v.b}</b></div>`).join('') || '<div class="tt-mut">ยังไม่มีเหรียญ</div>'); }
+    return head + list.slice(0, 14).map(x => `<div class="tr"><span>${sIcon(x.e.sport, 'sm')}${esc(sportName(x.e.sport))}</span><b>${esc(x.e.label)}</b></div>`).join('') + (list.length > 14 ? `<div class="tt-mut">และอีก ${list.length - 14} รายการ</div>` : '');
+  }
+  if (k === 'version') return `<div class="tt-h"><div><b>เวอร์ชัน ${APP_VERSION}</b><small>ปรับปรุง ${fmtDate(APP_DATE, true)}</small></div></div>${CHANGELOG.slice(0, 4).map(([v, t]) => `<div class="tr vl"><span class="num">${v}</span><b>${esc(t)}</b></div>`).join('')}`;
   if (k === 'livelist') {
     const L = liveList(); return `<div class="tt-h"><div><b>กำลังแข่งขัน ${L.length} นัด</b><small>คลิกเพื่อดูโปรแกรมวันนี้</small></div></div>${L.slice(0, 8).map(x => { const t = teamsOf(x.ev, x.m); return `<div class="tr"><span>${esc(sportName(x.ev.sport))} ${esc(x.ev.label)}</span><b>${gem(t.a)}${gem(t.b)}</b></div>`; }).join('')}`;
   }
@@ -1776,7 +1893,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { closeModal(); resetModalHandlers(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close]'))) return;
   const d = el.dataset;
   if (el.id === 'editbtn') { editOn = !editOn; render(); return; }
@@ -1798,7 +1915,7 @@ document.addEventListener('click', e => {
   else if (d.editsport) openSport(d.editsport);
   else if (d.delsport) { const n = eventsOf(d.delsport).length; ask(`ลบชนิดกีฬา “${sportName(d.delsport)}”${n ? ` และ ${n} รายการในนั้น` : ''}?`, () => { const nm = sportName(d.delsport); eventsOf(d.delsport).forEach(ev => put('events', ev.id, null)); put('sports', d.delsport, null); UI.adSport = null; logIt('ลบชนิดกีฬา', nm); }, 'ลบ'); }
   else if (d.addev) openEvent(null, d.addev);
-  else if (d.editev) openEvent(d.editev);
+  else if (d.editev) { WIZ = d.wiz ? d.editev : null; openEvent(d.editev); }
   else if (d.delev) { const t = evTitle(evById(d.delev)); ask(`ลบรายการ “${t}” พร้อมคู่และผลทั้งหมด?`, () => { put('events', d.delev, null); logIt('ลบรายการ', t); }, 'ลบ'); }
   else if (d.draw) openDraw(d.draw);
   else if (d.sched) openSchedule(d.sched);
@@ -1812,6 +1929,8 @@ document.addEventListener('click', e => {
   else if (d.act === 'fs') { const c = $('#mapcard'); if (document.fullscreenElement) document.exitFullscreen(); else c?.requestFullscreen?.().catch(() => toast('เบราว์เซอร์นี้ไม่รองรับเต็มจอ')); }
   else if (d.orient) { UI.mapOrient = d.orient === 'auto' ? null : d.orient; render(); }
   else if (d.act === 'dlsched') exportSchedule();
+  else if (d.act === 'reset') openReset();
+  else if (d.clrev) { const t = evTitle(evById(d.clrev)); ask(`ล้างผลทั้งหมดของ “${t}” (คงคู่และเวลาไว้)?`, () => { put('events', d.clrev, stripResults(clone(S.events[d.clrev]))); logIt('ล้างผลรายการ', t); toast('ล้างผลแล้ว'); }, 'ล้างผล'); }
   else if (d.act === 'dlmedal') exportMedals();
   else if (d.act === 'dlroster') exportRosters(UI.regColor);
   else if (d.act === 'dlrosterall') exportRosters(null);
