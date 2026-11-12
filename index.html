@@ -581,6 +581,8 @@ body.tvmode{min-height:100vh}
 .jpick{display:flex;flex-wrap:wrap;gap:6px 16px}.jpick .ck{margin:0}
 .jset .jnum{max-width:260px}
 .jtabs button[disabled]{opacity:.45;cursor:not-allowed}
+.mfbox{flex-direction:column;align-items:stretch;gap:6px}.mfrow{display:flex;align-items:flex-start;gap:10px}.mfl{flex:0 0 56px;padding-top:8px;font-size:13px;font-weight:600;color:var(--muted,#667)}.mfrow .seg button small{margin-left:5px;opacity:.6;font-size:11px}.mfrow .seg button:disabled{opacity:.35;cursor:default}.mfsum{padding-left:66px}.linkbtn{background:none;border:0;padding:0;color:var(--blue);text-decoration:underline;cursor:pointer;font:inherit}
+@media(max-width:640px){.mfrow{flex-direction:column;align-items:flex-start;gap:4px}.mfl{flex:none;padding-top:0}.mfsum{padding-left:0}}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -747,8 +749,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.19.6', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.19.7', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.19.7', 'ผังการแข่งขัน: ตัวกรองซ้อน ประเภท → เพศ → รุ่น (เช่น กรีฑา 60 รายการ)'],
   ['1.19.6', 'แก้สีในตารางคู่ (แพ้คัดออก) แล้วรายชื่อคณะสีที่ลงแข่งของรายการปรับตามให้อัตโนมัติ'],
   ['1.19.5', 'ตรวจตารางที่ใช้สนามชนกัน (รวมข้อมูลนำเข้า) แจ้งเตือนในหน้าจัดการและหน้าสนาม'],
   ['1.19.4', 'เปลี่ยนภาพแผนผังโรงเรียนเป็นแบบใหม่ (พื้นหลังโปร่งใส)'],
@@ -1715,13 +1718,33 @@ function geo() {
   const v = UI.mapOrient === 'v' || (UI.mapOrient !== 'h' && w < 760);
   return v ? { v, NW: 136, MH: 72, LW: 118, LH: 34, COL: 112, ROW: 142 } : { v, NW: 188, MH: 76, LW: 124, LH: 38, COL: 212, ROW: 50 };
 }
+/* ตัวกรองซ้อนในผังการแข่งขัน: ประเภท → เพศ → รุ่น (แสดงเฉพาะมิติที่มีหลายค่า) */
+const evType = e => String(e.label || '').replace(/^\d+\s+/, '').replace(/รุ่นอายุไม่เกิน\s*\d+\s*ปี|รุ่น\s*\d+\s*ปี|\d+\s*ปี|รุ่นผสม|รวมทีม/g, ' ').replace(/(^|\s)(ชาย|หญิง|ผสม)(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
+const evAgeK = e => e.age ? String(e.age) : '-';
+function mapFacets(all) {
+  const st = (UI.mapF = UI.mapF || {})[UI.mapSport] || (UI.mapF[UI.mapSport] = {});
+  const defs = [['t', 'ประเภท', evType, (x, y) => x.localeCompare(y, 'th', { numeric: true })],
+    ['g', 'เพศ', e => e.gender || '-', (x, y) => ['ชาย', 'หญิง', 'ผสม', '-'].indexOf(x) - ['ชาย', 'หญิง', 'ผสม', '-'].indexOf(y)],
+    ['a', 'รุ่น', evAgeK, (x, y) => (x === '-' ? 999 : +x) - (y === '-' ? 999 : +y)]];
+  const use = all.length > 4 ? defs.filter(([k, , f]) => new Set(all.map(f).filter(Boolean)).size > 1) : [];
+  use.forEach(([k, , f]) => { if (st[k] != null && !all.some(e => f(e) === st[k])) delete st[k]; });
+  const pass = (e, skip) => use.every(([k, , f]) => k === skip || st[k] == null || f(e) === st[k]);
+  const evs = all.filter(e => pass(e));
+  if (!use.length) return { evs, html: '' };
+  const lab = (k, v) => k === 'a' ? (v === '-' ? 'ไม่แบ่งรุ่น' : v + ' ปี') : k === 'g' && v === '-' ? 'ไม่ระบุ' : v;
+  const rows = use.map(([k, n, f, cmp]) => { const base = all.filter(e => pass(e, k)); const cnt = {}; base.forEach(e => { const v = f(e); if (v) cnt[v] = (cnt[v] || 0) + 1; });
+    const vals = [...new Set(all.map(f).filter(Boolean))].sort(cmp);
+    return `<div class="mfrow"><span class="mfl">${n}</span><div class="seg wrap mini"><button data-mf="${k}|" class="${st[k] == null ? 'on' : ''}">ทั้งหมด</button>${vals.map(v => `<button data-mf="${k}|${esc(v)}" class="${st[k] === v ? 'on' : ''}" ${cnt[v] ? '' : 'disabled'}>${esc(lab(k, v))}<small class="num">${cnt[v] || 0}</small></button>`).join('')}</div></div>`; }).join('');
+  const any = use.some(([k]) => st[k] != null);
+  return { evs, html: `<div class="filters mfbox">${rows}<div class="mfsum muted sm">แสดง ${evs.length} จาก ${all.length} รายการ${any ? ' · <button class="linkbtn" data-mf="*|">ล้างตัวกรอง</button>' : ''}</div></div>` };
+}
 function vMap() {
   const sps = sportsList(); if (!UI.mapSport || !S.sports[UI.mapSport]) UI.mapSport = sps[0]?.id;
-  const evs = eventsOf(UI.mapSport); if (!UI.mapEv || !evs.find(e => e.id === UI.mapEv)) UI.mapEv = evs[0]?.id;
+  const all = eventsOf(UI.mapSport); const F = mapFacets(all); const evs = F.evs; if (!UI.mapEv || !evs.find(e => e.id === UI.mapEv)) UI.mapEv = evs[0]?.id;
   const ev = evById(UI.mapEv); const LL = liveList(); const liveIds = new Set(LL.map(x => x.ev.sport)), liveEv = new Set(LL.map(x => x.ev.id));
   return `<section class="hero"><h1>ผังการแข่งขัน</h1><p class="muted">การ์ดรายการอยู่กลางผัง แตกกิ่งไปยังรอบ คู่แข่งขัน และทีม รูปแบบเดียวกันทุกประเภทการแข่ง ย่อให้พอดีจอโดยอัตโนมัติ${editOn ? ' · แตะกล่องคู่แข่งขันเพื่อบันทึกผล' : ''}</p></section>
   <div class="filters"><div class="seg wrap">${sps.map(s => `<button data-msport="${s.id}" class="${s.id === UI.mapSport ? 'on' : ''}">${sIcon(s.id)}${esc(s.name)}${liveIds.has(s.id) ? '<i class="livedot" title="มีนัดกำลังแข่ง"></i>' : ''}</button>`).join('')}</div></div>
-  <div class="filters"><div class="seg wrap evseg">${evs.map(e => `<button data-mev="${e.id}" class="${e.id === UI.mapEv ? 'on' : ''}"${tip('event', e.id)}>${esc(e.label)}${medalsOf(e).done ? ' ✓' : ''}${liveEv.has(e.id) ? '<i class="livedot"></i>' : ''}</button>`).join('')}</div></div>
+  ${F.html}<div class="filters"><div class="seg wrap evseg">${evs.map(e => `<button data-mev="${e.id}" class="${e.id === UI.mapEv ? 'on' : ''}"${tip('event', e.id)}>${esc(e.label)}${medalsOf(e).done ? ' ✓' : ''}${liveEv.has(e.id) ? '<i class="livedot"></i>' : ''}</button>`).join('')}</div></div>
   ${ev ? `<section class="card" id="mapcard"><div class="maphead"><div class="mh">${sIcon(ev.sport, 'tile lg')}<div><h2>${esc(evTitle(ev))}</h2><p class="muted sm">${FORMATS[ev.format]}${ev.venue ? ' · ' + esc(ev.venue) : ''}${ev.note ? ' · ' + esc(ev.note) : ''}</p></div></div>
     <div class="maptools">${ev.medal ? `<div class="pod">${medalLine(medalsOf(ev))}</div>` : ''}
       <div class="seg mini">${[['auto', 'อัตโนมัติ'], ['h', 'แนวนอน'], ['v', 'แนวตั้ง']].map(([k, n]) => `<button data-orient="${k}" class="${(UI.mapOrient || 'auto') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
@@ -3358,7 +3381,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -3373,6 +3396,8 @@ document.addEventListener('click', e => {
   else if (d.ciday) { UI.ciDay = d.ciday; render(); }
   else if (d.msport) { UI.mapSport = d.msport; UI.mapEv = null; render(); }
   else if (d.mev) { UI.mapEv = d.mev; render(); }
+  else if (d.mf != null) { const i = d.mf.indexOf('|'); const k = d.mf.slice(0, i), v = d.mf.slice(i + 1); const st = (UI.mapF = UI.mapF || {})[UI.mapSport] = UI.mapF[UI.mapSport] || {};
+    if (k === '*') UI.mapF[UI.mapSport] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; UI.mapEv = null; render(); }
   else if (d.regc) { UI.regColor = +d.regc; render(); }
   else if (d.roster) openRoster(d.roster);
   else if (d.ci) { const [a, b] = d.ci.split('|'); openCheckin(a, b); }
