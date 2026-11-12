@@ -574,6 +574,10 @@ h3.sub{font-size:14px;margin:14px 0 6px;color:var(--muted)}
 #editbtn,#authbox .btn{white-space:nowrap}
 .bar1 .right{flex-wrap:wrap;justify-content:flex-end;row-gap:6px}
 @media (max-width:520px){.who{max-width:110px;overflow:hidden;text-overflow:ellipsis}}
+body.tvmode{min-height:100vh}
+.tv header{flex-wrap:wrap;gap:10px}
+@media (max-width:640px){.tvctl{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:4px}.tvctl button{padding:5px 10px;font-size:13px}}
+.tvctl .tvx{color:var(--blue-d);border-color:var(--blue);font-weight:600}
 </style>
 </head>
 <body>
@@ -671,8 +675,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.10.0', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.11.0', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.11.0', 'ใบรายงานผลการแข่งขัน (สรุปทั้งงาน/ประจำวัน) · ปุ่มออกจากจอประกาศผลและเต็มจอ'],
   ['1.10.0', 'ระบบผู้ใช้ (ชื่อผู้บันทึกทุกรายการ) · ต้องเริ่มแข่งก่อนบันทึกผล · ฟอนต์ Noto Sans Thai · เมนูพอดีจอ'],
   ['1.9.0', 'บันทึกผลพร้อมกันหลายเครื่องไม่ทับกัน · ทำงานออฟไลน์ · ย้อนกลับผลได้ · สำรองอัตโนมัติ · เวลาต่อนัด · QR · จอประกาศเลื่อนเอง · เอกสารกรรมการ · รายชื่อผู้ได้เหรียญ'],
   ['1.8.0', 'ฟอร์มรายการแสดงเฉพาะช่องที่ใช้ · จัดเวลาจำค่าเดิม · จัดห้องเข้าคณะสีอัตโนมัติ · เมนูกติกานักกีฬา · กันสนามชน · กันข้อมูลผิดพลาด'],
@@ -1479,7 +1484,7 @@ function vMedals() {
     return `<details><summary><span class="sumi">${sIcon(sp.id)}${esc(sp.name)}</span><span class="muted num">${items.filter(e => medalsOf(e).g >= 0).length}/${items.length}</span></summary>
       ${items.map(e => `<div class="feed sm"><a class="fl" href="#map" data-open="${e.id}"${tip('event', e.id)}>${esc(e.label)}</a><div class="pod">${medalLine(medalsOf(e))}</div></div>`).join('')}</details>`;
   }).join('')}</div>
-  <div class="actions"><button class="btn" data-act="copysum">คัดลอกสรุปผลทุกรายการ</button><button class="btn ghost" data-act="dlmedal">ดาวน์โหลดผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูล</button></div></section>
+  <div class="actions"><button class="btn" data-act="report">พิมพ์ใบรายงานผล</button><button class="btn ghost" data-act="copysum">คัดลอกสรุปผลทุกรายการ</button><button class="btn ghost" data-act="dlmedal">ดาวน์โหลดผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูล</button></div></section>
   ${activityCard()}`;
 }
 function activityCard() {
@@ -2049,6 +2054,57 @@ function openPrint() {
     closeModal(); printDoc(`เอกสารกรรมการ-${d}${v ? '-' + v : ''}`, body); logIt('พิมพ์เอกสาร', `${d} ${v || 'ทุกสนาม'}`); };
 }
 function exportSheets() { openPrint(); }
+/* ---------- ใบรายงานผลการแข่งขัน ---------- */
+function evStatus(ev) {
+  if (MATCH_FMT.includes(ev.format)) { const ms = ev.matches || []; const d = ms.filter(m => sideWin(m)).length; return { done: ms.length > 0 && d === ms.length, txt: ms.length ? `${d}/${ms.length} คู่` : 'ยังไม่จับคู่' }; }
+  const ok = hasResults(ev); return { done: ok, txt: ok ? 'มีผลแล้ว' : ev.startedAt ? 'กำลังแข่ง' : 'ยังไม่แข่ง' };
+}
+function reportEvent(ev, o) {
+  const md = medalsOf(ev); const st = evStatus(ev); const nm = c => c >= 0 ? 'คณะ' + esc(COLORS[c].n) : '–';
+  const names = c => o.names && c >= 0 ? (rosterOf(ev.id, c).players || []).map(p => esc(p.name)).join(', ') : '';
+  const pod = ev.medal ? `<table class="pod"><tr><th style="width:18%">ทอง</th><td>${nm(md.g)}${names(md.g) ? `<br><small>${names(md.g)}</small>` : ''}</td></tr><tr><th>เงิน</th><td>${nm(md.s)}${names(md.s) ? `<br><small>${names(md.s)}</small>` : ''}</td></tr><tr><th>ทองแดง</th><td>${md.b.filter(c => c >= 0).map(c => nm(c) + (names(c) ? `<br><small>${names(c)}</small>` : '')).join('<br>') || '–'}</td></tr></table>` : '';
+  let det = '';
+  if (o.detail && MATCH_FMT.includes(ev.format)) {
+    const ms = (ev.matches || []).filter(m => !o.day || m.date === o.day);
+    if (ms.length) det += `<table><tr><th class="num">คู่</th><th>รอบ</th><th>วันเวลา</th><th>ฝั่ง A</th><th class="num">ผล</th><th>ฝั่ง B</th><th>ผู้ชนะ / หมายเหตุ</th></tr>${ms.map(m => { const t = teamsOf(ev, m); const w = sideWin(m);
+      return `<tr><td class="num">${m.no}</td><td>${esc(m.round || '')}</td><td>${m.date ? fmtDate(m.date) : ''} ${esc(m.time || '')}</td><td${w === 'a' ? ' class="win"' : ''}>${t.a >= 0 ? esc(COLORS[t.a].n) : esc(slotLabel(ev, m.a))}</td><td class="num">${w ? `${esc(m.sa ?? '')} – ${esc(m.sb ?? '')}` : ''}</td><td${w === 'b' ? ' class="win"' : ''}>${t.b >= 0 ? esc(COLORS[t.b].n) : esc(slotLabel(ev, m.b))}</td><td>${w === 'd' ? 'เสมอ' : w ? esc(COLORS[t[w]]?.n || '') : (isLive(m) ? 'กำลังแข่ง' : 'ยังไม่แข่ง')}${m.forfeit ? ' (ชนะเพราะคู่แข่งสละสิทธิ์)' : ''}${m.note && !m.forfeit ? ' · ' + esc(m.note) : ''}</td></tr>`; }).join('')}</table>`;
+    if (ev.format !== 'ko' && !o.day) { const sd = standings(ev); if (sd.n) det += `<table><tr><th>อันดับรอบพบกันหมด</th><th class="num">แข่ง</th><th class="num">ชนะ</th><th class="num">เสมอ</th><th class="num">แพ้</th><th class="num">ได้-เสีย</th><th class="num">คะแนน</th></tr>${sd.rows.map((r, i) => `<tr><td>${i + 1}. ${esc(COLORS[r.c].n)}</td><td class="num">${r.p}</td><td class="num">${r.w}</td><td class="num">${r.d}</td><td class="num">${r.l}</td><td class="num">${r.f}-${r.a}</td><td class="num">${r.pts}</td></tr>`).join('')}</table>`; }
+  } else if (o.detail && ev.format === 'rank' && ev.res?.p) {
+    det = `<table><tr><th>อันดับ</th><th>คณะสี</th><th>สถิติ</th></tr>${ev.res.p.map((c, i) => c >= 0 ? `<tr><td class="num">${i + 1}</td><td>${esc(COLORS[c].n)}</td><td>${esc(ev.res.perf?.[i] || '')}</td></tr>` : '').join('')}</table>`;
+  } else if (o.detail && ['points', 'score'].includes(ev.format)) {
+    const tb = ev.format === 'points' ? pointsTable(ev) : scoreTable(ev);
+    if (tb.n) det = `<table><tr><th>อันดับ</th><th>คณะสี</th><th class="num">คะแนน</th></tr>${tb.rows.map((r, i) => `<tr><td class="num">${i + 1}</td><td>${esc(COLORS[r.c].n)}</td><td class="num">${r.pts ?? '–'}</td></tr>`).join('')}</table>${ev.format === 'score' && tb.judges ? `<p class="small">กรรมการส่งคะแนน ${tb.submitted}/${tb.judges} คน · ${{ avg: 'ค่าเฉลี่ย', sum: 'ผลรวม', trim: 'เฉลี่ยตัดสูง-ต่ำสุด' }[ev.agg || 'avg']}</p>` : ''}`;
+  }
+  return `<div class="rev"><h3>${esc(ev.label)} <small>· ${esc(FORMATS[ev.format])} · ${st.txt}${st.done ? '' : ' (ยังไม่สิ้นสุด)'}</small></h3>${pod}${det}</div>`;
+}
+function openReport() {
+  const ds = days(); const ed = anyEdit();
+  modal(`<form class="dlg" id="rpf"><h3>ใบรายงานผลการแข่งขัน</h3><p class="muted sm">พิมพ์หรือบันทึกเป็น PDF (เลือกเครื่องพิมพ์ “บันทึกเป็น PDF”) สำหรับประกาศและเก็บเป็นหลักฐาน</p>
+    <div class="g3"><label class="fld">ขอบเขต<select id="rps"><option value="">สรุปทั้งงาน</option>${ds.map(d => `<option value="${d}" ${d === todayISO() ? 'selected' : ''}>ประจำวัน ${fmtDate(d, true)}</option>`).join('')}</select></label>
+      <label class="fld">ชนิดกีฬา<select id="rpsp"><option value="">ทุกชนิดกีฬา</option>${sportsList().map(sp => `<option value="${sp.id}">${esc(sp.name)}</option>`).join('')}</select></label></div>
+    <fieldset class="win col"><legend>เนื้อหา</legend>
+      <label><input type="checkbox" id="rpm" checked> ตารางสรุปเหรียญรางวัล${S.meta.scoring?.on ? 'และคะแนนรวม' : ''}</label>
+      <label><input type="checkbox" id="rpd" checked> ผลรายคู่ / อันดับ / คะแนน ของแต่ละรายการ</label>
+      <label><input type="checkbox" id="rpo"> เฉพาะรายการที่มีผลแล้ว</label>
+      ${ed ? '<label><input type="checkbox" id="rpn"> ชื่อนักกีฬาที่ได้เหรียญ <small class="muted">(ข้อมูลนักเรียน ใช้ภายในเท่านั้น)</small></label>' : ''}</fieldset>
+    <p class="err" id="err"></p><div class="actions"><button class="btn">พิมพ์ใบรายงานผล</button><button type="button" class="btn ghost" data-close>ปิด</button></div></form>`);
+  $('#rpf').onsubmit = e => { e.preventDefault();
+    const o = { day: $('#rps').value, sp: $('#rpsp').value, detail: $('#rpd').checked, only: $('#rpo').checked, names: !!$('#rpn')?.checked, med: $('#rpm').checked };
+    const onDay = ev => !o.day || (ev.matches || []).some(m => m.date === o.day) || ev.date === o.day || (ev.rounds || []).some(r => r.date === o.day);
+    const secs = sportsList().filter(sp => !o.sp || sp.id === o.sp).map(sp => { const evs = eventsOf(sp.id).map(e => evById(e.id)).filter(ev => onDay(ev) && (!o.only || evStatus(ev).done || (o.day && (ev.matches || []).some(m => m.date === o.day && sideWin(m)))));
+      return evs.length ? `<h2>${esc(sp.name)}</h2>${evs.map(ev => reportEvent(ev, o)).join('')}` : ''; }).join('');
+    if (!secs && !o.med) { $('#err').textContent = 'ไม่มีรายการตามเงื่อนไขที่เลือก'; return; }
+    const t = medalTable(); const ov = S.meta.scoring?.on ? overallTable() : null; const done = medalEvents().filter(e => medalsOf(e).g >= 0).length;
+    const med = o.med ? `<h2>สรุปเหรียญรางวัล${o.day ? ' (สะสมถึงปัจจุบัน)' : ''}</h2><p class="small">ตัดสินแล้ว ${done} จาก ${medalEvents().length} รายการ</p><table><tr><th class="num">อันดับ</th><th>คณะสี</th><th class="num">ทอง</th><th class="num">เงิน</th><th class="num">ทองแดง</th><th class="num">รวม</th>${ov ? '<th class="num">คะแนนรวม</th>' : ''}</tr>${t.map(x => `<tr><td class="num">${x.rank}</td><td>คณะ${esc(COLORS[x.c].n)}</td><td class="num">${x.g}</td><td class="num">${x.s}</td><td class="num">${x.b}</td><td class="num">${x.t}</td>${ov ? `<td class="num">${ov.find(y => y.c === x.c)?.t ?? ''}</td>` : ''}</tr>`).join('')}</table>` : '';
+    const title = o.day ? `รายงานผลการแข่งขันประจำวัน${fmtDate(o.day, true).replace(/^[^ ]+\.? /, 'ที่ ')}` : 'รายงานผลการแข่งขัน';
+    const body = `<section class="sheet report"><div class="rhead"><img src="${document.querySelector('.brand img')?.src || ''}" alt=""><div><h1>${esc(title)}</h1><p class="small">${esc(evName())}${evYear() ? ' ปีการศึกษา ' + esc(evYear()) : ''} · ${esc(evSchool())}${o.sp ? ' · ' + esc(sportName(o.sp)) : ''}</p>
+      <p class="small">ข้อมูล ณ ${new Date().toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })} น.${ME.id ? ' · พิมพ์โดย ' + esc(nameOf(ME.id).replace(' (คุณ)', '')) : ''}</p></div></div>
+      ${med}${secs}
+      <div class="sign"><span>ลงชื่อ ____________________<br>ฝ่ายประเมินผลการแข่งขัน</span><span>ลงชื่อ ____________________<br>ประธานจัดการแข่งขัน</span></div></section>`;
+    closeModal(); printDoc(title, body, `.report h2{border-bottom:1px solid #999;padding-bottom:2px;margin-top:6mm}.rev{break-inside:avoid;margin:3mm 0}.rev h3{margin:2mm 0 1mm}.rev h3 small{font-weight:400;color:#555;font-size:12px}.pod{width:auto;min-width:60%}.win{font-weight:700}.rhead{display:flex;gap:5mm;align-items:center;border-bottom:2px solid #111;padding-bottom:3mm;margin-bottom:3mm}.rhead img{width:20mm}.rhead h1{margin:0}`);
+    logIt('พิมพ์ใบรายงานผล', title); };
+}
+
 /* ---------- QR code ---------- */
 function pubURL(hash) { const base = (S.meta.pubUrl || (location.protocol.startsWith('http') ? location.origin + location.pathname : '')).replace(/#.*$/, ''); return base + (hash ? '#' + hash : ''); }
 function qrSVG(text, px = 160) {
@@ -2146,7 +2202,7 @@ function vAdmin() {
   ${conflicts.length ? `<section class="card"><details><summary><span>ตรวจสนามซ้ำเวลา</span><span class="muted num">${conflicts.length} ช่วงเวลา</span></summary><p class="muted sm">หลายรายการใช้สนามเดียวกันในเวลาเดียวกัน ตรวจว่าสนามมีหลายคอร์ทพอหรือไม่</p>${conflicts.map(c => `<div class="feed sm"><span class="fl">${fmtDate(c.date)} ${c.time} · ${esc(c.venue)}</span><span class="muted sm">${c.list.map(x => esc(evTitle(x.ev)) + ' คู่ ' + x.m.no).join(' / ')}</span></div>`).join('')}</details></section>` : ''}
   ${rolesCard()}${scoringCard()}
   <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button></div>
-    <h3 class="sub">พิมพ์และประกาศ</h3><div class="actions m0"><button class="btn ghost" data-act="sheets" data-tip="text|ใบบันทึกผล ใบเช็กชื่อนักกีฬา และตารางแข่งติดหน้าสนาม พิมพ์ได้ทีละวัน/สนาม">เอกสารกรรมการ</button><button class="btn ghost" data-act="qr">โปสเตอร์ QR code</button><button class="btn ghost" data-act="medrec">รายชื่อผู้ได้รับเหรียญ (พิมพ์)</button><button class="btn ghost" data-act="medrecc">รายชื่อผู้ได้รับเหรียญ (CSV)</button></div>
+    <h3 class="sub">พิมพ์และประกาศ</h3><div class="actions m0"><button class="btn ghost" data-act="report">ใบรายงานผลการแข่งขัน</button><button class="btn ghost" data-act="sheets" data-tip="text|ใบบันทึกผล ใบเช็กชื่อนักกีฬา และตารางแข่งติดหน้าสนาม พิมพ์ได้ทีละวัน/สนาม">เอกสารกรรมการ</button><button class="btn ghost" data-act="qr">โปสเตอร์ QR code</button><button class="btn ghost" data-act="medrec">รายชื่อผู้ได้รับเหรียญ (พิมพ์)</button><button class="btn ghost" data-act="medrecc">รายชื่อผู้ได้รับเหรียญ (CSV)</button></div>
     <h3 class="sub">ล้างข้อมูล</h3><div class="actions m0"><button class="btn danger" data-act="reset">ล้างข้อมูล / เริ่มใหม่</button></div>
     <p class="muted sm" data-tip="version">เวอร์ชัน ${APP_VERSION} · ปรับปรุง ${fmtDate(APP_DATE, true)}</p></section>
   ${logCard()}`;
@@ -2284,7 +2340,7 @@ function vTV() {
   const av = tvAvail(); let p = UI.tvP; if (!av.some(x => x[0] === p)) p = UI.tvP = 'medals';
   const auto = UI.tvAuto !== false && av.length > 1;
   const head = `<header><div class="tvt"><img src="${document.querySelector('.brand img')?.src || ''}" alt=""><div><small>${esc(evName())}${evYear() ? ' ' + esc(evYear()) : ''} · ${esc(evSchool())}</small><h1>${TV_P.find(x => x[0] === p)[1]}</h1>${p === 'medals' ? '<small><span style="color:var(--gold-t)">ทอง</span> · <span style="color:var(--silver-t)">เงิน</span> · <span style="color:var(--bronze-t)">ทองแดง</span></small>' : `<small class="num">${toTime(nowMin())} น.</small>`}</div></div>
-    <div class="tvctl">${av.map(([k, n]) => `<button class="${k === p ? 'on' : ''}" data-tvp="${k}">${n.replace('รางวัล', '')}</button>`).join('')}${av.length > 1 ? `<button data-act="tvauto" title="เลื่อนหน้าอัตโนมัติทุก ${TV_SEC} วินาที">${auto ? '❚❚ หยุด' : '▶ เลื่อนเอง'}</button>` : ''}</div></header>
+    <div class="tvctl"><button class="tvx" data-act="tvexit" title="กลับหน้าเดิม (กด Esc)">← ออกจากจอประกาศ</button><button data-act="tvfs" title="เต็มจอ (F11)">⛶ เต็มจอ</button>${av.map(([k, n]) => `<button class="${k === p ? 'on' : ''}" data-tvp="${k}">${n.replace('รางวัล', '')}</button>`).join('')}${av.length > 1 ? `<button data-act="tvauto" title="เลื่อนหน้าอัตโนมัติทุก ${TV_SEC} วินาที">${auto ? '❚❚ หยุด' : '▶ เลื่อนเอง'}</button>` : ''}</div></header>
     ${auto ? `<div class="tvbar"><i style="animation-duration:${TV_SEC}s;animation-delay:-${Math.min(TV_SEC, (Date.now() - tvTick) / 1000).toFixed(1)}s"></i></div>` : ''}`;
   let body = '';
   if (p === 'medals') { const t = medalTable(); const recent = medalEvents().filter(e => medalsOf(e).g >= 0).sort((a, b) => lastAt(b) - lastAt(a)).slice(0, 6);
@@ -3064,6 +3120,9 @@ document.addEventListener('click', e => {
   else if (d.act === 'dlci') exportCheckin();
   else if (d.act === 'sheets') openPrint();
   else if (d.act === 'qr') openQR();
+  else if (d.act === 'report') openReport();
+  else if (d.act === 'tvexit') exitTV();
+  else if (d.act === 'tvfs') { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.().catch(() => toast('เบราว์เซอร์ไม่อนุญาตเต็มจอ กด F11 แทน')); }
   else if (d.act === 'medrec') exportRecipients('print');
   else if (d.act === 'medrecc') exportRecipients('csv');
   else if (d.act === 'tvauto') { UI.tvAuto = UI.tvAuto === false; tvTick = Date.now(); render(); }
@@ -3098,6 +3157,7 @@ document.addEventListener('toggle', e => { if (e.target.dataset?.regsp && e.targ
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && e.target.matches?.('input[type=search]') && e.target.value) { e.preventDefault(); clearQ(e.target.id); return; }
   if (e.key === 'Escape' && !$('#modal').hidden) tryClose();
+  else if (e.key === 'Escape' && UI.view === 'tv' && !document.fullscreenElement) exitTV();
   if (e.key === 'Enter' && e.target.matches('[tabindex="0"]')) e.target.click();
 });
 document.addEventListener('change', e => {
@@ -3122,7 +3182,9 @@ document.addEventListener('input', e => {
 let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (UI.view === 'map') render(); }, 150); });
 document.addEventListener('fullscreenchange', () => { if (UI.view === 'map') render(); });
 setInterval(() => { if (['medals', 'tv', 'schedule', 'map', 'checkin'].includes(UI.view) && $('#modal').hidden && mode !== 'connecting' && !document.activeElement?.matches('input,select,textarea')) { hideTip(); render(); } }, 60000);
+function exitTV() { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => { }); location.hash = UI.prevView && UI.prevView !== 'tv' ? UI.prevView : 'medals'; }
 function route() { const raw = location.hash.slice(1); const [h, arg] = raw.split('~'); const nv = VIEWS.some(v => v[0] === h) ? h : 'medals';
+  if (nv === 'tv' && UI.view && UI.view !== 'tv') UI.prevView = UI.view;
   if (nv === 'venues' && arg) { UI.vFocus = decodeURIComponent(arg); UI.vScroll = true; }
   if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = ''; UI.q = ''; UI.pickq = ''; }
   UI.view = nv; $('#main').dataset.view = ''; window.scrollTo(0, 0); render(); }
