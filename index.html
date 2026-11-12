@@ -578,6 +578,13 @@ body.tvmode{min-height:100vh}
 .tv header{flex-wrap:wrap;gap:10px}
 @media (max-width:640px){.tvctl{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:4px}.tvctl button{padding:5px 10px;font-size:13px}}
 .tvctl .tvx{color:var(--blue-d);border-color:var(--blue);font-weight:600}
+.jpick{display:flex;flex-wrap:wrap;gap:6px 16px}.jpick .ck{margin:0}
+.jset .jnum{max-width:260px}
+.jtabs button[disabled]{opacity:.45;cursor:not-allowed}
+.cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
+.cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
+.cfpin input{max-width:160px;letter-spacing:4px}
+body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 </style>
 </head>
 <body>
@@ -675,8 +682,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.11.0', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.13.0', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.13.0', 'แยกบันทึกคะแนนระหว่างแข่งกับจบเกม · ยืนยันผลด้วย PIN · อธิบายคะแนนรวมคณะสี'],
+  ['1.12.0', 'เลือกกรรมการให้คะแนนจากผู้ใช้ระบบ · กรรมการกรอกได้เฉพาะใบของตัวเอง'],
   ['1.11.0', 'ใบรายงานผลการแข่งขัน (สรุปทั้งงาน/ประจำวัน) · ปุ่มออกจากจอประกาศผลและเต็มจอ'],
   ['1.10.0', 'ระบบผู้ใช้ (ชื่อผู้บันทึกทุกรายการ) · ต้องเริ่มแข่งก่อนบันทึกผล · ฟอนต์ Noto Sans Thai · เมนูพอดีจอ'],
   ['1.9.0', 'บันทึกผลพร้อมกันหลายเครื่องไม่ทับกัน · ทำงานออฟไลน์ · ย้อนกลับผลได้ · สำรองอัตโนมัติ · เวลาต่อนัด · QR · จอประกาศเลื่อนเอง · เอกสารกรรมการ · รายชื่อผู้ได้เหรียญ'],
@@ -878,9 +887,16 @@ function criteriaOf(ev) {
   if (Array.isArray(ev.criteria) && ev.criteria.length) return ev.criteria;
   return [];
 }
-const judgeCount = ev => Math.max(1, +ev.judges || 1);
+const judgeCount = ev => ev.judgeIds?.length || Math.max(1, +ev.judges || 1);
+const plainName = id => nameOf(id).replace(/ \(คุณ\)$/, '');
+/* ผู้ใช้ที่เป็นกรรมการได้: ผู้ดูแล และกรรมการบันทึกผลที่มีสิทธิ์ชนิดกีฬานี้ */
+function judgeCandidates(sport) {
+  const src = mode === 'shared' ? (S.meta.roles || {}) : localUsers();
+  return Object.entries(src).filter(([, u]) => u.role === 'admin' || (u.role === 'scorer' && (!u.sports?.length || u.sports.includes(sport)))).map(([id]) => ({ id, name: plainName(id) })).sort((a, b) => a.name.localeCompare(b.name, 'th'));
+}
+const mySlot = ev => (ev.judgeIds || []).indexOf(ME.id) + 1;
 const judgeDoc = (eid, j) => S.scores?.[`${eid}__${j}`] || null;
-const judgeName = (ev, j) => (ev.judgeNames || [])[j - 1] || `กรรมการคนที่ ${j}`;
+const judgeName = (ev, j) => ev.judgeIds?.[j - 1] ? plainName(ev.judgeIds[j - 1]) : (ev.judgeNames || [])[j - 1] || `กรรมการคนที่ ${j}`;
 function judgeTotal(d, c) { const v = d?.v?.[c]; if (!Array.isArray(v)) return null; const nums = v.filter(x => x !== '' && x != null && !isNaN(+x)); return nums.length ? nums.reduce((a, x) => a + +x, 0) : null; }
 function aggScores(arr, how) {
   const a = arr.filter(x => x != null); if (!a.length) return null;
@@ -2183,6 +2199,7 @@ function vAdmin() {
       <label class="fld" data-tip="text|ไม่ลงแข่งภายในกี่นาทีหลังคู่ก่อนหน้าจบ ถือว่าสละสิทธิ์ (ข้อ 4: 10 นาที)">ผ่อนผันก่อนปรับแพ้<span class="unit"><input id="fMin" type="number" min="1" value="${S.meta.forfeitMin ?? 10}"><i>นาที</i></span></label>
       <label class="fld" data-tip="text|เตือนเมื่อนักกีฬาคนเดียวกันมีสองนัดห่างกันน้อยกว่านี้">เตือนเวลาชน<span class="unit"><input id="clMin" type="number" min="0" value="${S.meta.clashMin ?? 30}"><i>นาที</i></span></label>
       <label class="ck cbx"><input type="checkbox" id="reqCi" ${S.meta.requireCheckin === false ? '' : 'checked'}> ต้องรายงานตัวครบก่อนเริ่มแข่ง</label>
+      ${mode === 'local' ? `<label class="ck cbx"><input type="checkbox" id="pinCf" ${S.meta.pinConfirm === false ? '' : 'checked'}> ใส่ PIN ยืนยันเมื่อจบเกม/ยืนยันผล</label>` : ''}
     </div>
     <div class="actions"><button class="btn sm" data-act="savemeta">บันทึกกติกา</button><button class="btn sm ghost" data-act="gorules">กติกานักกีฬา (รุ่นอายุ · จำนวนรายการต่อคน)</button></div></section>
   <div class="adgrid"><section class="card"><h2>ชนิดกีฬา</h2><div class="splist">${sps.map(s => `<div class="sprow ${s.id === UI.adSport ? 'on' : ''}" data-adsport="${s.id}" tabindex="0"><span>${sIcon(s.id)}${esc(s.name)}</span><span class="muted num">${eventsOf(s.id).length}</span></div>`).join('')}</div>
@@ -2222,10 +2239,15 @@ function rolesCard() {
 }
 function scoringCard() {
   const sc = S.meta.scoring || { on: false, g: 5, s: 3, b: 1, act: [6, 5, 4, 3, 2, 1] };
-  return `<section class="card"><h2>คะแนนรวมคณะสี</h2><p class="muted sm">ถ้าโรงเรียนตัดสินคณะชนะเลิศจากคะแนนรวม ให้เปิดใช้และกำหนดคะแนน (ตารางเหรียญยังแสดงตามเดิม)</p>
-    <label class="ck"><input type="checkbox" id="scOn" ${sc.on ? 'checked' : ''}> แสดงตารางคะแนนรวม</label>
-    <div class="ov"><label class="fld">ทอง<input id="scG" type="number" value="${sc.g}"></label><label class="fld">เงิน<input id="scS" type="number" value="${sc.s}"></label><label class="fld">ทองแดง<input id="scB" type="number" value="${sc.b}"></label>
-    <label class="fld">กิจกรรมคณะสี อันดับ 1–6<input id="scA" value="${(sc.act || []).join(',')}"></label><button class="btn sm ghost self-end" data-act="savescore">บันทึก</button></div></section>`;
+  const actEv = Object.values(S.events).filter(e => !e.medal && ['points', 'score'].includes(e.format));
+  return `<section class="card"><h2>คะแนนรวมคณะสี <small class="muted">(ไม่บังคับ)</small></h2>
+    <p class="muted sm">ใช้เมื่อโรงเรียนตัดสินคณะชนะเลิศจาก<b>คะแนนรวม</b> แทนการนับเหรียญอย่างเดียว ระบบแปลงเหรียญเป็นคะแนน แล้วบวกคะแนนจากรายการกิจกรรมที่ไม่มีเหรียญ (เช่น เชียร์ ขบวนพาเหรด) ตามอันดับ
+    เมื่อเปิดใช้ หน้าตารางเหรียญ จอประกาศผล และใบรายงานผล จะแสดงตารางคะแนนรวมเพิ่ม (ตารางเหรียญยังอยู่เหมือนเดิม)</p>
+    <p class="muted sm">ตัวอย่าง: คณะได้ 2 ทอง 1 เงิน และได้ที่ 1 เชียร์ = 2×${sc.g ?? 5} + 1×${sc.s ?? 3} + ${(sc.act || [])[0] ?? 6} = <b>${2 * (+sc.g || 0) + (+sc.s || 0) + (+(sc.act || [])[0] || 0)}</b> คะแนน · รายการกิจกรรมที่นับตอนนี้: ${actEv.length ? actEv.map(e => esc(e.label)).join(', ') : 'ยังไม่มี (ต้องเป็นรายการไม่นับเหรียญ แบบสะสมคะแนนหรือกรรมการให้คะแนน)'}</p>
+    <label class="ck"><input type="checkbox" id="scOn" ${sc.on ? 'checked' : ''}> เปิดใช้คะแนนรวมคณะสี</label>
+    <div class="g3"><label class="fld">ต่อเหรียญทอง<span class="unit"><input id="scG" type="number" min="0" value="${sc.g ?? 5}"><i>คะแนน</i></span></label><label class="fld">ต่อเหรียญเงิน<span class="unit"><input id="scS" type="number" min="0" value="${sc.s ?? 3}"><i>คะแนน</i></span></label><label class="fld">ต่อเหรียญทองแดง<span class="unit"><input id="scB" type="number" min="0" value="${sc.b ?? 1}"><i>คะแนน</i></span></label></div>
+    <label class="fld">คะแนนกิจกรรมตามอันดับ 1, 2, 3, … <small>คั่นด้วยจุลภาค</small><input id="scA" value="${(sc.act || []).join(', ')}" placeholder="6, 5, 4, 3, 2, 1"></label>
+    <div class="actions"><button class="btn sm" data-act="savescore">บันทึกคะแนนรวม</button></div></section>`;
 }
 function logCard() {
   return `<section class="card"><h2>ประวัติการแก้ไขล่าสุด</h2><div class="loglist">${LOG.slice(0, 80).map(l => `<div class="feed sm"><span class="fl"><span class="num muted">${new Date(l.at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span> ${esc(l.what)}</span><span class="muted sm">${esc(l.detail)} · ${esc(l.by ? nameOf(l.by).replace(/^[^@]+@.+$/, l.byName || '$&') : l.byName || 'ไม่ทราบผู้บันทึก')}${canUndo(l) ? ` <button class="btn sm ghost" data-undo="${esc(l.id)}">ย้อนกลับ</button>` : ''}</span></div>`).join('') || '<p class="muted sm">ยังไม่มีประวัติ</p>'}</div><p class="muted sm">ผลการแข่งขัน เริ่มแข่ง ปรับแพ้ และรายงานตัว ย้อนกลับได้ภายใน ${UNDO_MIN} นาที</p></section>`;
@@ -2377,6 +2399,18 @@ function ask(msg, yes, label = 'ยืนยัน') {
 }
 const colorOpts = (sel, blank = 'รอกำหนด') => `<option value="">${blank}</option>` + COLORS.map((k, i) => `<option value="${i}" ${sel === i ? 'selected' : ''}>${k.n}</option>`).join('');
 
+/* ยืนยันผลขั้นสุดท้าย: สรุปผล + PIN ของผู้ที่เข้าสู่ระบบ (โหมดทดลอง) */
+const needPin = () => mode === 'local' && S.meta.pinConfirm !== false && !!ME.id;
+function askFinal(html, ok, btn = 'ยืนยันผล') {
+  const dlg = $('#modal .dlg'); if (!dlg) { ok(); return; } $('#cfbox')?.remove();
+  dlg.insertAdjacentHTML('beforeend', `<div class="cfbox" id="cfbox" role="alertdialog" aria-label="ยืนยันผล"><div class="cfsum">${html}</div>
+    ${needPin() ? `<label class="fld cfpin">PIN ของ ${esc(ME.name)} เพื่อยืนยัน<input id="cfpin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" data-nodirty></label>` : `<p class="muted sm">ตรวจให้ถูกต้องก่อนยืนยัน ผลจะประกาศทันที และระบบบันทึกชื่อผู้ยืนยัน${ME.name ? ' (' + esc(ME.name) + ')' : ''}</p>`}
+    <p class="err" id="cferr"></p><div class="actions m0"><button type="button" class="btn" id="cfok">${btn}</button><button type="button" class="btn ghost" id="cfno">กลับไปแก้</button></div></div>`);
+  $('#cfbox').scrollIntoView({ block: 'nearest' }); ($('#cfpin') || $('#cfok')).focus();
+  const go = () => { if (needPin()) { const u = localUsers()[ME.id]; if (!u || u.pin !== pinHash(ME.id, $('#cfpin').value)) { $('#cferr').textContent = 'PIN ไม่ถูกต้อง'; $('#cfpin').select(); return; } } ok(); };
+  $('#cfok').onclick = e => { e.stopPropagation(); go(); }; $('#cfno').onclick = e => { e.stopPropagation(); $('#cfbox').remove(); };
+  $('#cfpin')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+}
 function openResult(eid, mid) {
   const ev = evById(eid); const m = mOf(ev, mid); const t = teamsOf(ev, m); const unit = unitOf(ev);
   const ready = t.a >= 0 && t.b >= 0;
@@ -2406,7 +2440,8 @@ function openResult(eid, mid) {
     </details>
     ${(() => { const l = LOG.find(x => x.undo?.eid === eid && x.undo?.mid === mid); return l && canUndo(l) ? `<p class="sm undoln">ล่าสุด: ${esc(l.what)} · ${new Date(l.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. <button type="button" class="btn sm ghost" data-undo="${esc(l.id)}">ย้อนกลับ</button></p>` : ''; })()}
     ${m.by || m.at ? `<p class="muted sm">บันทึกล่าสุดโดย ${esc(nameOf(m.by))}${m.at ? ' · ' + new Date(m.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''}</p>` : ''}
-    <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div></form>`);
+    <p class="err" id="err"></p><div class="actions">${sideWin(m) ? '<button class="btn">บันทึกการแก้ไขผล</button>' : started(m) ? '<button class="btn" title="สรุปผู้ชนะและปิดเกม">จบเกม · ยืนยันผล</button><button type="button" class="btn ghost" id="savelive" title="บันทึกคะแนน/วินัยระหว่างแข่ง เกมยังไม่จบ">บันทึกคะแนนระหว่างแข่ง</button>' : ''}<button type="button" class="btn ghost" data-close>${sideWin(m) || started(m) ? 'ยกเลิก' : 'ปิด'}</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div>
+    ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
     const r = patchEv({ eid, mid, unset: ['w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'liveAt', 'endedAt'], set: { ...fields, by: ME.id || '', at: Date.now() } });
     closeModal(); recUndo(msg, `${evTitle(ev)} คู่ ${m.no}`, r);
@@ -2415,18 +2450,20 @@ function openResult(eid, mid) {
     if (e.target.id === 'cdadd') { const p = people[+$('#cdp').value]; cards.push({ c: p.c, h: fnv(p.key), type: $('#cdt').value, note: $('#cdn').value.trim() }); $('#cdn').value = ''; $('#cdl').innerHTML = cardList(); }
     const rm = e.target.closest('[data-cdrm]'); if (rm) { cards.splice(+rm.dataset.cdrm, 1); $('#cdl').innerHTML = cardList(); }
   };
+  const extras = f => { const note = $('#note').value.trim(); if (note) f.note = note; if (cards.length) f.cards = cards;
+    const ps = $('#ps').value; if (ps) f.protest = { side: ps, status: $('#pst').value, text: $('#ptx').value.trim(), at: m.protest?.at || Date.now() }; if (m.ci) f.ci = m.ci; return f; };
+  $('#savelive')?.addEventListener('click', () => { const cur = mOf(evById(eid), mid); if (!started(cur)) { $('#err').textContent = 'ยังไม่เริ่มการแข่งขัน'; return; }
+    save(extras({ sa: $('#sa').value.trim(), sb: $('#sb').value.trim() }), 'อัปเดตระหว่างแข่ง'); });
   $('#mf').onsubmit = e => {
-    e.preventDefault(); { const cur = mOf(evById(eid), mid); if (!sideWin(cur) && !started(cur)) { $('#err').textContent = 'ยังบันทึกผลไม่ได้: กด “เริ่มการแข่งขัน” ก่อน (ถ้าทีมไม่มาแข่ง ใช้ “ปรับแพ้”)'; return; } } const sa = $('#sa').value.trim(), sb = $('#sb').value.trim(); const wv = $('#mf').w.value; let w = null, auto = false;
+    e.preventDefault(); const cur = mOf(evById(eid), mid); if (!sideWin(cur) && !started(cur)) { $('#err').textContent = 'ยังบันทึกผลไม่ได้: กด “เริ่มการแข่งขัน” ก่อน (ถ้าทีมไม่มาแข่ง ใช้ “ปรับแพ้”)'; return; }
+    const sa = $('#sa').value.trim(), sb = $('#sb').value.trim(); const wv = $('#mf').w.value; let w = null, auto = false;
+    if ([sa, sb].some(x => x !== '' && (isNaN(+x) || +x < 0))) { $('#err').textContent = 'คะแนนต้องเป็นตัวเลขไม่ติดลบ'; return; }
     if (wv === 'auto') { if (sa !== '' && sb !== '') { if (+sa !== +sb) { w = +sa > +sb ? 'a' : 'b'; auto = true; } else if (m.stage === 'rr') { w = 'd'; auto = true; } } } else w = wv;
-    const live = started(m);
-    if (!w && (sa !== '' || sb !== '') && !live) { $('#err').textContent = 'ยังไม่ได้เริ่มแข่ง: กด “เริ่มการแข่งขัน” ก่อนกรอกคะแนนระหว่างเกม หรือเลือกผู้ชนะเพื่อสรุปผล'; return; }
-    if (!w && (sa !== '' && sb !== '') && live && wv === 'auto' && m.stage !== 'rr' && +sa === +sb) { /* คะแนนระหว่างเกม */ }
-    const f = {}; if (w) Object.assign(f, { w, auto, sa, sb, endedAt: m.endedAt || Date.now() }); else if (live) Object.assign(f, { sa, sb });
-    const note = $('#note').value.trim(); if (note) f.note = note;
-    if (cards.length) f.cards = cards;
-    const ps = $('#ps').value; if (ps) f.protest = { side: ps, status: $('#pst').value, text: $('#ptx').value.trim(), at: m.protest?.at || Date.now() };
-    if (m.ci) f.ci = m.ci;
-    save(f, w ? 'บันทึกผล' : live ? 'อัปเดตระหว่างแข่ง' : 'บันทึกวินัย/ประท้วง');
+    if (!w) { $('#err').textContent = sa !== '' && sb !== '' && +sa === +sb ? 'คะแนนเท่ากัน รอบนี้ต้องมีผู้ชนะ: เลือก “ฝั่งซ้ายชนะ/ฝั่งขวาชนะ” และใส่วิธีตัดสินในหมายเหตุ (เช่น ชนะจุดโทษ 4-3)' : 'จบเกมไม่ได้: กรอกคะแนนทั้งสองฝั่ง หรือเลือกผู้ชนะ'; return; }
+    const f = extras({ w, auto, sa, sb, endedAt: m.endedAt || Date.now() });
+    const nm = sd => t[sd] >= 0 ? 'คณะ' + esc(COLORS[t[sd]].n) : esc(slotLabel(ev, m[sd]));
+    const sum = `<b>${sideWin(m) ? 'แก้ไขผล' : 'จบเกม'}: ${esc(evTitle(ev))} คู่ ${m.no}</b><div class="cfline">${chip(t.a, { ph: slotLabel(ev, m.a) })}<b class="num">${esc(sa || '–')} – ${esc(sb || '–')}</b>${chip(t.b, { ph: slotLabel(ev, m.b) })}</div><div>${w === 'd' ? 'ผล: <b>เสมอ</b>' : `ผู้ชนะ: <b>${nm(w)}</b>`}${f.note ? ' · ' + esc(f.note) : ''}</div>`;
+    askFinal(sum, () => save(f, sideWin(m) ? 'แก้ไขผล' : 'จบเกม · บันทึกผล'), sideWin(m) ? 'ยืนยันแก้ไขผล' : 'ยืนยันจบเกม');
   };
   $('#clr')?.addEventListener('click', () => { const f = {}; if (cards.length) f.cards = cards; if (m.ci) f.ci = m.ci; save(f, 'ล้างผล'); });
   $('#gostart')?.addEventListener('click', () => openStart(eid, mid));
@@ -2469,12 +2506,13 @@ function openForfeit(eid, mid) {
     <p class="muted sm">ข้อ 4: หลังคู่ก่อนหน้าจบ ทีมที่ไม่ลงแข่งภายใน ${S.meta.forfeitMin ?? 10} นาที ถือว่าสละสิทธิ์ · ระบบไม่ปรับแพ้เอง กรรมการต้องยืนยันทุกครั้ง</p>
     <fieldset class="win col"><legend>ทีมที่ไม่มาแข่ง/มาไม่ครบ</legend>${['a', 'b'].map(sd => { const c = ciInfo(ev, m, sd); return `<label><input type="radio" name="ab" value="${sd}" ${pre === sd ? 'checked' : ''}> ${chip(t[sd])} <small class="muted">รายงานตัว ${c.n}/${c.need}</small></label>`; }).join('')}</fieldset>
     <label class="fld">หมายเหตุ<input id="fnote" value="ชนะเพราะคู่แข่งสละสิทธิ์ (ไม่ลงแข่งภายใน ${S.meta.forfeitMin ?? 10} นาที)"></label>
-    <p class="err" id="err"></p><div class="actions"><button class="btn danger">ยืนยันปรับแพ้</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+    <p class="err" id="err"></p><div class="actions"><button class="btn danger">ปรับแพ้</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
   $('#fff').onsubmit = e => {
     e.preventDefault(); const ab = $('#fff').ab.value; if (!ab) { $('#err').textContent = 'เลือกทีมที่สละสิทธิ์'; return; }
-    const note = $('#fnote').value.trim(); closeModal();
+    const note = $('#fnote').value.trim();
+    askFinal(`<b>ปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${chip(t[ab])} สละสิทธิ์ · ${chip(t[ab === 'a' ? 'b' : 'a'])} ชนะ</div>`, () => { closeModal();
     const r = patchEv({ eid, mid, set: { w: ab === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note, forfeit: ab, at: Date.now(), endedAt: Date.now(), by: ME.id || '' }, unset: ['live'] });
-    recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[t[ab]]?.n || ''}`, r);
+    recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[t[ab]]?.n || ''}`, r); }, 'ยืนยันปรับแพ้');
   };
 }
 function evStarted(ev) { return !!ev.startedAt || hasResults(ev) || Object.keys(S.scores || {}).some(k => k.startsWith(ev.id + '__')); }
@@ -2498,9 +2536,10 @@ function openEvResult(eid) {
     $('#af').onsubmit = e => {
       e.preventDefault(); const pp = [0, 1, 2].map(i => $('#p' + i).value === '' ? -1 : +$('#p' + i).value); const s = pp.filter(x => x >= 0);
       if (new Set(s).size !== s.length) { $('#err').textContent = 'คณะสีเดียวกันได้อันดับเดียวต่อรายการ'; return; }
-      const res = { p: pp, perf: [0, 1, 2].map(i => $('#f' + i).value.trim()), at: Date.now(), by: ME.id || '' }; closeModal(); recUndo('บันทึกผล', evTitle(ev), patchEv({ eid, set: { res } }));
+      const res = { p: pp, perf: [0, 1, 2].map(i => $('#f' + i).value.trim()), at: Date.now(), by: ME.id || '' };
+      askFinal(`<b>ยืนยันผล: ${esc(evTitle(ev))}</b><div>${pp.slice(0, 3).map((c, i) => c >= 0 ? `ที่ ${i + 1} ${chip(c)} ${esc(res.perf[i] || '')}` : '').join(' · ')}</div>`, () => { closeModal(); recUndo('บันทึกผล', evTitle(ev), patchEv({ eid, set: { res } })); });
     };
-  } else if (ev.format === 'score') { openJudge(eid, UI.judge || 1); return;
+  } else if (ev.format === 'score') { openJudge(eid, mySlot(ev) || UI.judge || 1); return;
     const s = ev.res?.s || [];
     modal(`<form class="dlg" id="sf"><h3>${esc(evTitle(ev))}</h3><p class="muted sm">${esc(ev.note || '')}</p><div class="ffin">${(ev.teams || []).map(c => `<label class="side">${chip(c)}<input id="s${c}" class="num" inputmode="decimal" value="${esc(s[c] ?? '')}"></label>`).join('')}</div>
       <div class="actions"><button class="btn">บันทึกคะแนน</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
@@ -2509,13 +2548,15 @@ function openEvResult(eid) {
 }
 function openJudge(eid, j) {
   if (needStart(eid, () => openJudge(eid, j))) return;
-  const ev = evById(eid); const J = judgeCount(ev); j = Math.min(Math.max(1, j), J); UI.judge = j;
+  const ev = evById(eid); const J = judgeCount(ev); j = Math.min(Math.max(1, j), J);
+  const own = ev.judgeIds?.length && !isAdmin(); if (own) { const k = mySlot(ev); if (!k) { modal(`<div class="dlg"><h3>${esc(evTitle(ev))}</h3><p>คุณไม่ได้เป็นกรรมการให้คะแนนของรายการนี้</p><p class="muted sm">กรรมการ: ${ev.judgeIds.map(x => esc(plainName(x))).join(', ')}</p><div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`); return; } j = k; }
+  UI.judge = j;
   const crit = criteriaOf(ev).length ? criteriaOf(ev) : [{ n: 'คะแนนรวม', max: 100 }];
   const d = clone(judgeDoc(eid, j) || { eid, j, v: {} }); const teams = ev.teams || [0, 1, 2, 3, 4, 5];
   const draw = () => {
     const lock = d.submitted;
     $('#modal').innerHTML = `<form class="dlg xwide" id="jf"><h3>${esc(evTitle(ev))} · ใบให้คะแนน</h3>
-      <div class="seg wrap jtabs">${Array.from({ length: J }, (_, i) => { const dd = judgeDoc(eid, i + 1); return `<button type="button" data-jt="${i + 1}" class="${i + 1 === j ? 'on' : ''}">${esc(judgeName(ev, i + 1))}${dd?.submitted ? ' ✓' : dd ? ' (ร่าง)' : ''}</button>`; }).join('')}</div>
+      <div class="seg wrap jtabs">${Array.from({ length: J }, (_, i) => { const dd = judgeDoc(eid, i + 1); return `<button type="button" data-jt="${i + 1}" class="${i + 1 === j ? 'on' : ''}" ${own && i + 1 !== j ? 'disabled' : ''}>${esc(judgeName(ev, i + 1))}${dd?.submitted ? ' ✓' : dd ? ' (ร่าง)' : ''}</button>`; }).join('')}</div>
       <p class="muted sm">${J} กรรมการ · รวมคะแนนแบบ${{ avg: 'ค่าเฉลี่ย', sum: 'ผลรวม', trim: 'ค่าเฉลี่ยตัดสูงสุด-ต่ำสุด' }[ev.agg || 'avg']} · แต่ละกรรมการบันทึกแยกกัน ไม่ทับคะแนนของกันและกัน · ตั้งจำนวนกรรมการและเกณฑ์ได้ที่ “ตั้งค่ารายการ”</p>
       <div class="scroll"><table class="std jtab"><thead><tr><th>เกณฑ์ (เต็ม)</th>${teams.map(c => `<th>${chip(c)}</th>`).join('')}</tr></thead><tbody>
       ${crit.map((k, ci) => `<tr><td>${esc(k.n)} <small class="muted">(${k.max})</small></td>${teams.map(c => `<td><input class="num" inputmode="decimal" data-jv="${c}|${ci}" value="${esc(d.v?.[c]?.[ci] ?? '')}" ${lock ? 'disabled' : ''} aria-label="${esc(k.n)} คณะ${COLORS[c].n}"></td>`).join('')}</tr>`).join('')}
@@ -2528,7 +2569,7 @@ function openJudge(eid, j) {
   $('#modal').hidden = false; draw();
   $('#modal').oninput = e => { const k = e.target.dataset.jv; if (!k) return; const [c, ci] = k.split('|').map(Number); d.v = d.v || {}; d.v[c] = d.v[c] || []; d.v[c][ci] = e.target.value.trim(); const t = $('#jt' + c); if (t) t.textContent = judgeTotal(d, c) ?? '–'; };
   $('#modal').onclick = e => {
-    const t = e.target.closest('[data-jt]'); if (t) { resetModalHandlers(); openJudge(eid, +t.dataset.jt); return; }
+    const t = e.target.closest('[data-jt]'); if (t && !t.disabled) { resetModalHandlers(); openJudge(eid, +t.dataset.jt); return; }
     if (e.target.id === 'jdraft') { save(false); toast('บันทึกร่างแล้ว'); draw(); }
     if (e.target.id === 'junlock') { d.submitted = false; save(false); draw(); }
   };
@@ -2536,8 +2577,8 @@ function openJudge(eid, j) {
     e.preventDefault(); const bad = [];
     teams.forEach(c => crit.forEach((k, ci) => { const v = d.v?.[c]?.[ci]; if (v === '' || v == null || isNaN(+v)) bad.push(`${COLORS[c].n}: ${k.n} ยังไม่กรอก`); else if (+v < 0 || +v > +k.max) bad.push(`${COLORS[c].n}: ${k.n} ต้องอยู่ระหว่าง 0–${k.max}`); }));
     if (bad.length) { $('#err').textContent = bad.slice(0, 3).join(' · ') + (bad.length > 3 ? ` และอีก ${bad.length - 3} ช่อง` : ''); return; }
-    save(true); toast(`ส่งคะแนนของ${judgeName(ev, j)}แล้ว`); const next = Array.from({ length: J }, (_, i) => i + 1).find(x => x !== j && !judgeDoc(eid, x)?.submitted);
-    resetModalHandlers(); if (next) openJudge(eid, next); else closeModal();
+    askFinal(`<b>ส่งคะแนน ${esc(judgeName(ev, j))}: ${esc(evTitle(ev))}</b><div>${teams.map(c => `${chip(c)} <b class="num">${judgeTotal(d, c) ?? '–'}</b>`).join(' · ')}</div>`, () => { save(true); toast(`ส่งคะแนนของ${judgeName(ev, j)}แล้ว`); const next = Array.from({ length: J }, (_, i) => i + 1).find(x => x !== j && !judgeDoc(eid, x)?.submitted);
+    resetModalHandlers(); if (next && !own) openJudge(eid, next); else closeModal(); }, 'ยืนยันส่งคะแนน');
   }
 }
 function openRound(eid, i) {
@@ -2686,8 +2727,14 @@ function openEvent(id, sportId) {
       <label class="fld" data-for="points">จำนวนรอบ<input id="eR" type="number" min="1" max="20" step="1" value="${(e.rounds || []).length || ''}" placeholder="เช่น 3"></label></div></div>
     <label class="ck" data-for="ko rrko"><input type="checkbox" id="eb" ${e.bronze !== false ? 'checked' : ''}> มีนัดชิงอันดับ 3 <small class="muted">ถ้าไม่มี ผู้แพ้รอบรองได้ทองแดงทั้งคู่</small></label>
     <fieldset class="win col jset" data-for="score"><legend>กรรมการให้คะแนน</legend>
-      <div class="g3"><label class="fld">จำนวนกรรมการ<input id="ejn" type="number" min="1" max="15" step="1" value="${e.judges || 1}"></label><label class="fld">วิธีรวมคะแนน<select id="eja"><option value="avg" ${(e.agg || 'avg') === 'avg' ? 'selected' : ''}>ค่าเฉลี่ย</option><option value="sum" ${e.agg === 'sum' ? 'selected' : ''}>ผลรวม</option><option value="trim" ${e.agg === 'trim' ? 'selected' : ''}>เฉลี่ยตัดสูง-ต่ำสุด</option></select></label></div>
-      <label class="fld">ชื่อกรรมการ <small>คั่นด้วยจุลภาค ไม่ใส่ก็ได้</small><input id="ejnm" value="${esc((e.judgeNames || []).join(', '))}" placeholder="เช่น ครูสมศรี, ครูวิชัย, ครูนภา"></label>
+      ${(() => { const cand = judgeCandidates(e.sport); const sel = e.judgeIds || [];
+        const extra = sel.filter(id => !cand.some(c => c.id === id)).map(id => ({ id, name: plainName(id) + ' (ไม่มีสิทธิ์แล้ว)' }));
+        return cand.length || extra.length ? `<p class="muted sm">เลือกผู้ใช้ระบบที่เป็นกรรมการ แต่ละคนเข้าสู่ระบบแล้วกรอกใบให้คะแนนของตัวเอง <span id="jcnt" class="okt"></span></p>
+          <div class="jpick">${[...cand, ...extra].map(u => `<label class="ck"><input type="checkbox" class="ejid" value="${esc(u.id)}" ${sel.includes(u.id) ? 'checked' : ''}> ${esc(u.name)}</label>`).join('')}</div>
+          <p class="muted sm">รายชื่อมาจาก จัดการการแข่งขัน › ผู้ใช้และสิทธิ์ (ผู้ดูแล และกรรมการบันทึกผลที่มีสิทธิ์ชนิดกีฬานี้)</p>`
+          : `<p class="warn">ยังไม่มีผู้ใช้ที่เป็นกรรมการของชนิดกีฬานี้ เพิ่มได้ที่ จัดการการแข่งขัน › ผู้ใช้และสิทธิ์ ระหว่างนี้ระบุเป็นจำนวนกรรมการ (ไม่ระบุชื่อ) ได้</p>
+          <label class="fld jnum">จำนวนกรรมการ<input id="ejn" type="number" min="1" max="15" step="1" value="${e.judges || 1}"></label>`; })()}
+      <label class="fld jnum">วิธีรวมคะแนน<select id="eja"><option value="avg" ${(e.agg || 'avg') === 'avg' ? 'selected' : ''}>ค่าเฉลี่ย</option><option value="sum" ${e.agg === 'sum' ? 'selected' : ''}>ผลรวม</option><option value="trim" ${e.agg === 'trim' ? 'selected' : ''}>เฉลี่ยตัดสูง-ต่ำสุด</option></select></label>
       <label class="fld">เกณฑ์:คะแนนเต็ม <small>คั่นด้วยจุลภาค</small><input id="ejc" value="${esc((e.criteria || []).map(k => `${k.n}:${k.max}`).join(', '))}" placeholder="เช่น ความพร้อมเพรียง:20, การแต่งกาย:20"></label></fieldset>
     <label class="ck"><input type="checkbox" id="em" ${e.medal ? 'checked' : ''}> นับเหรียญรางวัล</label>
     <label class="fld">หมายเหตุ<input id="en" maxlength="300" value="${esc(e.note || '')}"></label>
@@ -2700,7 +2747,8 @@ function openEvent(id, sportId) {
     $('#dtn').textContent = f === 'points' ? 'วันเวลาของรอบแรก (รอบถัดไปแก้ได้ในหน้าบันทึกผลรอบ) · รายการนี้ไม่มีคู่ จึงไม่มีขั้นจัดเวลา' : 'รายการนี้ไม่มีการจับคู่ จึงกำหนดวันเวลาที่นี่ครั้งเดียว (รายการแบบมีคู่ กำหนดวันเวลารายคู่ในขั้น “จัดเวลา”)';
     if ($('#chgw')) $('#chgw').hidden = !changed(); confirmStage = false; $('#evsave').textContent = 'บันทึก'; };
   let confirmStage = false;
-  sync(); $('#ef').addEventListener('change', sync); document.querySelectorAll('.et').forEach(x => x.addEventListener('change', sync));
+  sync(); $('#ef').addEventListener('change', sync);
+  const jc = () => { const n = document.querySelectorAll('.ejid:checked').length; if ($('#jcnt')) $('#jcnt').textContent = n ? `เลือกแล้ว ${n} คน` : ''; }; jc(); document.querySelectorAll('.ejid').forEach(x => x.addEventListener('change', jc)); document.querySelectorAll('.et').forEach(x => x.addEventListener('change', sync));
   const err = t => { $('#err').textContent = t; return false; };
   $('#evf').onsubmit = ev => {
     ev.preventDefault(); const teams = teamsNow(); const fmt = $('#ef').value; const label = $('#el').value.trim().replace(/\s+/g, ' ');
@@ -2715,14 +2763,20 @@ function openEvent(id, sportId) {
     if (Number.isNaN(rM) || Number.isNaN(st)) return err('จำนวนส่งรายชื่อ/ตัวจริงต้องเป็นจำนวนเต็ม 0–99');
     const effM = rM === '' ? sp.rosterMax ?? 0 : rM, effS = st === '' ? sp.starters ?? 0 : st;
     if (effM && effS > effM) return err(`ตัวจริง (${effS}) มากกว่าจำนวนที่ส่งรายชื่อได้ (${effM})`);
-    let nR = 0, crit = [], nJ = 1;
+    let nR = 0, crit = [], nJ = 1, jIds = null;
     if (fmt === 'points') { nR = num($('#eR'), 1, 20); if (!nR) return err('ใส่จำนวนรอบ 1–20'); }
     if (fmt === 'score') {
-      nJ = num($('#ejn'), 1, 15); if (!nJ) return err('จำนวนกรรมการ 1–15 คน');
+      const picked = [...document.querySelectorAll('.ejid:checked')].map(x => x.value);
+      if ($('.ejid')) {
+        const old = e.judgeIds || []; jIds = [...old.filter(x => picked.includes(x)), ...picked.filter(x => !old.includes(x))];
+        if (!jIds.length) return err('เลือกกรรมการอย่างน้อย 1 คน'); if (jIds.length > 15) return err('กรรมการได้ไม่เกิน 15 คน');
+        const lost = old.map((x, k) => [x, k + 1]).filter(([x, k]) => !jIds.includes(x) && judgeDoc(id, k)); if (id && lost.length) return err(`${plainName(lost[0][0])} กรอกคะแนนไปแล้ว นำออกไม่ได้ (ล้างคะแนนของรายการก่อน)`);
+        if (id && old.some((x, k) => judgeDoc(id, k + 1) && jIds[k] !== x)) return err('มีกรรมการกรอกคะแนนแล้ว ลำดับกรรมการต้องคงเดิม เพิ่มได้เฉพาะคนใหม่');
+        nJ = jIds.length;
+      } else { nJ = num($('#ejn'), 1, 15); if (!nJ) return err('จำนวนกรรมการ 1–15 คน'); }
       if ($('#eja').value === 'trim' && nJ < 3) return err('เฉลี่ยตัดสูง-ต่ำสุด ต้องมีกรรมการอย่างน้อย 3 คน');
       const parts = $('#ejc').value.split(',').map(x => x.trim()).filter(Boolean);
       for (const x of parts) { const m = x.match(/^(.+?)\s*:\s*(\d+(?:\.\d+)?)$/); if (!m || +m[2] <= 0) return err(`เกณฑ์ “${x}” ไม่ถูกรูปแบบ ใช้ ชื่อเกณฑ์:คะแนนเต็ม เช่น การแต่งกาย:20`); crit.push({ n: m[1].trim(), max: +m[2] }); }
-      const names = $('#ejnm').value.split(',').map(x => x.trim()).filter(Boolean); if (names.length > nJ) return err(`ใส่ชื่อกรรมการ ${names.length} คน แต่กำหนดจำนวนไว้ ${nJ} คน`);
     }
     const v = $('#ev').value, dt = $('#ed').value, tm = $('#eti').value;
     if (['rank', 'score', 'points'].includes(fmt) && v && dt && tm) { const b = busyAt(occList(id), dt, toMin(tm), toMin(tm) + (du || durOf({ ...e, sport: e.sport }, v)), v); if (b.length >= courtsOf(v)) return err(`${v} ไม่ว่างวันที่ ${fmtDate(dt)} เวลา ${tm} (ใช้โดย ${b.slice(0, 2).map(x => x.label + ' ' + x.at).join(', ')}) เลือกเวลาหรือสนามอื่น`); }
@@ -2731,7 +2785,7 @@ function openEvent(id, sportId) {
     const d = id ? clone(S.events[id]) : { sport: sportId, order: Math.max(0, ...Object.values(S.events).map(x => x.order || 0)) + 1, matches: [] };
     Object.assign(d, { label, age: $('#ea').value ? +$('#ea').value : null, gender: $('#eg').value, format: fmt, teams, venue: v, medal: $('#em').checked, note: $('#en').value.trim() });
     if (MATCH_FMT.includes(fmt)) { d.bronze = $('#eb').checked; delete d.date; delete d.time; } else { d.date = dt; d.time = tm; }
-    if (fmt === 'score') Object.assign(d, { judges: nJ, agg: $('#eja').value, judgeNames: $('#ejnm').value.split(',').map(x => x.trim()).filter(Boolean), criteria: crit });
+    if (fmt === 'score') { Object.assign(d, { judges: nJ, agg: $('#eja').value, criteria: crit }); if (jIds) { d.judgeIds = jIds; delete d.judgeNames; } else delete d.judgeIds; }
     ['rosterMax', 'starters', 'dur'].forEach((k, i) => { const x = [rM, st, du][i]; if (x === '') delete d[k]; else d[k] = x; });
     if (fmt === 'points') { const old = d.rounds || []; d.rounds = Array.from({ length: nR }, (_, i) => old[i] || { label: `รอบที่ ${i + 1}`, date: i ? '' : dt || days()[0] || '', time: i ? '' : tm }); if (old[0] && dt) { d.rounds[0].date = dt; d.rounds[0].time = tm; } }
     if (reset) { d.matches = []; delete d.res; d.reviewed = false; }
@@ -3126,7 +3180,8 @@ document.addEventListener('click', e => {
   else if (d.act === 'medrec') exportRecipients('print');
   else if (d.act === 'medrecc') exportRecipients('csv');
   else if (d.act === 'tvauto') { UI.tvAuto = UI.tvAuto === false; tvTick = Date.now(); render(); }
-  else if (d.act === 'savescore') { const m = clone(S.meta); m.scoring = { on: $('#scOn').checked, g: +$('#scG').value || 0, s: +$('#scS').value || 0, b: +$('#scB').value || 0, act: $('#scA').value.split(/[,\s]+/).filter(Boolean).map(Number) }; put('meta', 'config', m); logIt('แก้คะแนนรวมคณะสี', ''); toast('บันทึกแล้ว'); }
+  else if (d.act === 'savescore') { const act = $('#scA').value.split(/[,\s]+/).filter(Boolean); if ([$('#scG').value, $('#scS').value, $('#scB').value, ...act].some(x => isNaN(+x) || +x < 0)) { toast('คะแนนต้องเป็นตัวเลขไม่ติดลบ'); return; }
+    const m = clone(S.meta); m.scoring = { on: $('#scOn').checked, g: +$('#scG').value || 0, s: +$('#scS').value || 0, b: +$('#scB').value || 0, act: act.map(Number) }; put('meta', 'config', m); logIt('แก้คะแนนรวมคณะสี', ''); toast('บันทึกแล้ว'); }
   else if (d.act === 'copysum') copy(summaryText());
   else if (d.act === 'copyroster') copy(rosterText(UI.regColor));
   else if (d.act === 'backup') openBackup();
@@ -3137,7 +3192,7 @@ document.addEventListener('click', e => {
   else if (d.act === 'savemeta') {
     const v = { ci: +$('#ciMin').value, f: +$('#fMin').value, cl: +$('#clMin').value };
     if ([v.ci, v.cl].some(x => !Number.isFinite(x) || x < 0) || !(v.f >= 1)) { toast('ตรวจตัวเลขกติกา: ต้องเป็นจำนวนไม่ติดลบ (ผ่อนผันอย่างน้อย 1 นาที)'); return; }
-    const m = clone(S.meta); m.checkinMin = v.ci; m.forfeitMin = v.f; m.requireCheckin = $('#reqCi').checked; m.clashMin = v.cl; put('meta', 'config', m); logIt('แก้กติกาทั่วไป', ''); toast('บันทึกกติกาแล้ว'); }
+    const m = clone(S.meta); m.checkinMin = v.ci; m.forfeitMin = v.f; m.requireCheckin = $('#reqCi').checked; if ($('#pinCf')) m.pinConfirm = $('#pinCf').checked; m.clashMin = v.cl; put('meta', 'config', m); logIt('แก้กติกาทั่วไป', ''); toast('บันทึกกติกาแล้ว'); }
   else if (d.act === 'saveinfo') {
     const t = $('#mtitle').value.trim(), y = $('#myear').value.trim(), sc = $('#mschool').value.trim();
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
