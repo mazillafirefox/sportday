@@ -849,8 +849,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.3', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.4', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.4', 'ปุ่มตรวจฐานข้อมูลกลาง (อ่าน/เขียนแต่ละส่วน) · แจ้งและลองใหม่เมื่ออ่านรายชื่อไม่ได้ · กู้คืนแสดงสาเหตุเมื่อส่งไม่สำเร็จ'],
   ['1.22.3', 'ระบบสำรอง/กู้คืนใหม่: เลือกไฟล์ · ตรวจก่อนกู้คืน · เลือกส่วนข้อมูล · ตรวจซ้ำจากเซิร์ฟเวอร์และรายงานความครบ · แก้คะแนนเซตบันทึกใน Firestore ไม่ได้'],
   ['1.22.2', 'เชื่อม Firebase โปรเจกต์ sportday · เก็บอีเมลผู้ดูแลแบบ hash'],
   ['1.22.1', 'ใช้ Firebase เป็นฐานข้อมูลกลางตามเดิม (ยังรองรับ Supabase เป็นทางเลือก)'],
@@ -1394,13 +1395,15 @@ function updateWrite(force) {
   canWrite = mode !== 'shared' ? true : sb ? !!ME.id && !!SB_ACC?.role : !!ME.id && (ME.owner || !!(S.meta.roles || {})[ME.id]);
   if (force || before !== canWrite) subscribePrivate();
 }
+const PRIV_ERR = {}; let PRIV_T = 0;
 function subscribePrivate() {
   if (mode !== 'shared') return;
   if (sb) { sbPrivate(); return; }
   ['rosters', 'log', 'students'].forEach(k => { if (UNSUB[k]) { UNSUB[k](); delete UNSUB[k]; } });
   if (!canWrite) { S.rosters = {}; S.students = {}; LOG = []; return; }
-  UNSUB.students = db.collection('students').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); }); S.students = o; if (['teams', 'register'].includes(UI.view)) render(); }, () => { S.students = {}; });
-  UNSUB.rosters = db.collection('rosters').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); }); S.rosters = o; render(); }, () => { S.rosters = {}; });
+  const fail = (col, e) => { PRIV_ERR[col] = e?.code || e?.message || 'error'; toast(`อ่าน${col === 'students' ? 'รายชื่อนักเรียน' : 'รายชื่อนักกีฬา'}ไม่ได้ (${PRIV_ERR[col]}) จะลองใหม่อัตโนมัติ`); clearTimeout(PRIV_T); PRIV_T = setTimeout(() => { if (canWrite) subscribePrivate(); }, 8000); };
+  UNSUB.students = db.collection('students').onSnapshot(snap => { delete PRIV_ERR.students; const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); }); S.students = o; if (['teams', 'register'].includes(UI.view)) render(); }, e => { S.students = {}; fail('students', e); });
+  UNSUB.rosters = db.collection('rosters').onSnapshot(snap => { delete PRIV_ERR.rosters; const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); }); S.rosters = o; render(); }, e => { S.rosters = {}; fail('rosters', e); });
   UNSUB.log = db.collection('log').orderBy('at', 'desc').limit(150).onSnapshot(snap => { LOG = snap.docs.map(d => fsDec(d.data())); if (UI.view === 'admin') render(); }, () => { LOG = []; });
 }
 async function initData() {
@@ -3829,7 +3832,7 @@ function openBackup() {
     <h4 class="bkh">1. สำรองข้อมูลตอนนี้</h4>
     <table class="bktbl"><tbody>${BK_PARTS.map(p => `<tr><td>${p.n}</td><td>${bkPartText(p.k, cur) || '<span class="muted">ไม่มี</span>'}</td></tr>`).join('')}</tbody></table>
     ${privMissing ? '<p class="qwarn sm">ยังไม่ได้เข้าสู่ระบบ ไฟล์สำรองจะไม่มีรายชื่อนักกีฬาและรายชื่อนักเรียน</p>' : ''}
-    <div class="actions m0"><button class="btn" id="dlbk">ดาวน์โหลดไฟล์สำรอง (.json)</button></div>
+    <div class="actions m0"><button class="btn" id="dlbk">ดาวน์โหลดไฟล์สำรอง (.json)</button>${mode === 'shared' && !sb ? '<button class="btn ghost" id="bkdiag">ตรวจฐานข้อมูลกลาง</button>' : ''}</div><div id="diagout"></div>
     <p class="muted sm">เก็บไฟล์ไว้ในคอมพิวเตอร์และ Google Drive ทุกวันหลังจบการแข่ง ชื่อไฟล์มีวันที่และเวลา</p>
     ${adm ? `<h4 class="bkh">2. กู้คืน / นำเข้าข้อมูล</h4>
     <div class="bksrc">
@@ -3842,6 +3845,7 @@ function openBackup() {
     <p class="err" id="err"></p>
     <div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`);
   $('#dlbk').onclick = downloadBackup;
+  $('#bkdiag')?.addEventListener('click', bkDiag);
   $('#cp')?.addEventListener('click', () => copy(JSON.stringify(makeBackup())));
   $('#bkfile')?.addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader();
     r.onload = () => { let o; try { o = JSON.parse(r.result); } catch (x) { $('#err').textContent = 'อ่านไฟล์ไม่ได้: ไม่ใช่ไฟล์สำรองของระบบนี้'; return; } bkPreview(o, 'ไฟล์ ' + f.name); };
@@ -3851,6 +3855,24 @@ function openBackup() {
   document.querySelectorAll('[data-snap]').forEach(b => b.onclick = () => bkPreview(sn[+b.dataset.snap].data, 'สำเนาอัตโนมัติ ' + bkWhen(sn[+b.dataset.snap].at)));
 }
 
+async function bkDiag() {
+  const out = $('#diagout'); if (!out) return; const btn = $('#bkdiag'); btn.disabled = true; out.innerHTML = '<p class="muted sm">กำลังตรวจ…</p>';
+  const rows = [], add = (a, b, ok) => rows.push(`<tr><td>${a}</td><td>${ok === false ? '<b class="bkx">✗</b> ' : ok ? '<b class="bkok">✓</b> ' : ''}${b}</td></tr>`);
+  add('บัญชีที่เข้าสู่ระบบ', ME.id ? esc(ME.id) : 'ยังไม่ได้เข้าสู่ระบบ', !!ME.id);
+  add('สิทธิ์ในหน้าเว็บ', `${ME.owner ? 'ผู้ดูแลหลัก' : ROLE_N[myRole().role] || '-'} · บันทึกได้ ${canWrite ? 'ใช่' : 'ไม่'}`, canWrite);
+  add('การเชื่อมต่อ', navigator.onLine ? 'ออนไลน์' : 'ออฟไลน์', navigator.onLine);
+  for (const [col, n] of [['events', 'โปรแกรม (อ่าน)'], ['rosters', 'รายชื่อนักกีฬา (อ่าน)'], ['students', 'รายชื่อนักเรียน (อ่าน)']]) {
+    try { const sn = await withTimeout(db.collection(col).get({ source: 'server' }), 20000); add(n, `${sn.size} เอกสารในฐานข้อมูลกลาง · ในหน้านี้ ${Object.keys(S[col] || {}).length}`, true); }
+    catch (e) { add(n, 'อ่านไม่ได้: ' + esc(e?.code || e?.message || e), false); }
+  }
+  for (const [col, n] of [['rosters', 'รายชื่อนักกีฬา (เขียน)'], ['students', 'รายชื่อนักเรียน (เขียน)']]) {
+    const ref = db.collection(col).doc('zz_diag_' + Date.now());
+    try { await withTimeout(ref.set({ diag: true, at: Date.now() }), 20000); await withTimeout(ref.delete(), 20000); add(n, 'เขียนได้', true); }
+    catch (e) { add(n, 'เขียนไม่ได้: ' + esc(e?.code || e?.message || e), false); }
+  }
+  Object.entries(PRIV_ERR).forEach(([c, e]) => add('ข้อผิดพลาดล่าสุด ' + c, esc(e), false));
+  out.innerHTML = `<table class="bktbl">${rows.join('')}</table><p class="muted sm">ถ้ามี ✗ ให้ถ่ายภาพตารางนี้ส่งให้ผู้พัฒนา</p>`; btn.disabled = false;
+}
 function bkPreview(o, src) {
   if (!o || typeof o !== 'object' || !(o.events || o.sports || o.students || o.rosters)) { const e = $('#err'); if (e) e.textContent = 'ไม่พบข้อมูลของระบบนี้ในไฟล์'; return; }
   const fc = bkCount(o), cc = bkCount(S), h = o._backup;
@@ -3919,7 +3941,7 @@ async function bkWrite(jobs) {
     const chunk = jobs.slice(k, k + 40); let ok = false, last;
     for (let t = 0; t < 4 && !ok; t++) {
       try { const b = db.batch(); chunk.forEach(j => { const ref = db.collection(j.col).doc(j.id); if (j.v === null) b.delete(ref); else b.set(ref, fsEnc(j.v)); }); await withTimeout(b.commit(), 30000); ok = true; }
-      catch (e) { last = e; if (e?.code === 'permission-denied') return { failed: jobs.slice(k).map(job => ({ job, err: 'บัญชีนี้ไม่มีสิทธิ์บันทึก' })), denied: true }; if (e?.code === 'invalid-argument') break; await new Promise(r => setTimeout(r, 1000 * (t + 1))); }
+      catch (e) { last = e; $('#bkstage') && ($('#bkstage').textContent = `ส่งไม่สำเร็จ (${e?.code || e?.message || e}) กำลังลองใหม่ ${t + 1}/4…`); if (e?.code === 'permission-denied') return { failed: jobs.slice(k).map(job => ({ job, err: 'บัญชีนี้ไม่มีสิทธิ์บันทึก' })), denied: true }; if (e?.code === 'invalid-argument') break; await new Promise(r => setTimeout(r, 1000 * (t + 1))); }
     }
     if (ok) { chunk.forEach(step); continue; }
     /* ชุดนี้ส่งไม่ผ่าน → ส่งทีละเอกสารเพื่อหาว่าเอกสารไหนมีปัญหา */
