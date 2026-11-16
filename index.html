@@ -640,6 +640,9 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .btn.cib.ok{background:#E8F7EE;border-color:#7BC79A;color:#17703F;font-weight:600}.btn.cib.part{background:#FFF6E6;border-color:#F1C38A;color:#9A5A00}
 .protc{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;margin-bottom:8px}.protc.pending{border-color:#F1C38A;background:#FFF8EC}.protc.upheld{border-color:#9BD3B0;background:#F1FBF5}.protc.rejected{background:#F7F8FA}
 .prott{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.protd{border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}.protf{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.protf-ic{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:700;border-radius:99px;padding:2px 8px;white-space:nowrap;border:1px solid}
+.protf-ic.pending,.protf-ic.need{background:#FFF0DA;color:#9A5A00;border-color:#F1C38A}.protf-ic.upheld:not(.need){background:#E8F7EE;color:#17703F;border-color:#9BD3B0}.protf-ic.rejected{background:#F1F3F7;color:#5B6475;border-color:var(--line)}
+.replayf{border:1px dashed #9DB0E8;border-radius:10px;padding:8px 10px;background:#F7F9FF}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -806,8 +809,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.21.1', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.21.2', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.21.2', 'สัญลักษณ์ ⚑ ที่คู่ที่มีการประท้วง (รอพิจารณา/รับคำร้อง/ยกคำร้อง/รอแก้ผล) · ยื่นประท้วงได้หลังจบเกม · รับคำร้องแก้ผล: เตือนจนกว่าจะแก้ผล · แข่งใหม่: กำหนดวัน เวลา สนามใหม่ พร้อมตรวจสนามว่าง'],
   ['1.21.1', 'การประท้วง: ยื่นแยกจากการบันทึกผล (ฝ่าย ผู้ยื่น เรื่อง หลักฐาน เวลา) → รอพิจารณา → ผู้ดูแลตัดสิน (ยกคำร้อง / รับคำร้อง: คงผล แก้ผล หรือแข่งใหม่) ยืนยันด้วย PIN · คู่รอบถัดไปรอจนพิจารณาเสร็จ · รายการคำร้องรอพิจารณาในหน้าจัดการ'],
   ['1.20.9', 'ปุ่มเช็คชื่อในตารางเปลี่ยนสีตามการรายงานตัว: ✓ เช็คชื่อครบ (เขียว) · เช็คชื่อ 1/2 ทีม (ส้ม)'],
   ['1.20.8', 'เริ่มแข่งไม่ได้ถ้าคู่ที่กำหนดก่อนหน้าที่สนามเดียวกันยังไม่ได้แข่ง (ผู้ดูแลยืนยันข้ามลำดับได้) · คะแนนรายเซตใช้ #1 #2 #3'],
@@ -1431,7 +1435,8 @@ function matchFlags(m) {
   const reds = (m.cards || []).filter(c => c.type !== 'Y').length, yel = (m.cards || []).filter(c => c.type === 'Y').length;
   if (yel) f += `<span class="cdf y" title="ใบเหลือง">${yel}</span>`;
   if (reds) f += `<span class="cdf r" title="ใบแดง">${reds}</span>`;
-  if (m.protest?.status === 'pending') f += '<span class="pill warnp">มีการประท้วง</span>';
+  if (m.protest?.side) { const p = m.protest; const need = p.status === 'upheld' && p.outcome === 'edit' && !p.editedAt;
+    f += `<span class="protf-ic ${p.status}${need ? ' need' : ''}" title="${p.status === 'pending' ? 'มีการประท้วง · รอพิจารณา' : p.status === 'upheld' ? 'รับคำร้อง · ' + (PROT_OUT[p.outcome] || '') + (need ? ' (ยังไม่ได้แก้ผล)' : '') : 'ยกคำร้อง · ผลคงเดิม'}">⚑ ${p.status === 'pending' ? 'ประท้วง · รอพิจารณา' : p.status === 'upheld' ? (need ? 'รับคำร้อง · รอแก้ผล' : 'รับคำร้อง') : 'ยกคำร้อง'}</span>`; }
   return f;
 }
 const SCHED_C = {};
@@ -2016,7 +2021,7 @@ function matchNode(ev, m, x, y, isFinal, cls) {
   const line = side => `<div class="bl ${s === side ? 'w' : s && s !== 'd' ? 'l' : ''}">${chip(t[side], { ph: slotLabel(ev, m[side]), tip: slotTip(ev, m[side]) })}<span class="num">${s || lv ? esc(m['s' + side] ?? '') : ''}</span></div>`;
   const ed = editOn && canScore(ev.sport);
   const TAG = { live: '<span class="livetag"><i></i>LIVE</span>', delay: '<span class="odtag">ล่าช้า</span>', hold: '<span class="odtag">รอคู่ก่อน</span>', waiting: '<span class="odtag">รอนักกีฬา</span>', forfeit: '<span class="odtag forf">ปรับแพ้?</span>', checkin: '<span class="odtag ci">รายงานตัว</span>' }[st.k] || '';
-  return `<div class="node match${isFinal ? ' final' : ''}${cls ? ' ' + cls : ''}${ed ? ' click' : ''} ${STATE_CLS[st.k] || ''}${m.protest?.status === 'pending' ? ' prot' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}${tip('match', ev.id, m.id)} style="left:${x - G.NW / 2}px;top:${y - G.MH / 2}px;width:${G.NW}px;min-height:${G.MH}px">
+  return `<div class="node match${isFinal ? ' final' : ''}${cls ? ' ' + cls : ''}${ed ? ' click' : ''} ${STATE_CLS[st.k] || ''}${m.protest?.status === 'pending' || m.protest?.status === 'upheld' && m.protest?.outcome === 'edit' && !m.protest?.editedAt ? ' prot' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}${tip('match', ev.id, m.id)} style="left:${x - G.NW / 2}px;top:${y - G.MH / 2}px;width:${G.NW}px;min-height:${G.MH}px">
     ${TAG}<div class="bh"><span>คู่ ${m.no}${G.v ? '' : ' · ' + esc(m.round || '')}</span><span class="num">${m.date ? fmtDate(m.date) : ''} ${esc(m.time || '')}</span></div>${line('a')}${line('b')}</div>`;
 }
 function leafNode(n) {
@@ -2625,7 +2630,7 @@ function vAdmin() {
       ${['ko', 'rr', 'rrko'].includes(e.format) ? `<button data-draw="${e.id}">จับคู่ใหม่</button><button data-sched="${e.id}">จัดเวลาอัตโนมัติ</button><button data-mlist="${e.id}">ตารางคู่ (แก้รายคู่)</button>` : ''}
       <button data-editev="${e.id}">ตั้งค่ารายการ</button>${hasResults(e) ? `<button data-clrev="${e.id}">ล้างผลรายการนี้</button>` : ''}<button class="dz" data-delev="${e.id}">ลบรายการ</button></div></details></div></div>`; }).join('') || '<p class="muted">ยังไม่มีรายการ</p>'}</div>
     <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button></div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
-  ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending'); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงรอพิจารณา <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
+  ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending' || x.m.protest?.status === 'upheld' && x.m.protest.outcome === 'edit' && !x.m.protest.editedAt); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงที่ต้องดำเนินการ <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง ${x.m.protest.status === 'pending' ? '<span class="protf-ic pending">รอพิจารณา</span>' : '<span class="protf-ic need">รอแก้ผลตามมติ</span>'}</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
   ${conflictCard(conflicts, true)}
   ${rolesCard()}${scoringCard()}
   <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button></div>
@@ -2862,6 +2867,7 @@ function openResult(eid, mid) {
   const cardList = () => cards.map((cd, i) => `<div class="cdrow"><span class="cdf ${cd.type === 'Y' ? 'y' : 'r'}"></span>${chip(cd.c)} ${esc(cardName(cd))} <small class="muted">${TYPES[cd.type]}${cd.note ? ' · ' + esc(cd.note) : ''}</small><button type="button" class="x" data-cdrm="${i}" aria-label="ลบ">×</button></div>`).join('') || '<p class="muted sm">ไม่มี</p>';
   const fz = m.forfeit && sideWin(m) ? t[m.forfeit] : null; const deps = fz != null ? depMatches(ev, mid) : [];
   modal(`<form class="dlg wide" id="mf"><h3>${esc(evTitle(ev))} · คู่ ${m.no} ${esc(m.round || '')}</h3>
+    ${m.protest?.status === 'upheld' && m.protest.outcome === 'edit' && !m.protest.editedAt ? `<div class="qwarn"><b>⚑ แก้ผลตามมติคณะกรรมการ</b><div class="sm">${esc(m.protest.decision || '')}</div><p class="muted sm">แก้คะแนน/ผู้ชนะด้านล่าง แล้วกด “บันทึกการแก้ไขผล” และยืนยันด้วย PIN</p></div>` : ''}
     ${fz != null ? `<div class="forfbox"><div><b>ปรับแพ้แล้ว:</b> ${chip(fz)} สละสิทธิ์${m.by ? ` · โดย ${esc(nameOf(m.by))}` : ''}${m.endedAt ? ` · ${new Date(m.endedAt).toTimeString().slice(0, 5)} น.` : ''}</div>
       ${deps.length ? `<p class="muted sm">ยกเลิกไม่ได้แล้ว: ${deps.map(x => 'คู่ ' + x.no).join(', ')} ที่ใช้ผลคู่นี้เริ่มแข่งหรือมีผลแล้ว</p>` : `<button type="button" class="btn sm ghost danger" id="unforf">ยกเลิกการปรับแพ้</button>`}</div>` : ''}
     ${ready ? '' : '<p class="warn">ยังไม่ทราบคู่แข่งขันครบทั้งสองฝั่ง ต้องบันทึกผลนัดก่อนหน้าก่อน</p>'}${!sideWin(m) && !started(m) ? '<p class="warn">ยังไม่เริ่มการแข่งขัน: บันทึกผลได้หลังกด “เริ่มการแข่งขัน” (ด้านล่าง) · ถ้าทีมไม่มาแข่ง ใช้ “ปรับแพ้”</p>' : ''}
@@ -2888,6 +2894,7 @@ function openResult(eid, mid) {
     <p class="err" id="err"></p><div class="actions">${sideWin(m) ? '<button class="btn">บันทึกการแก้ไขผล</button>' : started(m) ? '<button class="btn" title="สรุปผู้ชนะและปิดเกม">จบเกม · ยืนยันผล</button><button type="button" class="btn ghost" id="savelive" title="บันทึกคะแนน/วินัยระหว่างแข่ง เกมยังไม่จบ">บันทึกคะแนนระหว่างแข่ง</button>' : ''}<button type="button" class="btn ghost" data-close>${sideWin(m) || started(m) ? 'ยกเลิก' : 'ปิด'}</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div>
     ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
+    const pc = mOf(evById(eid), mid).protest; if (pc?.outcome === 'edit' && pc.status === 'upheld' && !pc.editedAt && fields.w) fields = { ...fields, protest: { ...pc, editedAt: Date.now(), editedBy: ME.id || '' } };
     const r = patchEv({ eid, mid, unset: ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], set: { ...fields, by: ME.id || '', at: Date.now() } });
     closeModal(); recUndo(msg, `${evTitle(ev)} คู่ ${m.no}`, r);
   };
@@ -2945,7 +2952,7 @@ function protestUI(eid, mid) {
     const ended = m.endedAt ? Math.floor((Date.now() - m.endedAt) / 60000) : null; const late = ended != null && ended > PROT_MIN;
     const deps = depMatches(ev, mid);
     if (!p?.side) {
-      if (mode !== 'file') { box.innerHTML = `<p class="muted sm">ครูผู้ควบคุมทีมยื่นได้ภายใน ${PROT_MIN} นาทีหลังจบเกม พร้อมหลักฐาน${ended != null ? ` · จบเกมมาแล้ว ${ended} นาที${late ? ' <b class="warnt">(เกินเวลายื่น)</b>' : ''}` : ''}</p>${can ? '<button type="button" class="btn sm ghost" data-pr="file">ยื่นประท้วง</button>' : ''}`; return; }
+      if (mode !== 'file') { const done = !!sideWin(m); box.innerHTML = `<p class="muted sm">ครูผู้ควบคุมทีมยื่นได้ภายใน ${PROT_MIN} นาทีหลังจบเกม พร้อมหลักฐาน${!done ? ' · <b>ยื่นได้หลังกด “จบเกม” แล้ว</b> (ระหว่างแข่งให้ผู้ตัดสินในสนามชี้ขาดตามกติกา)' : ended != null ? ` · จบเกมมาแล้ว ${ended} นาที${late ? ' <b class="warnt">(เกินเวลายื่น)</b>' : ''}` : ''}</p>${can && done ? '<button type="button" class="btn sm ghost" data-pr="file">ยื่นประท้วง</button>' : ''}`; return; }
       box.innerHTML = `<div class="protf">${late ? `<p class="warn sm">เกิน ${PROT_MIN} นาทีหลังจบเกมแล้ว (${ended} นาที) ตามกติกาไม่รับคำร้อง บันทึกได้แต่จะมีหมายเหตุว่ายื่นเกินเวลา</p>` : ''}
         <div class="ov"><label class="fld">ฝ่ายที่ประท้วง<select id="prs"><option value="">เลือก</option>${['a', 'b'].map(sd => t[sd] >= 0 ? `<option value="${sd}">${COLORS[t[sd]].n}</option>` : '').join('')}</select></label>
         <label class="fld">ผู้ยื่น (ครูผู้ควบคุมทีม)<input id="prw" placeholder="ชื่อครู"></label></div>
@@ -2956,14 +2963,17 @@ function protestUI(eid, mid) {
     const head = `<div class="protc ${p.status}"><div class="prott"><span class="pill ${p.status === 'pending' ? 'warnp' : p.status === 'upheld' ? 'done' : ''}">${PROT_N[p.status] || ''}</span> <b>${chip(t[p.side])} ประท้วง</b>${p.late ? ' <small class="warnt">ยื่นเกินเวลา</small>' : ''}</div>
       <div class="sm">${esc(p.text || '')}</div>${p.evid ? `<div class="muted sm">หลักฐาน: ${esc(p.evid)}</div>` : ''}
       <div class="muted sm">ยื่น ${p.at ? new Date(p.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.' : ''}${p.who ? ' โดย ' + esc(p.who) : ''}${p.by ? ' · รับเรื่อง ' + esc(nameOf(p.by)) : ''}</div>
-      ${p.status !== 'pending' ? `<div class="sm protd"><b>ผลการพิจารณา:</b> ${PROT_N[p.status]}${p.status === 'upheld' && p.outcome ? ' · ' + PROT_OUT[p.outcome] : ''}${p.decision ? ' — ' + esc(p.decision) : ''}<div class="muted sm">โดย ${esc(nameOf(p.decidedBy))}${p.decidedAt ? ' · ' + new Date(p.decidedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.' : ''}</div></div>` : ''}</div>`;
+      ${p.status !== 'pending' ? `<div class="sm protd"><b>ผลการพิจารณา:</b> ${PROT_N[p.status]}${p.status === 'upheld' && p.outcome ? ' · ' + PROT_OUT[p.outcome] : ''}${p.decision ? ' — ' + esc(p.decision) : ''}${p.replay ? `<div>แข่งใหม่ ${fmtDate(p.replay.date, true)} ${esc(p.replay.time)} น. · ${esc(p.replay.venue)} <span class="muted">(เดิม ${fmtDate(p.replay.from.date)} ${esc(p.replay.from.time)} น.)</span></div>` : ''}${p.outcome === 'edit' ? (p.editedAt ? `<div class="okt">แก้ผลตามมติแล้ว ${new Date(p.editedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</div>` : '<div class="warnt"><b>ยังไม่ได้แก้ผลตามมติ</b> แก้คะแนน/ผู้ชนะด้านบน แล้วกด “บันทึกการแก้ไขผล”</div>') : ''}<div class="muted sm">โดย ${esc(nameOf(p.decidedBy))}${p.decidedAt ? ' · ' + new Date(p.decidedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.' : ''}</div></div>` : ''}</div>`;
     if (p.status === 'pending') {
       if (mode !== 'decide') { box.innerHTML = head + `<p class="muted sm">ระหว่างรอพิจารณา คู่ในรอบถัดไปที่ใช้ผลคู่นี้จะยังเริ่มแข่งไม่ได้</p><div class="actions m0">${adm ? '<button type="button" class="btn sm" data-pr="decide">พิจารณาคำร้อง</button>' : '<span class="muted sm">ผู้ดูแล (คณะกรรมการ) เป็นผู้พิจารณา</span>'}${can ? '<button type="button" class="btn sm ghost danger" data-pr="withdraw">ถอนคำร้อง</button>' : ''}</div>`; return; }
       box.innerHTML = head + `<div class="protf"><fieldset class="win col"><legend>ผลการพิจารณา</legend>
           <label><input type="radio" name="prd" value="rejected"> ยกคำร้อง (ผลคงเดิม)</label>
           <label><input type="radio" name="prd" value="keep"> รับคำร้อง แต่ผลการแข่งขันคงเดิม (เช่น ตักเตือน/ลงโทษรายบุคคล)</label>
-          <label><input type="radio" name="prd" value="edit"> รับคำร้อง และแก้ผลการแข่งขัน (แก้คะแนน/ผู้ชนะด้านบนหลังบันทึก)</label>
-          <label><input type="radio" name="prd" value="replay" ${deps.length ? 'disabled' : ''}> รับคำร้อง ล้างผลให้แข่งใหม่${deps.length ? ` <small class="muted">(ทำไม่ได้: ${deps.map(x => 'คู่ ' + x.no).join(', ')} ใช้ผลคู่นี้และเริ่มแข่งแล้ว)</small>` : ''}</label></fieldset>
+          <label><input type="radio" name="prd" value="edit"> รับคำร้อง และแก้ผลการแข่งขัน <small class="muted">(บันทึกมตินี้ก่อน แล้วระบบเปิดฟอร์มผลให้แก้คะแนน/ผู้ชนะต่อ)</small></label>
+          <label><input type="radio" name="prd" value="replay" ${deps.length ? 'disabled' : ''}> รับคำร้อง ล้างผลให้แข่งใหม่${deps.length ? ` <small class="muted">(ทำไม่ได้: ${deps.map(x => 'คู่ ' + x.no).join(', ')} ใช้ผลคู่นี้และเริ่มแข่งแล้ว ต้องล้างผลคู่นั้นก่อน)</small>` : ''}</label></fieldset>
+        <div class="replayf" hidden><b class="sm">กำหนดเวลาแข่งใหม่</b><div class="ov"><label class="fld">วันที่<select id="prdd">${days().map(d => `<option value="${d}" ${d === (todayStr() > m.date ? todayStr() : m.date) ? 'selected' : ''}>${fmtDate(d, true)}</option>`).join('')}</select></label>
+          <label class="fld">เวลา<input id="prdt" type="time" value="${esc(toTime(Math.min(nowMin() + 15, 23 * 60)))}"></label>
+          <label class="fld">สนาม<select id="prdv">${venuesList().map(x => `<option ${x.name === venueOf(ev, m) ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label></div><p class="muted sm" id="prdc"></p></div>
         <label class="fld">เหตุผล/มติคณะกรรมการ<input id="prdn" placeholder="เช่น ตรวจสอบแล้วผู้เล่นมีรายชื่อถูกต้อง"></label>
         <p class="err" id="prerr"></p><div class="actions m0"><button type="button" class="btn sm" data-pr="decidego">บันทึกผลการพิจารณา</button><button type="button" class="btn sm ghost" data-pr="cancel">ยกเลิก</button></div></div>`; return;
     }
@@ -2981,16 +2991,23 @@ function protestUI(eid, mid) {
     if (k === 'withdraw') { ask('ถอนคำร้องนี้? (ลบการประท้วงออก)', () => { recUndo('ถอนคำร้องประท้วง', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, unset: ['protest'] })); }, 'ถอนคำร้อง'); return; }
     if (k === 'reopen') { const p = { ...m.protest, status: 'pending' }; ['decision', 'decidedAt', 'decidedBy', 'outcome'].forEach(x => delete p[x]); recUndo('เปิดพิจารณาคำร้องใหม่', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, set: { protest: p } })); setTimeout(draw, 30); return; }
     if (k === 'decidego') { const d = document.querySelector('#protbox [name=prd]:checked')?.value; const note = $('#prdn').value.trim(); if (!d) return err('เลือกผลการพิจารณา'); if (!note) return err('ใส่เหตุผล/มติคณะกรรมการ');
-      const status = d === 'rejected' ? 'rejected' : 'upheld'; const p = { ...m.protest, status, decision: note, decidedAt: Date.now(), decidedBy: ME.id || '', ...(status === 'upheld' ? { outcome: d } : {}) };
-      const html = `<b>ผลการพิจารณาคำร้อง: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${PROT_N[status]}${status === 'upheld' ? ' · ' + PROT_OUT[d] : ''}</div><div class="muted sm">${esc(note)}</div>`;
+      let rs = null; if (d === 'replay') { const dd = $('#prdd').value, tt = $('#prdt').value, vv = $('#prdv').value; if (!dd || !/^\d{2}:\d{2}$/.test(tt)) return err('กำหนดวันและเวลาแข่งใหม่');
+        const c = replayClash(ev, m, dd, tt, vv); if (c) return err(c); rs = { date: dd, time: tt, venue: vv }; }
+      const status = d === 'rejected' ? 'rejected' : 'upheld'; const p = { ...m.protest, status, decision: note, decidedAt: Date.now(), decidedBy: ME.id || '', ...(status === 'upheld' ? { outcome: d } : {}), ...(rs ? { replay: { ...rs, from: { date: m.date, time: m.time, venue: venueOf(ev, m) } } } : {}) };
+      const html = `<b>ผลการพิจารณาคำร้อง: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${PROT_N[status]}${status === 'upheld' ? ' · ' + PROT_OUT[d] : ''}</div>${rs ? `<div>แข่งใหม่ ${fmtDate(rs.date, true)} ${rs.time} น. · ${esc(rs.venue)}</div>` : ''}<div class="muted sm">${esc(note)}</div>`;
       askFinal(html, () => {
-        const set = { protest: p }; const unset = d === 'replay' ? ['w', 'auto', 'sa', 'sb', 'sets', 'note', 'endedAt', 'startedAt', 'live', 'forfeit'] : [];
+        const set = { protest: p, ...(rs ? { date: rs.date, time: rs.time, venue: rs.venue } : {}) }; const unset = d === 'replay' ? ['w', 'auto', 'sa', 'sb', 'sets', 'note', 'endedAt', 'startedAt', 'live', 'forfeit', 'ci', 'ciOk'] : [];
         const r = patchEv({ eid, mid, set, unset }); recUndo('พิจารณาคำร้องประท้วง', `${evTitle(ev)} คู่ ${m.no} · ${PROT_N[status]}`, r);
         if (d === 'edit' || d === 'replay') { closeModal(); resetModalHandlers(); setTimeout(() => openResult(eid, mid), 60); } else { mode = ''; $('#cfbox')?.remove(); setTimeout(draw, 30); }
       }, 'ยืนยันผลการพิจารณา', { forcePin: true, word: 'ยืนยัน' }); return; }
   });
+  box.addEventListener('change', e => { if (e.target.name === 'prd') { const f = box.querySelector('.replayf'); if (f) f.hidden = e.target.value !== 'replay'; } });
   box.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
   draw();
+}
+function replayClash(ev, m, d, t, v) {
+  const s = toMin(t), e = s + durOf(ev, v); const me = `${evTitle(ev)} คู่ ${m.no}`; const b = busyAt(occList().filter(o => o.label !== me), d, s, e, v);
+  return b.length >= courtsOf(v) ? `เวลานี้ ${v} ไม่ว่าง: ${b.slice(0, 3).map(o => o.at + ' ' + o.label).join(', ')} เลือกเวลาหรือสนามอื่น` : '';
 }
 /* คู่ที่ต้องรอผลการประท้วงของคู่ต้นทาง */
 const protHold = (ev, m) => [m.a, m.b].map(s => s?.m ? mOf(ev, s.m) : null).filter(x => x && x.protest?.status === 'pending');
