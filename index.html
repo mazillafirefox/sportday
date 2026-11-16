@@ -835,8 +835,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.1', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.22.2', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.2', 'เชื่อม Firebase โปรเจกต์ sportday · เก็บอีเมลผู้ดูแลแบบ hash'],
   ['1.22.1', 'ใช้ Firebase เป็นฐานข้อมูลกลางตามเดิม (ยังรองรับ Supabase เป็นทางเลือก)'],
   ['1.22.0', 'ฐานข้อมูลกลาง Supabase: บัญชีครู/กรรมการด้วยอีเมล+รหัสผ่าน · บันทึกผลแบบ atomic · อัปเดตสดสำหรับผู้เข้าสู่ระบบ · ผู้ชมดึงข้อมูลทุก 15 วินาที · ยืนยันผลด้วยรหัสผ่าน'],
   ['1.21.7', 'นำเข้าข้อมูลสำรองขึ้นฐานข้อมูลกลาง: ไม่ส่งบัญชีและ PIN ของโหมดทดลองขึ้นไป'],
@@ -886,8 +887,15 @@ const CHANGELOG = [
 ];
 const CONFIG = {
   supabase: null, /* เช่น { url: 'https://xxxx.supabase.co', anonKey: 'eyJ...' } */
-  firebase: null,
-  adminEmails: []
+  firebase: {
+    apiKey: 'AIzaSyCUfxCzKqRSGqAkb37YtIlPHoRpSflnhLY',
+    authDomain: 'sportday-7f878.firebaseapp.com',
+    projectId: 'sportday-7f878',
+    storageBucket: 'sportday-7f878.firebasestorage.app',
+    messagingSenderId: '440212954892',
+    appId: '1:440212954892:web:b65116470913d3c018f329'
+  },
+  adminEmails: ['sha256:35581b06dabc1fafe1eb2cef8f6b024ff6b3239bfb186a92ea3dd1b27005695f'] /* ใส่อีเมลตรง ๆ หรือ 'sha256:<hex>' เพื่อไม่ให้อีเมลปรากฏในหน้าเว็บสาธารณะ */
 };
 /* ===================== ค่าคงที่ ===================== */
 const COLORS = [
@@ -1400,11 +1408,17 @@ async function initData() {
     if (col === 'meta') updateWrite();
     render(); if (col === 'events') flush();
   }, e => { clearTimeout(timer); toast('อ่านข้อมูลไม่ได้: ตรวจสอบ Firestore rules'); }));
-  auth.onAuthStateChanged(u => {
+  auth.onAuthStateChanged(async u => {
     ME.id = u?.email ? u.email.toLowerCase() : null; ME.name = (S.meta.roles || {})[ME.id]?.name || u?.displayName || ''; if (ME.id) NAMES[ME.id] = ME.name;
-    ME.owner = !!ME.id && (CONFIG.adminEmails || []).map(x => String(x).toLowerCase()).includes(ME.id);
+    ME.owner = await isAdminEmail(ME.id);
     updateWrite(true); render();
   });
+}
+async function isAdminEmail(id) {
+  if (!id) return false; const L = (CONFIG.adminEmails || []).map(x => String(x).trim().toLowerCase());
+  if (L.includes(id)) return true; if (!L.some(x => x.startsWith('sha256:'))) return false;
+  try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(id)); const h = [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+    return L.includes('sha256:' + h); } catch (e) { return false; }
 }
 async function signIn() { if (sb) { openSbLogin(); return; } try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch (e) { if (e?.code !== 'auth/popup-closed-by-user') toast('เข้าสู่ระบบไม่สำเร็จ: ' + (e?.code || '')); } }
 async function signOut() { if (sb) { await sb.auth.signOut(); editOn = false; sbClearPrivate(); return; } await auth.signOut(); editOn = false; }
