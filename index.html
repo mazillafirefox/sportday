@@ -637,6 +637,7 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .ss.cur{background:#FFF0F2;border-color:#F3B8BE;color:var(--live)}.ss.cur::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--live);margin-left:4px;align-self:center;animation:liveblink 1.4s infinite}
 .mrow.compact .ssrow{grid-column:2}.tvlive .ss{font-size:15px}
 .qwarn{border:1px solid #F1C38A;background:#FFF8EC;border-radius:12px;padding:10px 12px;margin:8px 0;color:#7A4A00}.qwarn>b{display:block;margin-bottom:4px}.qwarn p{margin:6px 0 4px}
+.btn.cib.ok{background:#E8F7EE;border-color:#7BC79A;color:#17703F;font-weight:600}.btn.cib.part{background:#FFF6E6;border-color:#F1C38A;color:#9A5A00}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -803,8 +804,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.8', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.20.9', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.20.9', 'ปุ่มเช็คชื่อในตารางเปลี่ยนสีตามการรายงานตัว: ✓ เช็คชื่อครบ (เขียว) · เช็คชื่อ 1/2 ทีม (ส้ม)'],
   ['1.20.8', 'เริ่มแข่งไม่ได้ถ้าคู่ที่กำหนดก่อนหน้าที่สนามเดียวกันยังไม่ได้แข่ง (ผู้ดูแลยืนยันข้ามลำดับได้) · คะแนนรายเซตใช้ #1 #2 #3'],
   ['1.20.7', 'กีฬาที่แข่งเป็นเซต แสดงคะแนนรายเซตระหว่างแข่ง (ตาราง แผนที่สนาม การ์ดสนาม จอประกาศผล)'],
   ['1.20.6', 'ส่งรายชื่อ: กรองชั้น/ห้อง และมุมมองตารางติ๊กเลือกหลายคนหรือเลือกทั้งหมด แล้วกดเพิ่มทีเดียว (เหมาะกับขบวนพาเรด/กองเชียร์)'],
@@ -1540,7 +1542,9 @@ function rowButtons(ev, m, st) {
   if (st.k === 'done') return `<button class="btn sm rowbtn ghost" data-res="${id}">แก้ผล</button>`;
   if (st.k === 'live') return `<button class="btn sm rowbtn" data-res="${id}">บันทึกผล</button>`;
   if (st.k === 'tbd') return '';
-  const ci = S.meta.requireCheckin === false ? '' : `<button class="btn sm rowbtn ghost" data-ci="${id}">เช็คชื่อ</button>`;
+  const ciA = st.A || ciInfo(ev, m, 'a'), ciB = st.B || ciInfo(ev, m, 'b'); const nOk = [ciA, ciB].filter(x => x.ok).length; const any = [ciA, ciB].some(x => x.n || x.manual);
+  const ciT = nOk === 2 ? 'ทั้งสองทีมรายงานตัวครบแล้ว' : nOk === 1 || any ? `รายงานตัวแล้ว ${[ciA, ciB].map(x => x.manual ? 'ครบ' : x.n + '/' + x.need).join(' · ')}` : 'ยังไม่มีใครรายงานตัว';
+  const ci = S.meta.requireCheckin === false ? '' : `<button class="btn sm rowbtn ghost cib${nOk === 2 ? ' ok' : nOk || any ? ' part' : ''}" data-ci="${id}" title="${ciT}">${nOk === 2 ? '✓ เช็คชื่อครบ' : nOk || any ? `เช็คชื่อ ${nOk}/2 ทีม` : 'เช็คชื่อ'}</button>`;
   if (st.k === 'forfeit') return `${ci}<button class="btn sm rowbtn startb notready" data-start="${id}">เริ่มแข่ง</button><button class="btn sm rowbtn forf" data-forf="${id}">ปรับแพ้</button>`;
   const v = venueOf(ev, m); const q = v ? earlierPending(v, ev, m) : []; const qBlock = q.length && liveAtVenue(v, ev.id, m.id).length + q.length >= courtsOf(v);
   return `${ci}<button class="btn sm rowbtn startb${st.both && !qBlock ? '' : ' notready'}" data-start="${id}"${qBlock ? ` title="รอคู่ ${q[0].m.time} น. ที่สนามนี้แข่งก่อน"` : ''}>เริ่มแข่ง</button>`;
