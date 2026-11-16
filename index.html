@@ -621,6 +621,10 @@ body.tvmode{min-height:100vh}
 .cigrp.now{border:1px solid #BFD0FF;background:#F7F9FF;border-radius:14px;padding:8px}.cigrp.now .cih{color:var(--blue-d)}
 details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.cih::before{content:"▸";color:var(--muted)}details.cigrp[open]>summary.cih::before{content:"▾"}
 @media (max-width:720px){.cirow,.cirow.ed{grid-template-columns:62px 1fr}.cirow .stc{grid-column:1/-1;justify-content:flex-start;max-width:none}.cirow .rbtns{grid-column:1/-1;justify-content:flex-start}}
+.prow.click .plink,.plink{color:var(--blue-d);text-decoration:underline;text-decoration-color:rgba(46,91,255,.3);text-underline-offset:3px}.prow.click:hover .plink{text-decoration-color:var(--blue)}
+.athevs{display:flex;flex-direction:column;gap:6px}.athev{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.athev.clash{border-color:#F1C38A;background:#FFF8EC}@media(max-width:640px){.athev{grid-template-columns:1fr auto}.athev .btn{grid-column:1/-1;justify-self:start}}
+.rline.focus{background:#FFF6D6;border-radius:10px;box-shadow:0 0 0 2px #F1C38A}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -787,8 +791,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.3', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.20.4', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.20.4', 'ตารางนักกีฬาคณะสี: กดชื่อเพื่อดูข้อมูลนักกีฬา (รายการที่ลง สถานะ เวลาชน) และไปแก้รายชื่อของรายการนั้นได้ทันที'],
   ['1.20.3', 'หน้ารายงานตัว: แบ่งกลุ่ม ต้องรายงานตัวตอนนี้ / ใกล้ถึงเวลา / กำลังแข่ง / ภายหลัง / จบแล้ว พร้อมไฮไลต์นัดถัดไปและจบแล้ว'],
   ['1.20.2', 'เวลาชนนับจากเวลาแข่งจริงของแต่ละนัด · คนที่เวลาชนกับรายการนี้เป็นข้อผิดพลาด ส่งรายชื่อไม่ได้ (ทุกวิธี: เลือก พิมพ์ วางจาก Excel) · เวลาชนระหว่างรายการอื่นแสดงเป็นข้อมูล ไม่บล็อกรายการนี้'],
   ['1.20.1', 'แถวตาราง: ไฮไลต์นัดถัดไป/จบแล้ว เหมือนกันทั้งโหมดดูและแก้ไข · รายชื่อที่เลือกจากรายชื่อนักเรียนแก้ได้แค่เบอร์ · รายงานตัวต้องเลือกนักกีฬาก่อนบันทึก · ปรับแพ้ต้องยืนยัน PIN ทุกครั้ง และยกเลิกได้ · จัดหน้าตารางเหรียญใหม่'],
@@ -2076,7 +2081,7 @@ function vRegister() {
   <div class="two"><section class="card"><h2>สถานะการส่งรายชื่อคณะ${COLORS[c].n}</h2>${statusBar}${urgBox}<div class="reglist">${sum}</div></section>
   <section class="card"><h2>นักกีฬาคณะ${COLORS[c].n} <small class="muted">${people.length} คน</small></h2>
     ${flagged.length ? `<p class="warn">${flagged.length} คนลงเกินจำนวนที่กติกากำหนด</p>` : ''}${nClash ? `<p class="warn">${nClash} คนมีนัดแข่งเวลาทับกัน (นัดถัดไปเริ่มก่อนนัดก่อนหน้าจบ หรือห่างไม่ถึง ${S.meta.clashMin ?? 30} นาที) รายการที่เกี่ยวข้องขึ้นสถานะ “ต้องแก้” · ดูรายละเอียดที่ “ค้นหานักกีฬา”</p>` : ''}
-    <div class="plist">${people.map(p => { const bad = chkOn('max') && (p.sports.size > (S.meta.maxSports ?? 2) || p.ath.size > (S.meta.maxAthletics ?? 2)); return `<div class="prow${bad ? ' bad' : ''}"><span>${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="errt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="muted sm">${p.evs.map(id => esc(S.events[id] ? sportName(S.events[id].sport) : '')).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span></div>`; }).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
+    <div class="plist">${people.map(p => { const bad = chkOn('max') && (p.sports.size > (S.meta.maxSports ?? 2) || p.ath.size > (S.meta.maxAthletics ?? 2)); return `<div class="prow click${bad ? ' bad' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูข้อมูลนักกีฬาและแก้ไขการส่งรายชื่อ"><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="errt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="muted sm">${p.evs.map(id => esc(S.events[id] ? sportName(S.events[id].sport) : '')).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span></div>`; }).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
     <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
   <section class="card"><h2>ภาพรวมการส่งรายชื่อทุกคณะสี</h2><p class="muted sm">ส่งครบ / รายการที่คณะสีนั้นลงแข่ง (ไม่นับรายการที่ไม่ได้อยู่ในสาย)</p>${matrix}</section>`;
 }
@@ -2276,6 +2281,28 @@ function openAddStudent() {
 }
 
 /* ---------- ค้นหานักกีฬา ---------- */
+/* ข้อมูลนักกีฬาหนึ่งคน: รายการที่ลง สถานะ เวลาชน นัดที่รอแข่ง · กดไปแก้รายชื่อของรายการนั้น */
+function openAthlete(c, key) {
+  const a = athleteIndex(c)[key]; if (!a) { toast('ไม่พบนักกีฬาคนนี้แล้ว'); return; }
+  const sched = athleteSchedule(c); const items = (sched[key] || []).slice().sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time)); const cl = clashesOf(items);
+  const clE = new Set(cl.flatMap(([x, y]) => [x.eid, y.eid])); const B = bannedSet(); const ban = isBanned(c, a, B); const can = canRoster(c);
+  const maxS = S.meta.maxSports ?? 2, maxA = S.meta.maxAthletics ?? 2; const overS = chkOn('max') && a.sports.size > maxS, overA = chkOn('max') && a.ath.size > maxA;
+  const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id));
+  const row = ev => { const r = rosterOf(ev.id, c); const p = (r.players || []).find(x => pkey(x) === key) || {}; const s = regState(ev, c); const [t, cls] = REG_ST[s.k];
+    const nx = items.find(i => i.eid === ev.id);
+    return `<div class="athev${clE.has(ev.id) ? ' clash' : ''}"><div><b>${sIcon(ev.sport, 'sm')}${esc(evTitle(ev))}</b>${p.num ? ` <small class="muted">เบอร์ ${esc(p.num)}</small>` : ''}
+      <div class="muted sm">${nx ? `แข่ง ${fmtDate(nx.date)} ${nx.time} น.${nx.venue ? ' · ' + esc(nx.venue) : ''}` : ev.date ? `${fmtDate(ev.date)} ${esc(ev.time || '')}` : 'ยังไม่มีนัดที่รอแข่ง'}${clE.has(ev.id) ? ' · <b class="warnt">เวลาชน</b>' : ''}</div></div>
+      <span class="pill ${cls}">${r.submitted ? 'ส่งแล้ว' : 'ร่าง'}${s.k === 'bad' ? ' · ต้องแก้' : ''}</span>
+      <button class="btn sm ${clE.has(ev.id) ? '' : 'ghost'}" data-athed="${ev.id}~${c}~${esc(key)}">${can ? 'แก้ไขรายชื่อ' : 'ดูรายชื่อ'}</button></div>`; };
+  modal(`<div class="dlg wide"><div class="maphead"><div><h3>${esc(a.name)}</h3><p class="muted sm">ชั้น ${esc(a.cls)} · ลง ${evs.length} รายการ · กีฬา ${a.sports.size}/${maxS} ชนิด · กรีฑา ${a.ath.size}/${maxA} ประเภท</p></div>${chip(c)}</div>
+    ${ban ? '<p class="warn">ถูกตัดสิทธิ์ทุกรายการตามข้อ 6</p>' : ''}${overS ? `<p class="warn">ลงกีฬาเกิน ${maxS} ชนิด (${[...a.sports].map(sportName).join(', ')}) ต้องเอาออกจากบางรายการ</p>` : ''}${overA ? `<p class="warn">ลงกรีฑาเกิน ${maxA} ประเภท</p>` : ''}
+    ${cl.map(([p, q]) => `<p class="warn">เวลาชน ${fmtDate(p.date)}: ${p.time} ${esc(p.label)} กับ ${q.time} ${esc(q.label)} — เปลี่ยนตัวในรายการใดรายการหนึ่ง</p>`).join('')}
+    <h4 class="subh">รายการที่ส่งชื่อ</h4><div class="athevs">${evs.map(row).join('')}</div>
+    ${items.length ? `<h4 class="subh">นัดที่รอแข่ง</h4>${items.map(i => `<div class="feed sm"><span class="fl num">${fmtDate(i.date)} ${i.time}</span><span class="muted sm">${esc(i.label)}${i.venue ? ' · ' + esc(i.venue) : ''}</span></div>`).join('')}` : ''}
+    <div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`);
+  $('#modal').onclick = e => { const b = e.target.closest('[data-athed]'); if (!b) return; e.stopPropagation(); const [eid, cc, ...k] = b.dataset.athed.split('~'); closeModal(); resetModalHandlers(); UI.regColor = +cc;
+    if (location.hash !== '#register') { location.hash = '#register'; setTimeout(() => openRoster(eid, k.join('~')), 120); } else { render(); openRoster(eid, k.join('~')); } };
+}
 function vAthletes() {
   return `<section class="hero"><h1>ค้นหานักกีฬา</h1><p class="muted">พิมพ์ชื่อหรือห้อง (เช่น 3/6) เพื่อดูรายการที่ลง นัดถัดไป ใบเหลือง/แดง และเวลาที่ชนกัน</p></section>
   <div class="filters"><label class="fld grow"><span class="vh">ค้นหา</span>${qbox('aq', UI.q, 'ชื่อ หรือ ห้อง เช่น สมชาย / 3/6')}</label>
@@ -2296,7 +2323,7 @@ function athleteResults() {
   });
   if (!q && !UI.onlyClash) return `<p class="muted">พบนักกีฬาที่ส่งชื่อแล้ว ${out.length} คน พิมพ์เพื่อค้นหา</p>`;
   if (!out.length) return '<p class="muted">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>';
-  return `<div class="athgrid">${out.slice(0, 60).map(x => `<section class="card ath${x.cl.length || x.ban ? ' flag' : ''}"><div class="maphead"><div><h2>${esc(x.a.name)}</h2><p class="muted sm">ชั้น ${esc(x.a.cls)} · ${[...new Set(x.a.evs.map(id => S.events[id] ? evTitle({ id, ...S.events[id] }) : ''))].map(esc).join(', ')}</p></div>${chip(x.c)}</div>
+  return `<div class="athgrid">${out.slice(0, 60).map(x => `<section class="card ath${x.cl.length || x.ban ? ' flag' : ''}"><div class="maphead"><div><h2><a href="#" class="plink" data-ath="${x.c}~${esc(pkey(x.a))}">${esc(x.a.name)}</a></h2><p class="muted sm">ชั้น ${esc(x.a.cls)} · ${[...new Set(x.a.evs.map(id => S.events[id] ? evTitle({ id, ...S.events[id] }) : ''))].map(esc).join(', ')}</p></div>${chip(x.c)}</div>
     ${x.ban ? '<p class="warn">ถูกตัดสิทธิ์ทุกรายการตามข้อ 6</p>' : ''}
     ${x.cl.map(([p, q]) => `<p class="warn">เวลาชน ${fmtDate(p.date)}: ${p.time} ${esc(p.label)} กับ ${q.time} ${esc(q.label)}</p>`).join('')}
     ${x.items.length ? x.items.slice(0, 6).map(i => `<div class="feed sm"><span class="fl num">${fmtDate(i.date)} ${i.time}</span><span class="muted sm">${esc(i.label)}${i.venue ? ' · ' + esc(i.venue) : ''}</span></div>`).join('') : '<p class="muted sm">ไม่มีนัดที่รอแข่ง</p>'}
@@ -3001,7 +3028,7 @@ function openRound(eid, i) {
 }
 
 /* ---- roster editor ---- */
-function openRoster(eid) {
+function openRoster(eid, focusKey) {
   const ev = evById(eid); const c = UI.regColor; const r = clone(rosterOf(eid, c)); r.players = r.players || []; UI.pickq = '';
   const sched = athleteSchedule(c); const ro = !canRoster(c); const gendered = ev.gender === 'ชาย' || ev.gender === 'หญิง';
   const draw = () => {
@@ -3017,7 +3044,7 @@ function openRoster(eid) {
       <p class="muted sm">ส่งได้ไม่เกิน ${max} คน · ตัวจริง ${starters(ev)} คน${ev.age ? ` · รุ่น ${ev.age} ปี รับ ม.${AGES()[ev.age]?.join(', ม.')}` : ''}${r.submitted ? ` · <b class="okt">ส่งแล้ว</b>${r.submittedBy ? ' โดย ' + esc(nameOf(r.submittedBy)) : ''}` : r.by ? ` · แก้ล่าสุดโดย ${esc(nameOf(r.by))}` : ''}</p>
       ${max && r.players.length > max ? `<p class="warn">มี ${r.players.length} คน เกินกำหนด ${max} คน</p>` : ''}
       ${ro ? '<p class="muted sm">ดูได้อย่างเดียว เฉพาะครูคณะสีนี้หรือผู้ดูแลที่แก้ไขได้</p>' : ''}
-      ${r.players.some(p => p.sid || p.fromList) && !lock ? '<p class="muted sm">🔒 คนที่เลือกจากรายชื่อนักเรียน แก้ได้เฉพาะเบอร์เสื้อ ถ้าเลือกผิดคนให้กด × แล้วเลือกใหม่</p>' : ''}<div class="rtable">${r.players.map((p, i) => `<div class="rline${p.sid || p.fromList ? ' fromlist' : ''}"><span class="num muted">${i + 1}</span><input data-pf="${i}|name" value="${esc(p.name)}" placeholder="ชื่อ-สกุล" aria-label="ชื่อ-สกุล" ${lock ? 'disabled' : p.sid || p.fromList ? 'readonly tabindex="-1" title="ข้อมูลจากรายชื่อนักเรียน แก้ไม่ได้ ถ้าเลือกผิดคนให้ลบแล้วเลือกใหม่"' : ''}><input data-pf="${i}|cls" class="num" value="${esc(p.cls)}" placeholder="ชั้น 3/6" aria-label="ชั้น" ${lock ? 'disabled' : p.sid || p.fromList ? 'readonly tabindex="-1"' : ''}><input data-pf="${i}|num" class="num" value="${esc(p.num ?? '')}" placeholder="เบอร์" aria-label="เบอร์เสื้อ" ${lock ? 'disabled' : ''}>
+      ${r.players.some(p => p.sid || p.fromList) && !lock ? '<p class="muted sm">🔒 คนที่เลือกจากรายชื่อนักเรียน แก้ได้เฉพาะเบอร์เสื้อ ถ้าเลือกผิดคนให้กด × แล้วเลือกใหม่</p>' : ''}<div class="rtable">${r.players.map((p, i) => `<div class="rline${p.sid || p.fromList ? ' fromlist' : ''}${focusKey && pkey(p) === focusKey ? ' focus' : ''}"><span class="num muted">${i + 1}</span><input data-pf="${i}|name" value="${esc(p.name)}" placeholder="ชื่อ-สกุล" aria-label="ชื่อ-สกุล" ${lock ? 'disabled' : p.sid || p.fromList ? 'readonly tabindex="-1" title="ข้อมูลจากรายชื่อนักเรียน แก้ไม่ได้ ถ้าเลือกผิดคนให้ลบแล้วเลือกใหม่"' : ''}><input data-pf="${i}|cls" class="num" value="${esc(p.cls)}" placeholder="ชั้น 3/6" aria-label="ชั้น" ${lock ? 'disabled' : p.sid || p.fromList ? 'readonly tabindex="-1"' : ''}><input data-pf="${i}|num" class="num" value="${esc(p.num ?? '')}" placeholder="เบอร์" aria-label="เบอร์เสื้อ" ${lock ? 'disabled' : ''}>
         <select data-pf="${i}|sex" aria-label="เพศ" ${lock || p.sid || p.fromList ? 'disabled' : ''}><option value="">เพศ</option><option ${p.sex === 'ชาย' ? 'selected' : ''}>ชาย</option><option ${p.sex === 'หญิง' ? 'selected' : ''}>หญิง</option></select>
         ${lock ? '<span></span>' : `<button class="x" data-prm="${i}" aria-label="ลบแถว">×</button>`}${errsAll[i].length ? `<small class="errt">${errsAll[i].map(esc).join(' · ')}</small>` : ''}${clashTxt(p)}</div>`).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
       ${lock || !allStudents().length ? '' : `<div class="picker"><label class="fld"><span>เลือกจากรายชื่อนักเรียนคณะ${COLORS[c].n}${ev.age ? ` (ม.${AGES()[ev.age].join(', ')})` : ''}${gendered ? ' · ' + ev.gender : ''}</span>${qbox('stpick', UI.pickq, 'พิมพ์ชื่อ ห้อง หรือเลขประจำตัว')}</label><div id="pickhits">${pickHits()}</div></div>`}
@@ -3056,7 +3083,7 @@ function openRoster(eid) {
   }
 
   const save = (sub) => { r.players = r.players.filter(p => normName(p.name) || p.cls); r.submitted = !!sub; r.ev = eid; r.c = c; r.at = Date.now(); r.by = ME.id || ''; if (sub) r.submittedBy = ME.id || ''; if (sub) r.submittedAt = Date.now(); put('rosters', rosterId(eid, c), clone(r)); };
-  $('#modal').hidden = false; draw();
+  $('#modal').hidden = false; draw(); if (focusKey) setTimeout(() => $('#modal .rline.focus')?.scrollIntoView({ block: 'center' }), 80);
   function clashSplit(p) { const cl = clashesOf((sched[pkey(p)] || []).concat(evItems(p))); return { mine: cl.filter(([x, y]) => x.eid === eid || y.eid === eid), other: cl.filter(([x, y]) => x.eid !== eid && y.eid !== eid) }; }
   function clLine([x, y]) { return `${fmtDate(x.date)} ${x.time} ${esc(x.label)} กับ ${y.time} ${esc(y.label)}`; }
   function clashTxt(p) { const { other } = clashSplit(p); return other.length ? `<small class="muted sm clt">ⓘ ชนกันระหว่างรายการอื่นของคนนี้ (ไม่เกี่ยวกับรายการนี้): ${other.slice(0, 2).map(clLine).join(' · ')} — แก้ที่รายการนั้น</small>` : ''; }
@@ -3567,7 +3594,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -3588,6 +3615,7 @@ document.addEventListener('click', e => {
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
   else if (d.regc) { UI.regColor = +d.regc; render(); }
   else if (d.roster) openRoster(d.roster);
+  else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); }
   else if (d.ci) { const [a, b] = d.ci.split('|'); openCheckin(a, b); }
   else if (d.cie) openCheckin(d.cie);
   else if (d.adsport) { setSport(d.adsport); render(); }
