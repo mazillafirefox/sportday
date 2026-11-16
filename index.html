@@ -631,6 +631,11 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .pktable tbody tr:not(.blocked){cursor:pointer}.pktable tbody tr:not(.blocked):hover td{background:#F5F8FF}.pktable tr.on td{background:#EEF3FF}.pktable tr.blocked td{color:#9AA1B2}.pktable tr.blocked .why{color:var(--bad)}.pktable .why{font-size:11px}
 .pkfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}.pkfoot p{margin:0}.pkfoot .grow{flex:1}
 @media(max-width:640px){.pkview{margin-left:0}.pktable td:nth-child(5),.pktable th:nth-child(5){display:none}}
+.setstrip{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center}.vtl .setstrip,.mbub .setstrip{margin-top:2px}
+.ss{display:inline-flex;align-items:baseline;gap:2px;font:600 12px var(--display);background:#F1F3F7;border:1px solid var(--line);border-radius:7px;padding:1px 6px;color:#5B6475;font-variant-numeric:tabular-nums}
+.ss small{font:500 10px var(--body);color:var(--muted);margin-right:3px}.ss b{font-weight:600}.ss b.w{color:var(--blue-d);font-weight:800}
+.ss.cur{background:#FFF0F2;border-color:#F3B8BE;color:var(--live)}.ss.cur::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--live);margin-left:4px;align-self:center;animation:liveblink 1.4s infinite}
+.mrow.compact .ssrow{grid-column:2}.tvlive .ss{font-size:15px}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -797,8 +802,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.6', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.20.7', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.20.7', 'กีฬาที่แข่งเป็นเซต แสดงคะแนนรายเซตระหว่างแข่ง (ตาราง แผนที่สนาม การ์ดสนาม จอประกาศผล)'],
   ['1.20.6', 'ส่งรายชื่อ: กรองชั้น/ห้อง และมุมมองตารางติ๊กเลือกหลายคนหรือเลือกทั้งหมด แล้วกดเพิ่มทีเดียว (เหมาะกับขบวนพาเรด/กองเชียร์)'],
   ['1.20.5', 'หน้ารายงานตัว: เลิกใช้ป้าย “ถัดไป” รายสนาม (ใช้กลุ่มความเร่งด่วนแทน) · ป้าย “เปิดรายงานตัว · แข่งในอีก X นาที”'],
   ['1.20.4', 'ตารางนักกีฬาคณะสี: กดชื่อเพื่อดูข้อมูลนักกีฬา (รายการที่ลง สถานะ เวลาชน) และไปแก้รายชื่อของรายการนั้นได้ทันที'],
@@ -990,6 +996,12 @@ function setErr(SET, i, x, final) {
   if (final) { const won = !SET.deuce ? hi === pts : hi === pts && hi - lo >= 2 || hi > pts && (hi - lo === 2 || hi === cap) || hi === cap && cap;
     if (!won) return `เซต ${i + 1}: ${p}–${q} ยังไม่จบเซต (ต้องถึง ${pts} แต้ม${SET.deuce ? ' และห่าง 2 แต้ม' : ''}${cap ? ` หรือถึง ${cap}` : ''})`; }
   return '';
+}
+/* คะแนนรายเซต: เซตที่จบแล้วเน้นฝั่งที่ชนะ · เซตที่กำลังแข่งมีจุดแดง */
+function setStrip(ev, m) {
+  const SET = setsOf(ev); if (!SET) return ''; const l = (m.sets || []).filter(x => x && (x[0] !== '' && x[0] != null || x[1] !== '' && x[1] != null)); if (!l.length) return '';
+  return `<span class="setstrip" title="คะแนนรายเซต">${l.map((x, i) => { const full = x[0] !== '' && x[1] !== '' && x[0] != null && x[1] != null; const fin = full && !setErr(SET, i, x, true); const cur = !sideWin(m) && i === l.length - 1 && !fin;
+    return `<span class="ss${cur ? ' cur' : ''}"><small>ซ${i + 1}</small><b class="${fin && +x[0] > +x[1] ? 'w' : ''}">${esc(x[0] || 0)}</b>–<b class="${fin && +x[1] > +x[0] ? 'w' : ''}">${esc(x[1] || 0)}</b></span>`; }).join('')}</span>`;
 }
 const setNote = sets => (sets || []).filter(x => x && x[0] !== '' && x[1] !== '' && x[0] != null && x[1] != null).map(x => `${x[0]}-${x[1]}`).join(', ');
 const days = () => S.meta.days || [];
@@ -1577,7 +1589,7 @@ function mapBox(info, sel, o = {}) {
   const s = info.find(x => x.v.name === sel && x.p);
   const bub = s && o.bubble ? (() => { const d = D(s.p); const x = s.n.live[0] || s.n.late[0] || s.n.next; const t = x ? teamsOf(x.ev, x.m) : null;
     return `<div class="mbub${d[1] < 45 ? ' below' : ''}${d[0] > 70 ? ' left' : ''}${d[0] < 25 ? ' right' : ''}" style="left:${d[0]}%;top:${d[1]}%"><div class="mbh"><span class="spill ${s.n.st}">${ST_N[s.n.st]}</span><b>${esc(s.v.name)}</b></div>
-      ${x ? `<div class="muted sm">${x === s.n.live[0] ? '' : (x === s.n.next ? 'ถัดไป ' : 'กำหนด ') + x.m.time + ' · '}${esc(sportName(x.ev.sport))} ${esc(x.ev.label)}</div><div class="mbs">${chip(t.a, { ph: slotLabel(x.ev, x.m.a) })}<b class="num">${x === s.n.live[0] && x.m.sa !== '' && x.m.sa != null ? `${esc(x.m.sa)} – ${esc(x.m.sb)}` : 'VS'}</b>${chip(t.b, { ph: slotLabel(x.ev, x.m.b) })}</div>${s.n.live.length + s.n.liveEv.length > 1 ? `<div class="muted sm">+ อีก ${s.n.live.length + s.n.liveEv.length - 1} คอร์ท</div>` : ''}`
+      ${x ? `<div class="muted sm">${x === s.n.live[0] ? '' : (x === s.n.next ? 'ถัดไป ' : 'กำหนด ') + x.m.time + ' · '}${esc(sportName(x.ev.sport))} ${esc(x.ev.label)}</div><div class="mbs">${chip(t.a, { ph: slotLabel(x.ev, x.m.a) })}<b class="num">${x === s.n.live[0] && x.m.sa !== '' && x.m.sa != null ? `${esc(x.m.sa)} – ${esc(x.m.sb)}` : 'VS'}</b>${chip(t.b, { ph: slotLabel(x.ev, x.m.b) })}</div>${x === s.n.live[0] ? setStrip(x.ev, x.m) : ''}${s.n.live.length + s.n.liveEv.length > 1 ? `<div class="muted sm">+ อีก ${s.n.live.length + s.n.liveEv.length - 1} คอร์ท</div>` : ''}`
         : s.n.liveEv[0] ? `<div class="muted sm">${esc(evTitle(s.n.liveEv[0]))}</div>` : '<div class="muted sm">ไม่มีการแข่งขันตอนนี้</div>'}</div>`; })() : '';
   const svg = SCHOOL_IMG_URL ? `<img class="smimg ${ori}" src="${SCHOOL_IMG_URL}" alt="แผนผังโรงเรียนสิงห์สมุทร" draggable="false">` : '';
   return `<div class="smap ${ori}${o.pick ? ' picking' : ''}"><div class="smapin ${ori}" ${o.pick ? 'id="pickmap"' : 'data-mapbg="1"'} data-ori="${ori}">${svg}
@@ -1633,7 +1645,7 @@ function liveBoard(big) {
     const cur = l.filter(x => isLive(x.m)).slice(0, courtsOf(v)); const nxt = l.find(x => !isLive(x.m));
     if (!cur.length && !nxt) return null;
     const line = (x, live) => { const t = teamsOf(x.ev, x.m); const sc = live && (x.m.sa || x.m.sb) ? `<b class="num lvs">${esc(x.m.sa || 0)}–${esc(x.m.sb || 0)}</b>` : '<span class="muted">VS</span>';
-      return `<div class="vtl"${tip('match', x.ev.id, x.m.id)}><div class="vte">${sIcon(x.ev.sport, 'sm')}<b>${esc(sportName(x.ev.sport))}</b> ${esc(x.ev.label)}</div><div class="vtm">${chip(t.a, { ph: slotLabel(x.ev, x.m.a) })}${sc}${chip(t.b, { ph: slotLabel(x.ev, x.m.b) })}</div></div>`; };
+      return `<div class="vtl"${tip('match', x.ev.id, x.m.id)}><div class="vte">${sIcon(x.ev.sport, 'sm')}<b>${esc(sportName(x.ev.sport))}</b> ${esc(x.ev.label)}</div><div class="vtm">${chip(t.a, { ph: slotLabel(x.ev, x.m.a) })}${sc}${chip(t.b, { ph: slotLabel(x.ev, x.m.b) })}</div>${live ? setStrip(x.ev, x.m) : ''}</div>`; };
     const nk = nxt ? mState(nxt.ev, nxt.m).k : ''; const late = ['delay', 'hold', 'forfeit', 'waiting'].includes(nk);
     const head = cur.length ? `<span class="vts live"><i></i>กำลังแข่ง</span>` : `<span class="vts next">ถัดไป ${esc(nxt.m.time)} น.</span>${short[nk] ? `<span class="vts ${late ? 'late' : 'soft'}">${short[nk]}</span>` : ''}`;
     return { live: cur.length > 0, t: cur.length ? '' : nxt.m.time, html: `<div class="vtile${cur.length ? ' on' : ''}${late && !cur.length ? ' late' : ''}"><div class="vth"><span class="vtn">${esc(v)}</span>${head}</div>
@@ -1791,7 +1803,7 @@ function matchRow(ev, m, compact) {
   return `<div class="mrow${compact ? ' compact' : ''}${ed ? ' click' : ''}${ed && !compact ? ' ed' : ''} ${scls}${nx ? ' isnext' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}>
     <span class="tt num">${esc(m.time || '–')}</span>
     <span class="ml"${tip('match', ev.id, m.id)}>${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}${compact ? ' ' + nxp + shortPill(ev, m, st) : ''}<small> · คู่ ${m.no} ${esc(m.round || '')}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
-    <span class="vsline">${chip(t.a, { ph: slotLabel(ev, m.a), tip: slotTip(ev, m.a), win: s === 'a', lose: s === 'b' })}${score}${chip(t.b, { ph: slotLabel(ev, m.b), tip: slotTip(ev, m.b), win: s === 'b', lose: s === 'a' })}${flags}</span>${compact ? '' : `<span class="stc">${nxp}${statePill(ev, m, st)}</span>`}${btn ? `<span class="rbtns">${btn}</span>` : ''}</div>`;
+    <span class="vsline">${chip(t.a, { ph: slotLabel(ev, m.a), tip: slotTip(ev, m.a), win: s === 'a', lose: s === 'b' })}${score}${chip(t.b, { ph: slotLabel(ev, m.b), tip: slotTip(ev, m.b), win: s === 'b', lose: s === 'a' })}${flags}${lv && !compact ? setStrip(ev, m) : ''}</span>${lv && compact && setStrip(ev, m) ? `<span class="ssrow">${setStrip(ev, m)}</span>` : ''}${compact ? '' : `<span class="stc">${nxp}${statePill(ev, m, st)}</span>`}${btn ? `<span class="rbtns">${btn}</span>` : ''}</div>`;
 }
 
 function vSchedule() {
