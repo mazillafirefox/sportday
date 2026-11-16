@@ -755,6 +755,7 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .athtbl table{margin:0}.athtbl thead th{position:sticky;top:0;background:#fff}
 .athtbl tr.fieldr td{background:#F4F8FF}
 .rdtbl select,.rdtbl input{min-width:0;width:100%}.rdlist{margin-top:8px;max-height:320px;overflow:auto}
+.rtop{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.rtop b{margin:0 4px 0 2px;font-size:13px}
 </style>
 </head>
 <body>
@@ -854,8 +855,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.11', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.12', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.12', 'รายการสะสมคะแนนแสดงแยกแถวละรอบ กรอกคะแนนทีละรอบ · แสดงในหน้าสนามแข่งขันตามวันของแต่ละรอบ'],
   ['1.22.11', 'รายการสะสมคะแนน (Free Fire): สถานะตามรอบของแต่ละวัน · ตั้งวันเวลาทุกรอบได้ในหน้าตั้งค่ารายการ'],
   ['1.22.10', 'เปลี่ยนชื่อปุ่มเป็น “จัดเวลากรีฑาอัตโนมัติ”'],
   ['1.22.9', 'ตรวจเวลาชนนับเวลารายรอบของรายการสะสมคะแนน (Free Fire) ทั้งสนามและนักกีฬา'],
@@ -2054,6 +2056,11 @@ function vSchedule() {
   const gsum = l => { const dn = l.filter(x => sideWin(x.m)); const tot = dn.reduce((s, x) => s + (playedMin(x.m) || 0), 0); const lvn = l.filter(x => isLive(x.m)).length; return `${l.length} นัด · จบแล้ว ${dn.length}${lvn ? ` · กำลังแข่ง ${lvn}` : ''}${tot ? ` · รวมเวลาแข่ง ${fmtMin(tot)}` : ''}`; };
   let body = sportsList().filter(sp => groups[sp.id]).map(sp => `<section class="card bysport"><h2 class="sh">${sIcon(sp.id, 'tile')}${esc(sp.name)} <small class="muted">${gsum(groups[sp.id])}</small></h2>
     ${groups[sp.id].sort((a, b) => (a.m.time || '').localeCompare(b.m.time || '')).map(x => matchRow(x.ev, x.m)).join('')}</section>`).join('');
+  const rdRow = (e, i) => { const r = e.rounds[i]; const dn = !!e.res?.rounds?.[i]; const ed = editOn && canScore(e.sport);
+    return `<div class="mrow g2 click${ed ? ' ed' : ''}${dn ? ' isdone' : ''}" data-open="${e.id}" tabindex="0"><span class="tcol"><b class="tt num">${esc(r.time || '–')}</b>${dn ? '<span class="tst done">✓ มีคะแนน</span>' : ''}</span>
+      <span class="ml">${sIcon(e.sport, 'sm')}<b class="sname">${esc(sportName(e.sport))}</b> <b class="elab">${esc(e.label)} · ${esc(r.label)}</b><small>${i + 1}/${(e.rounds || []).length} รอบ · สะสมคะแนน${e.venue ? ' · ' + esc(e.venue) : ''}</small></span>
+      <span class="span3">${dn ? `<span class="rtop">${roundTop(e, i)}</span>` : '<span class="muted sm">ทุกคณะแข่งพร้อมกัน</span>'}</span><span class="ncol"></span>${ed ? `<span class="rbtns">${!dn && r.date > todayISO() ? `<button class="btn sm rowbtn ghost" disabled title="รอบนี้แข่ง ${esc(fmtDate(r.date, true))} กรอกคะแนนได้ในวันแข่ง">รอวันแข่ง</button>` : `<button class="btn sm rowbtn${dn ? ' ghost' : ''}" data-round="${e.id}|${i}">${dn ? 'แก้คะแนน' : 'กรอกคะแนน'}</button>`}</span>` : ''}</div>`; };
+  const evRows = e => { const rs = dayRounds(e, d); return rs.length ? rs.map(x => rdRow(e, x.i)).join('') : evRow(e); };
   const evRow = e => {
     const r = (e.rounds || []).filter(r => r.date === d).map(r => `${r.label} ${r.time}`).join(' · ');
     const m = medalsOf(e);
@@ -2068,13 +2075,16 @@ function vSchedule() {
     const NOW = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit']; const isT = d === todayStr(); const now = nowMin();
     const G = { live: [], now: [], soon: [], later: [], done: [] };
     ms.forEach(x => { const st = mState(x.ev, x.m); const k = st.k === 'done' ? 'done' : st.k === 'live' ? 'live' : NOW.includes(st.k) ? 'now' : isT && x.m.time && toMin(x.m.time) - now <= 60 ? 'soon' : 'later'; G[k].push({ t: x.m.time || '', h: matchRow(x.ev, x.m) }); });
-    others.forEach(e => { const t = evDayTime(e, d); const k = evDayDone(e, d) ? 'done' : evDayLive(e, d) ? 'live' : isT && t && toMin(t) - now <= 0 ? 'now' : isT && t && toMin(t) - now <= 60 ? 'soon' : 'later'; G[k].push({ t, h: evRow(e) }); });
+    const slot = t => isT && t && toMin(t) - now <= 0 ? 'now' : isT && t && toMin(t) - now <= 60 ? 'soon' : 'later';
+    others.forEach(e => { const rs = dayRounds(e, d);
+      if (rs.length) { rs.forEach(({ r, i }) => G[e.res?.rounds?.[i] ? 'done' : slot(r.time)].push({ t: r.time || '', h: rdRow(e, i) })); return; }
+      const t = evDayTime(e, d); const k = evDayDone(e, d) ? 'done' : evDayLive(e, d) ? 'live' : slot(t); G[k].push({ t, h: evRow(e) }); });
     const sec = (k, title, sub, open = true) => { const l = G[k].sort((p, q) => p.t.localeCompare(q.t)); if (!l.length) return '';
       const hd = `<span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small>`;
       return open ? `<section class="card stgrp ${k}"><h2 class="cih">${hd}</h2>${l.map(x => x.h).join('')}</section>` : `<details class="card stgrp ${k}"><summary class="cih">${hd}</summary>${l.map(x => x.h).join('')}</details>`; };
     body = isT ? sec('live', '● กำลังแข่ง · ต้องบันทึกผล', 'กด “บันทึกผล” เมื่อจบเกม') + sec('now', '🔔 ถึงเวลาแข่ง · รอเริ่ม', 'รายงานตัว/เริ่มแข่ง หรือปรับแพ้') + sec('soon', 'ใกล้ถึงเวลา', 'ภายใน 1 ชั่วโมง') + sec('later', 'ภายหลังวันนี้', '') + sec('done', '✓ จบแล้ว', '', false)
       : sec('live', '● กำลังแข่ง · ต้องบันทึกผล', '') + sec('now', 'ยังไม่จบ', '') + sec('soon', 'นัดในวันนั้น', '') + sec('later', d < todayStr() ? 'ยังไม่มีผล' : 'นัดในวันนั้น', '') + sec('done', '✓ จบแล้ว', '', d < todayStr());
-  } else if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(evRow).join('')}</section>`;
+  } else if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(evRows).join('')}</section>`;
   return `<section class="hero"><h1>โปรแกรมและผลการแข่งขัน</h1><p class="muted">${editOn ? 'แตะที่นัดเพื่อบันทึกผล ผู้ชนะจะถูกส่งเข้านัดถัดไปอัตโนมัติ' : 'เปิดโหมดแก้ไขเพื่อบันทึกผล (เฉพาะผู้มีสิทธิ์)'}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-day="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div>
   <button class="btn sm ghost" data-act="dlsched">ตารางแข่งทั้งหมด (CSV)</button><button class="btn sm ghost" data-act="sheets">ใบบันทึกผลกรรมการวันนี้ (พิมพ์)</button>
@@ -2976,16 +2986,18 @@ function venueSelect(id, sel, blank) {
 function vVenues() {
   const d = UI.vDay || (UI.vDay = defaultDay()); const vs = venuesList(); const adm = isAdmin() && editOn;
   const byV = {}; allMatches().filter(x => x.m.date === d).forEach(x => { const v = venueOf(x.ev, x.m) || 'ไม่ระบุสนาม'; (byV[v] = byV[v] || []).push(x); });
-  Object.entries(S.events).forEach(([id, e]) => { if (!(e.matches || []).length && e.date === d && e.venue) (byV[e.venue] = byV[e.venue] || []).push({ ev: { id, ...e }, m: null }); });
+  Object.entries(S.events).forEach(([id, e]) => { if ((e.matches || []).length || !e.venue) return; const ev = { id, ...e }; const rs = dayRounds(ev, d);
+    if (rs.length) rs.forEach(({ r, i }) => (byV[e.venue] = byV[e.venue] || []).push({ ev, m: null, rd: i, t: r.time || '' }));
+    else if (e.format !== 'points' && e.date === d) (byV[e.venue] = byV[e.venue] || []).push({ ev, m: null, t: e.time || '' }); });
   const names = [...new Set([...vs.map(v => v.name), ...Object.keys(byV)])];
   const cfs = isAdmin() ? venueConflicts() : []; const cfDay = cfs.filter(c => c.date === d);
   return `<section class="hero"><h1>สนามแข่งขัน</h1><p class="muted">ตารางการใช้สนามรายวัน สถานะกำลังแข่ง ล่าช้า และคู่ถัดไปของแต่ละสนาม${adm ? ' · โหมดแก้ไข: เพิ่ม/แก้ไข/ลบสนามได้' : ''}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-vday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div>${adm ? '<button class="btn sm" data-act="addvenue">+ เพิ่มสนาม</button>' : ''}</div>
-  ${conflictCard(cfDay, false)}<div class="vgrid">${names.map(n => { const v = vs.find(x => x.name === n) || { name: n, courts: 1 }; const l = (byV[n] || []).sort((a, b) => ((a.m?.time || a.ev.time) || '').localeCompare((b.m?.time || b.ev.time) || ''));
+  ${conflictCard(cfDay, false)}<div class="vgrid">${names.map(n => { const v = vs.find(x => x.name === n) || { name: n, courts: 1 }; const l = (byV[n] || []).sort((a, b) => ((a.m?.time || a.t) || '').localeCompare((b.m?.time || b.t) || ''));
     const lv = l.filter(x => x.m && isLive(x.m)).length; const dl = l.filter(x => x.m && ['delay', 'hold', 'waiting', 'forfeit'].includes(mState(x.ev, x.m).k)).length;
     return `<section class="card venue${lv ? ' haslive' : ''}${n === UI.vFocus ? ' focus' : ''}"><div class="maphead"><div class="mh"><span class="pin" aria-hidden="true"></span><div><h2>${esc(n)}</h2><p class="muted sm">${v.courts > 1 ? `${v.courts} คอร์ท/สนามย่อย · ` : ''}${l.length} รายการวันนี้${v.note ? ' · ' + esc(v.note) : ''}</p></div></div>
       <div class="actions m0">${lv ? LIVEB : ''}${dl ? `<span class="pill delayp">ล่าช้า ${dl}</span>` : ''}${cfDay.some(c => c.venue === n) ? '<span class="pill delayp" title="มีช่วงเวลาที่ใช้สนามชนกัน">⚠ ชนกัน</span>' : ''}${adm && vs.find(x => x.name === n) ? `<button class="btn sm ghost" data-editvenue="${esc(n)}">แก้ไข</button>` : ''}</div></div>
-      ${l.map(x => x.m ? matchRow(x.ev, x.m, true) : `<div class="mrow compact c2"><span class="tcol"><b class="tt num">${esc(x.ev.time || '–')}</b></span><span class="cbody"><span class="ml">${sIcon(x.ev.sport, 'sm')}<b>${esc(sportName(x.ev.sport))}</b> ${esc(x.ev.label)}<small>${esc(FORMATS[x.ev.format] || '')}</small></span></span></div>`).join('') || '<p class="muted sm">ว่างทั้งวัน</p>'}</section>`; }).join('')}</div>`;
+      ${l.map(x => x.m ? matchRow(x.ev, x.m, true) : `<div class="mrow compact c2 click${x.rd != null && x.ev.res?.rounds?.[x.rd] ? ' isdone' : ''}" data-open="${x.ev.id}"><span class="tcol"><b class="tt num">${esc(x.t || '–')}</b></span><span class="cbody"><span class="ml">${sIcon(x.ev.sport, 'sm')}<b>${esc(sportName(x.ev.sport))}</b> ${esc(x.ev.label)}${x.rd != null ? ' · ' + esc(x.ev.rounds[x.rd].label) : ''}<small>${x.rd != null ? (x.ev.res?.rounds?.[x.rd] ? '✓ มีคะแนนแล้ว' : 'ทุกคณะแข่งพร้อมกัน') : esc(FORMATS[x.ev.format] || '')}</small></span></span></div>`).join('') || '<p class="muted sm">ว่างทั้งวัน</p>'}</section>`; }).join('')}</div>`;
 }
 function openVenue(name) {
   const vs = clone(venuesList()); const v = name ? vs.find(x => x.name === name) : { name: '', courts: 1, note: '' };
@@ -3377,6 +3389,7 @@ function openJudge(eid, j) {
   }
 }
 function openRound(eid, i) {
+  { const e0 = evById(eid); const r0 = e0?.rounds?.[i]; if (r0 && r0.date && r0.date > todayISO() && !e0.res?.rounds?.[i]) { toast(`${r0.label} แข่ง ${fmtDate(r0.date, true)} กรอกคะแนนได้ในวันแข่ง`); return; } }
   if (needStart(eid, () => openRound(eid, i))) return;
   const ev = evById(eid); const row = ev.res?.rounds?.[i] || [];
   modal(`<form class="dlg" id="rf"><h3>${esc(evTitle(ev))} · ${esc(ev.rounds[i].label)}</h3><div class="ffin">${(ev.teams || []).map(c => `<label class="side">${chip(c)}<input id="r${c}" class="num" inputmode="decimal" value="${esc(row[c] ?? '')}"></label>`).join('')}</div>
@@ -3733,6 +3746,9 @@ function ptsDay(e, d) {
   const done = idx.filter(i => R[i]).length; const nx = idx.find(i => !R[i]);
   return { n: idx.length, done, all: done === idx.length, time: (nx != null ? e.rounds[nx].time : e.rounds[idx[0]].time) || '', nextLabel: nx != null ? e.rounds[nx].label : '' };
 }
+/* รอบของรายการสะสมคะแนนที่แข่งในวัน d (แสดงแยกแถวละรอบ) */
+function dayRounds(e, d) { return e.format === 'points' ? (e.rounds || []).map((r, i) => ({ r, i })).filter(x => x.r.date === d) : []; }
+function roundTop(e, i) { const row = e.res?.rounds?.[i]; if (!row) return ''; return (e.teams || []).map(c => ({ c, v: +row[c] || 0 })).sort((a, b) => b.v - a.v).slice(0, 3).map(x => `${chip(x.c)}<b class="num">${x.v}</b>`).join(' '); }
 function evDayDone(e, d) { const p = ptsDay(e, d); return p ? p.all : hasResults(e); }
 function evDayLive(e, d) { const p = ptsDay(e, d); return p ? p.done > 0 && !p.all : !!e.startedAt && !hasResults(e); }
 function evDayTime(e, d) { const p = ptsDay(e, d); return p ? p.time : (e.time || (e.rounds || []).find(r => r.date === d)?.time || ''); }
