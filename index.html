@@ -853,9 +853,11 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.8', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.10', APP_DATE = '2026-11-16';
 const CHANGELOG = [
-  ['1.22.8', 'เริ่มแข่งได้เฉพาะวันแข่ง · จัดเวลากรีฑาตามสูจิบัตร (ประเภทลานแข่งพร้อมลู่) · คู่ที่ยังไม่ทราบทีมไม่ขวางคู่ถัดไปที่สนามเดียวกัน'],
+  ['1.22.10', 'เปลี่ยนชื่อปุ่มเป็น “จัดเวลากรีฑาอัตโนมัติ”'],
+  ['1.22.9', 'ตรวจเวลาชนนับเวลารายรอบของรายการสะสมคะแนน (Free Fire) ทั้งสนามและนักกีฬา'],
+  ['1.22.8', 'เริ่มแข่งได้เฉพาะวันแข่ง · จัดเวลากรีฑาอัตโนมัติ (ประเภทลานแข่งพร้อมลู่) · คู่ที่ยังไม่ทราบทีมไม่ขวางคู่ถัดไปที่สนามเดียวกัน'],
   ['1.22.7', 'แก้คอลัมน์หน้ารายงานตัวเมื่อดูวันที่ยังไม่ถึงวันแข่ง'],
   ['1.22.6', 'รายงานตัวได้เฉพาะวันแข่ง (ก่อนถึงวันแข่งปุ่มเช็คชื่อปิดไว้)'],
   ['1.22.5', 'แก้รายชื่อนักกีฬา/นักเรียนไม่แสดงเมื่อเข้าสู่ระบบเสร็จก่อนโหลดข้อมูลชุดแรก'],
@@ -1265,6 +1267,7 @@ function occList(except) {
   const out = []; const sl = venueSlots();
   Object.entries(S.events).forEach(([id, e]) => { if (id === except) return; const ev = { id, ...e };
     if ((e.matches || []).length) e.matches.forEach(m => { const v = venueOf(e, m); if (v && m.date && m.time) out.push({ date: m.date, s: toMin(m.time), e: toMin(m.time) + durOf(e, v, sl), v, label: `${evTitle(ev)} คู่ ${m.no}`, at: m.time }); });
+    else if ((e.rounds || []).length) e.rounds.forEach(r => { if (r.date && r.time && e.venue) out.push({ date: r.date, s: toMin(r.time), e: toMin(r.time) + durOf(e, e.venue, sl), v: e.venue, label: `${evTitle(ev)} ${r.label}`, at: r.time }); });
     else if (e.date && e.time && e.venue) out.push({ date: e.date, s: toMin(e.time), e: toMin(e.time) + durOf(e, e.venue, sl), v: e.venue, label: evTitle(ev), at: e.time });
   });
   return out;
@@ -1641,6 +1644,7 @@ function athleteSchedule(c) {
     const [eid, cc] = rid.split('__'); if (+cc !== c) return; const ev = S.events[eid]; if (!ev) return; const e = { id: eid, ...ev };
     const items = [];
     if ((ev.matches || []).length) (ev.matches || []).forEach(m => { const t = teamsOf(e, m); if ((t.a === c || t.b === c) && m.date && m.time && !sideWin(m)) items.push({ eid, label: `${evTitle(e)} คู่ ${m.no}`, date: m.date, time: m.time, venue: m.venue || ev.venue }); });
+    else if ((ev.rounds || []).length) ev.rounds.forEach((rd, i) => { if (rd.date && rd.time && !ev.res?.rounds?.[i]) items.push({ eid, label: `${evTitle(e)} ${rd.label}`, date: rd.date, time: rd.time, venue: ev.venue }); });
     else if (ev.date && ev.time) items.push({ eid, label: evTitle(e), date: ev.date, time: ev.time, venue: ev.venue });
     (r.players || []).forEach(p => { if (!normName(p.name)) return; (out[pkey(p)] = out[pkey(p)] || []).push(...items); });
   });
@@ -2864,7 +2868,7 @@ function vAdmin() {
       <details class="menu"><summary class="btn sm ghost">จัดการ ▾</summary><div class="menupop">
       ${['ko', 'rr', 'rrko'].includes(e.format) ? `<button data-draw="${e.id}">จับคู่ใหม่</button><button data-sched="${e.id}">จัดเวลาอัตโนมัติ</button><button data-mlist="${e.id}">ตารางคู่ (แก้รายคู่)</button>` : ''}
       <button data-editev="${e.id}">ตั้งค่ารายการ</button>${hasResults(e) ? `<button data-clrev="${e.id}">ล้างผลรายการนี้</button>` : ''}<button class="dz" data-delev="${e.id}">ลบรายการ</button></div></details></div></div>`; }).join('') || '<p class="muted">ยังไม่มีรายการ</p>'}</div>
-    <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button>${sp.isAthletics && evsAll.length ? `<button class="btn sm ghost" data-athsched="${sp.id}">จัดเวลากรีฑาตามสูจิบัตร</button>` : ''}</div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
+    <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button>${sp.isAthletics && evsAll.length ? `<button class="btn sm ghost" data-athsched="${sp.id}">จัดเวลากรีฑาอัตโนมัติ</button>` : ''}</div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
   ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending' || x.m.protest?.status === 'upheld' && x.m.protest.outcome === 'edit' && !x.m.protest.editedAt); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงที่ต้องดำเนินการ <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง ${x.m.protest.status === 'pending' ? '<span class="protf-ic pending">รอพิจารณา</span>' : '<span class="protf-ic need">รอแก้ผลตามมติ</span>'}</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
   ${conflictCard(conflicts, true)}
   ${rolesCard()}${scoringCard()}
@@ -3515,7 +3519,7 @@ function openCheckin(eid, mid) {
   };
 }
 
-/* ---------- จัดเวลากรีฑาตามลำดับในสูจิบัตร ----------
+/* ---------- จัดเวลากรีฑาอัตโนมัติ (ตามลำดับรายการ) ----------
    ประเภทลู่ (วิ่ง/ผลัด) ต่อกันตามลำดับเลขในสูจิบัตร · ประเภทลาน (ขว้างจักร กระโดดไกล ทุ่มน้ำหนัก) เริ่มเมื่อถึงลำดับของตัวเอง
    และแข่งพร้อมกับประเภทลู่ได้ในลานของตัวเอง (ลานเดียวกันต้องรอรายการก่อนหน้าจบ) */
 const ATH_FIELD = [['discus', /ขว้างจักร/, 'สนามกรีฑา · ลานขว้างจักร', 'ขว้างจักร'], ['lj', /กระโดดไกล/, 'สนามกรีฑา · บ่อกระโดดไกล', 'กระโดดไกล'], ['shot', /ทุ่มน้ำหนัก/, 'สนามกรีฑา · ลานทุ่มน้ำหนัก', 'ทุ่มน้ำหนัก']];
@@ -3541,8 +3545,8 @@ function openAthSched(sid) {
   const o = { date: date0, start: '08:30', gap: 0, split: true, venue: venue0, dur: { field: 30, ...Object.fromEntries(ATH_TRACK.map(t => [t[0], t[3]])) } };
   const draw = () => {
     const p = athPlan(evs, o); const cl = athClashes(p.rows);
-    $('#modal').innerHTML = `<div class="dlg wide athdlg"><h3>จัดเวลากรีฑาตามลำดับในสูจิบัตร</h3>
-      <p class="muted sm">ประเภทลู่แข่งต่อกันตามเลขลำดับ · ขว้างจักร กระโดดไกล ทุ่มน้ำหนัก เริ่มเมื่อถึงลำดับของตัวเองและแข่งพร้อมกับประเภทลู่ได้ (ลานเดียวกันรอรายการก่อนหน้าจบ)</p>
+    $('#modal').innerHTML = `<div class="dlg wide athdlg"><h3>จัดเวลากรีฑาอัตโนมัติ</h3>
+      <p class="muted sm">ประเภทลู่แข่งต่อกันตามลำดับรายการ · ขว้างจักร กระโดดไกล ทุ่มน้ำหนัก เริ่มเมื่อถึงลำดับของตัวเองและแข่งพร้อมกับประเภทลู่ได้ (ลานเดียวกันรอรายการก่อนหน้าจบ)</p>
       <div class="g3"><label class="fld">วันแข่ง<select id="ad">${days().map(d => `<option value="${d}" ${d === o.date ? 'selected' : ''}>${fmtDate(d, true)}</option>`).join('')}</select></label>
       <label class="fld">เริ่มรายการแรก<input id="as" type="time" value="${o.start}"></label>
       <label class="fld">เว้นระหว่างรายการ (นาที)<input id="ag" type="number" min="0" max="30" value="${o.gap}"></label></div>
