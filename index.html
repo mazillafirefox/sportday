@@ -736,6 +736,20 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .steps li.done.go button{color:var(--ok)}
 
 .wiznav{display:flex;justify-content:space-between;gap:8px;margin:6px 0 4px;flex-wrap:wrap}
+.bkh{margin:14px 0 6px;font-size:15px}
+.bktbl{width:100%;border-collapse:collapse;margin:6px 0 10px;font-size:14px}
+.bktbl th,.bktbl td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line,#E3E8F0);vertical-align:top}
+.bktbl th{font-weight:600;color:var(--muted,#5B6B82);font-size:13px}
+.bktbl tr.off td{color:var(--muted,#8A97AA)}
+.bksrc{display:flex;gap:8px;flex-wrap:wrap}
+.bkmode{border:1px solid var(--line,#E3E8F0);border-radius:10px;padding:8px 12px;margin:8px 0}
+.bkmode label{display:block;margin:4px 0}
+.bkrow{display:grid;grid-template-columns:minmax(140px,1fr) 2fr 90px;gap:10px;align-items:center;padding:6px 0;font-size:14px}
+.bkbar2{height:10px;border-radius:6px;background:#E8EDF5;overflow:hidden}
+.bkbar2 i{display:block;height:100%;background:#1E5BC6;transition:width .2s}
+.bkn{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted,#5B6B82)}
+.bkok{color:#1B8A4B}.bkx{color:#C62828}
+@media(max-width:600px){.bkrow{grid-template-columns:1fr 70px}.bkrow .bkbar2{grid-column:1/-1;grid-row:2}}
 </style>
 </head>
 <body>
@@ -835,8 +849,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.2', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.3', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.3', 'ระบบสำรอง/กู้คืนใหม่: เลือกไฟล์ · ตรวจก่อนกู้คืน · เลือกส่วนข้อมูล · ตรวจซ้ำจากเซิร์ฟเวอร์และรายงานความครบ · แก้คะแนนเซตบันทึกใน Firestore ไม่ได้'],
   ['1.22.2', 'เชื่อม Firebase โปรเจกต์ sportday · เก็บอีเมลผู้ดูแลแบบ hash'],
   ['1.22.1', 'ใช้ Firebase เป็นฐานข้อมูลกลางตามเดิม (ยังรองรับ Supabase เป็นทางเลือก)'],
   ['1.22.0', 'ฐานข้อมูลกลาง Supabase: บัญชีครู/กรรมการด้วยอีเมล+รหัสผ่าน · บันทึกผลแบบ atomic · อัปเดตสดสำหรับผู้เข้าสู่ระบบ · ผู้ชมดึงข้อมูลทุก 15 วินาที · ยืนยันผลด้วยรหัสผ่าน'],
@@ -989,7 +1004,7 @@ function openUser(id) {
 function logIt(what, detail, extra) {
   const e = { at: Date.now(), by: ME.id || '', byName: ME.name || '', what, detail: String(detail || '').slice(0, 300), id: uid('l'), ...(extra ? clone(extra) : {}) };
   if (mode === 'shared' && sb) sb.from('log').insert({ at: e.at, data: e }).then(r => { if (r.error) console.warn(r.error); });
-  else if (mode === 'shared') db.collection('log').add(e).catch(() => { });
+  else if (mode === 'shared') db.collection('log').add(fsEnc(e)).catch(() => { });
   else { S.log = [e, ...(S.log || [])].slice(0, 300); LOG = S.log; saveLocal(); }
 }
 async function download(filename, text) {
@@ -1272,6 +1287,9 @@ const LS = 'gem2569-v2';
 function loadLocal() { try { const x = JSON.parse(localStorage.getItem(LS) || 'null'); if (x) { S = Object.assign({ sports: {}, events: {}, rosters: {}, meta: {}, students: {}, scores: {} }, x); return true; } } catch (e) { } return false; }
 function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { } }
 const pending = {};
+/* Firestore ไม่รับ array ซ้อน array (เช่นคะแนนเซต [[25,20],[18,25]]) และค่า undefined → แปลงก่อนเขียน/หลังอ่าน */
+const fsEnc = v => Array.isArray(v) ? v.map(x => Array.isArray(x) ? { _arr: fsEnc(x) } : fsEnc(x)) : (v && typeof v === 'object') ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== undefined).map(([k, x]) => [k, fsEnc(x)])) : (typeof v === 'number' && !isFinite(v) ? null : v);
+const fsDec = v => Array.isArray(v) ? v.map(fsDec) : (v && typeof v === 'object') ? (Array.isArray(v._arr) && Object.keys(v).length === 1 ? fsDec(v._arr) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fsDec(x)]))) : v;
 async function put(col, id, data) {
   mDirty = false;
   if (col === 'meta') { S.meta = data || {}; } else if (data === null) delete S[col][id]; else S[col][id] = data;
@@ -1281,9 +1299,10 @@ async function put(col, id, data) {
   const key = col + '/' + id;
   const run = async () => {
     inflight++; renderStatus();
-    try { const ref = db.collection(col).doc(id); if (data === null) await ref.delete(); else await ref.set(data); }
+    try { const ref = db.collection(col).doc(id); if (data === null) await ref.delete(); else await ref.set(fsEnc(data)); }
     catch (e) {
-      if (e && (e.code === 'invalid_argument' || e.code === 'permission-denied')) { canWrite = false; editOn = false; toast('บัญชีนี้ไม่มีสิทธิ์บันทึก ติดต่อผู้ดูแลระบบ'); render(); }
+      if (e && e.code === 'invalid-argument') toast('บันทึกไม่สำเร็จ: ข้อมูลผิดรูปแบบ');
+      else if (e && e.code === 'permission-denied') { canWrite = false; editOn = false; toast('บัญชีนี้ไม่มีสิทธิ์บันทึก ติดต่อผู้ดูแลระบบ'); render(); }
       else if (e && (e.code === 'quota_exceeded' || e.code === 'resource-exhausted')) toast('ใช้โควตาฐานข้อมูลเกินกำหนด ลองใหม่ภายหลัง');
       else toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง');
     } finally { inflight--; renderStatus(); }
@@ -1329,7 +1348,7 @@ async function flush() {
       const op = OUTBOX[0];
       try {
         if (sb) { await sbSend(op); } else
-        await withTimeout(db.runTransaction(async t => { const ref = db.collection('events').doc(op.eid); const sn = await t.get(ref); if (!sn.exists) return; const d = sn.data(); if (applyOp(d, op)) t.set(ref, d); }), 20000);
+        await withTimeout(db.runTransaction(async t => { const ref = db.collection('events').doc(op.eid); const sn = await t.get(ref); if (!sn.exists) return; const d = fsDec(sn.data()); if (applyOp(d, op)) t.set(ref, fsEnc(d)); }), 20000);
       } catch (e) {
         if (e && e.code === 'permission-denied') toast('บัญชีนี้ไม่มีสิทธิ์บันทึก รายการที่ค้างถูกยกเลิก');
         else if (sb && e && /^(22|23|P0|PGRST)/.test(String(e.code || ''))) toast('บันทึกไม่สำเร็จ: ' + (e.message || e.code));
@@ -1352,7 +1371,7 @@ async function saveEventKeep(eid, d) {
   S.events[eid] = d; mDirty = false; render(); inflight++; renderStatus();
   if (sb) { try { const r = await withTimeout(sb.from('docs').select('data').eq('col', 'events').eq('id', eid).maybeSingle(), 15000); if (r.error) throw sbErr(r.error); const nd = keepResults(clone(d), r.data?.data || null); nd.at = Date.now(); S.events[eid] = nd; await sbWrite('events', eid, nd); }
     catch (e) { if (e && e.code === 'permission-denied') toast('บัญชีนี้ไม่มีสิทธิ์บันทึก'); else sbQueue('events', eid, d); } finally { inflight--; renderStatus(); } return; }
-  try { await withTimeout(db.runTransaction(async t => { const ref = db.collection('events').doc(eid); const sn = await t.get(ref); const nd = keepResults(clone(d), sn.exists ? sn.data() : null); nd.at = Date.now(); t.set(ref, nd); }), 20000); }
+  try { await withTimeout(db.runTransaction(async t => { const ref = db.collection('events').doc(eid); const sn = await t.get(ref); const nd = keepResults(clone(d), sn.exists ? fsDec(sn.data()) : null); nd.at = Date.now(); t.set(ref, fsEnc(nd)); }), 20000); }
   catch (e) { if (e && e.code === 'permission-denied') toast('บัญชีนี้ไม่มีสิทธิ์บันทึก'); else put('events', eid, d); }
   finally { inflight--; renderStatus(); }
 }
@@ -1380,9 +1399,9 @@ function subscribePrivate() {
   if (sb) { sbPrivate(); return; }
   ['rosters', 'log', 'students'].forEach(k => { if (UNSUB[k]) { UNSUB[k](); delete UNSUB[k]; } });
   if (!canWrite) { S.rosters = {}; S.students = {}; LOG = []; return; }
-  UNSUB.students = db.collection('students').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); }); S.students = o; if (['teams', 'register'].includes(UI.view)) render(); }, () => { S.students = {}; });
-  UNSUB.rosters = db.collection('rosters').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); }); S.rosters = o; render(); }, () => { S.rosters = {}; });
-  UNSUB.log = db.collection('log').orderBy('at', 'desc').limit(150).onSnapshot(snap => { LOG = snap.docs.map(d => d.data()); if (UI.view === 'admin') render(); }, () => { LOG = []; });
+  UNSUB.students = db.collection('students').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); }); S.students = o; if (['teams', 'register'].includes(UI.view)) render(); }, () => { S.students = {}; });
+  UNSUB.rosters = db.collection('rosters').onSnapshot(snap => { const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); }); S.rosters = o; render(); }, () => { S.rosters = {}; });
+  UNSUB.log = db.collection('log').orderBy('at', 'desc').limit(150).onSnapshot(snap => { LOG = snap.docs.map(d => fsDec(d.data())); if (UI.view === 'admin') render(); }, () => { LOG = []; });
 }
 async function initData() {
   if (CONFIG.supabase && CONFIG.supabase.url) { await sbInit(); return; }
@@ -1399,7 +1418,7 @@ async function initData() {
   } catch (e) { mode = 'local'; loadLocal(); LOG = S.log || []; canWrite = true; render(); toast('เชื่อมต่อ Firebase ไม่ได้ กำลังใช้ข้อมูลในเครื่องนี้'); return; }
   const timer = setTimeout(() => { if (mode === 'connecting') { mode = 'shared'; render(); toast('โหลดข้อมูลช้ากว่าปกติ ตรวจสอบอินเทอร์เน็ต'); } }, 12000);
   ['sports', 'events', 'meta', 'scores'].forEach(col => db.collection(col).onSnapshot(snap => {
-    const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); });
+    const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); });
     if (col === 'events') { const now = Date.now(); while (RECENT.length && RECENT[0].until < now) RECENT.shift();
       RECENT.forEach(({ op }) => { const d = o[op.eid]; if (d && (d.at || 0) < op.ts) applyOp(d, op); }); /* snapshot เก่าที่มาถึงช้ากว่าการบันทึก */
       OUTBOX.forEach(op => { if (o[op.eid]) applyOp(o[op.eid], op); }); }
@@ -3740,11 +3759,13 @@ function nResults() { return Object.values(S.events).reduce((a, e) => a + (e.mat
 function takeSnap(force) {
   if (!isAdmin() || mode === 'connecting' || !Object.keys(S.events).length) return;
   const list = snaps(); const last = list[0]; const nres = nResults();
-  const data = { sports: S.sports, events: S.events, meta: S.meta, rosters: S.rosters, scores: S.scores };
+  const data = { sports: S.sports, events: S.events, meta: S.meta, rosters: S.rosters, scores: S.scores, students: S.students };
   const js = JSON.stringify(data); if (!force && last && JSON.stringify(last.data) === js) return;
   if (!force && last && Date.now() - last.at < 25 * 60000) return;
   list.unshift({ at: Date.now(), nres, data }); 
   for (let n = Math.min(list.length, SNAP_N); n >= 1; n--) { try { localStorage.setItem(SNAP_KEY, JSON.stringify(list.slice(0, n))); return; } catch (e) { } }
+  /* เต็ม → เก็บสำเนาล่าสุดโดยไม่รวมรายชื่อนักเรียน (รายชื่อนักเรียนมีในไฟล์สำรองที่ดาวน์โหลด) */
+  list[0] = { ...list[0], data: { ...data, students: {} } }; for (let n = Math.min(list.length, SNAP_N); n >= 1; n--) { try { localStorage.setItem(SNAP_KEY, JSON.stringify(list.slice(0, n))); return; } catch (e) { } }
 }
 function markBackup() { try { localStorage.setItem('gem-lastbk', todayISO()); } catch (e) { } render(); }
 /* เตือนดาวน์โหลดไฟล์สำรองเมื่อหมดการแข่งของวันนี้ */
@@ -3758,39 +3779,202 @@ function backupDue() {
 }
 setInterval(() => takeSnap(false), 5 * 60000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) takeSnap(false); });
+/* ===================== สำรองและกู้คืนข้อมูล =====================
+   ไฟล์สำรองรุ่น 2 มีส่วนหัว _backup (วันที่ รุ่นโปรแกรม จำนวนข้อมูลแต่ละส่วน) · กู้คืนเลือกส่วนได้ · มีแถบความคืบหน้า
+   หลังกู้คืนอ่านข้อมูลกลับจากเซิร์ฟเวอร์มาเทียบกับไฟล์ทีละเอกสาร แล้วแสดงรายงานว่าครบหรือขาดอะไร */
+const BK_PARTS = [
+  { k: 'prog', n: 'โปรแกรมและผลการแข่งขัน', cols: ['sports', 'events'] },
+  { k: 'meta', n: 'ตั้งค่า คณะสี ห้องเรียน สิทธิ์ผู้ใช้', cols: ['meta'] },
+  { k: 'rosters', n: 'รายชื่อนักกีฬาที่ส่ง', cols: ['rosters'] },
+  { k: 'students', n: 'รายชื่อนักเรียน', cols: ['students'] },
+  { k: 'scores', n: 'คะแนนกิจกรรมคณะสี', cols: ['scores'] }
+];
+const BK_ID = /^[\w.:@+~-]+$/;
+function bkCount(o) {
+  o = o || {}; const ev = Object.values(o.events || {});
+  return {
+    sports: Object.keys(o.sports || {}).length, events: ev.length,
+    results: ev.reduce((a, e) => a + (e.matches || []).filter(m => m.w).length + (e.res ? 1 : 0), 0),
+    rosters: Object.keys(o.rosters || {}).length, players: Object.values(o.rosters || {}).reduce((a, r) => a + ((r && r.players) || []).filter(p => p && p.name).length, 0),
+    rooms: Object.keys(o.students || {}).length, students: Object.values(o.students || {}).reduce((a, d) => a + ((d && d.list) || []).length, 0),
+    scores: Object.keys(o.scores || {}).length, meta: !!(o.meta && Object.keys(o.meta).length), roles: Object.keys((o.meta || {}).roles || {}).length
+  };
+}
+function bkPartText(k, c) {
+  const f = n => (+n || 0).toLocaleString();
+  if (k === 'prog') return c.events ? `${f(c.sports)} ชนิดกีฬา · ${f(c.events)} รายการ · ผลแล้ว ${f(c.results)}` : '';
+  if (k === 'meta') return c.meta ? `มี${c.roles ? ` · สิทธิ์ผู้ใช้ ${f(c.roles)} คน` : ''}` : '';
+  if (k === 'rosters') return c.rosters ? `${f(c.rosters)} ทีม · ${f(c.players)} คน` : '';
+  if (k === 'students') return c.students ? `${f(c.students)} คน · ${f(c.rooms)} ห้อง` : '';
+  if (k === 'scores') return c.scores ? `${f(c.scores)} ชุด` : '';
+  return '';
+}
+function bkHas(o, k) { const c = bkCount(o); return !!bkPartText(k, c); }
+function makeBackup() {
+  const meta = clone(S.meta || {}); if (mode === 'shared') delete meta.users;
+  const o = { sports: S.sports, events: S.events, meta, rosters: S.rosters, students: S.students, scores: S.scores };
+  o._backup = { app: 'gem2569', v: 2, version: APP_VERSION, at: Date.now(), by: ME.name || ME.id || '', mode, counts: bkCount(o) };
+  return o;
+}
+function bkFileName() { const d = new Date(); const p = n => String(n).padStart(2, '0'); return `สำรองข้อมูล-${evName()}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`; }
+function downloadBackup() { const o = makeBackup(); download(bkFileName(), JSON.stringify(o)); markBackup(); logIt('ดาวน์โหลดไฟล์สำรอง', bkPartsLine(o._backup.counts)); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); }
+function bkPartsLine(c) { return BK_PARTS.map(p => bkPartText(p.k, c) && p.n + ': ' + bkPartText(p.k, c)).filter(Boolean).join(' / '); }
+function bkTrial() { if (mode !== 'shared') return null; try { const x = JSON.parse(localStorage.getItem(LS) || 'null'); return x && Object.keys(x.events || {}).length ? x : null; } catch (e) { return null; } }
+function bkWhen(t) { return new Date(t).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }); }
+
 function openBackup() {
-  modal(`<div class="dlg wide"><h3>สำรอง / นำเข้าข้อมูล</h3><p class="muted sm">ข้อมูลทั้งหมด (ชนิดกีฬา รายการ คู่แข่งขัน ผล รายชื่อนักกีฬา) คัดลอกเก็บไว้ได้ หรือวางข้อมูลสำรองแล้วกดนำเข้า</p>
-    <textarea id="bk" rows="8">${esc(JSON.stringify(S))}</textarea><p class="err" id="err"></p>
-    <div class="actions"><button class="btn" id="cp">คัดลอก</button>${isAdmin() ? '<button class="btn ghost" id="imp">นำเข้าข้อมูลนี้</button>' : ''}<button class="btn ghost" id="dlbk">ดาวน์โหลดไฟล์สำรอง (.json)</button><button class="btn ghost" data-close>ปิด</button></div></div>`);
-  const sn = snaps();
-  if (sn.length) $('#bk').insertAdjacentHTML('beforebegin', `<details class="mt snaps"><summary>สำเนาอัตโนมัติในเครื่องนี้ (${sn.length})</summary><p class="muted sm">ระบบเก็บสำเนาทุก 30 นาทีบนเครื่องผู้ดูแล (ไม่รวมรายชื่อนักเรียน) ใช้กู้คืนเมื่อข้อมูลผิดพลาด</p>${sn.map((x, i) => `<div class="feed sm"><span class="fl">${new Date(x.at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}</span><span class="muted sm">${Object.keys(x.data.events || {}).length} รายการ · ผล ${x.nres} รายการ <button type="button" class="btn sm ghost" data-snap="${i}">ใช้สำเนานี้</button></span></div>`).join('')}</details>`);
-  document.querySelectorAll('[data-snap]').forEach(b => b.onclick = () => { $('#bk').value = JSON.stringify(sn[+b.dataset.snap].data); toast('ใส่สำเนาลงช่องด้านล่างแล้ว กด “นำเข้าข้อมูลนี้” หรือดาวน์โหลดเก็บไว้'); });
-  $('#cp').onclick = () => copy($('#bk').value);
-  $('#dlbk').onclick = () => { download(`สำรองข้อมูล-${evName()}-${todayStr()}.json`, $('#bk').value); markBackup(); };
-  $('#imp')?.addEventListener('click', async () => {
-    let o; try { o = JSON.parse($('#bk').value); } catch (e) { $('#err').textContent = 'ข้อมูลไม่ใช่รูปแบบสำรองที่ถูกต้อง'; return; }
-    closeModal(); await importAll(o, 'นำเข้าข้อมูล'); logIt('นำเข้าข้อมูลสำรอง', '');
-  });
+  const cur = bkCount(S); const adm = isAdmin(); const sn = snaps(); const trial = adm ? bkTrial() : null;
+  const privMissing = mode === 'shared' && !canWrite;
+  modal(`<div class="dlg wide bkdlg"><h3>สำรองและกู้คืนข้อมูล</h3>
+    <h4 class="bkh">1. สำรองข้อมูลตอนนี้</h4>
+    <table class="bktbl"><tbody>${BK_PARTS.map(p => `<tr><td>${p.n}</td><td>${bkPartText(p.k, cur) || '<span class="muted">ไม่มี</span>'}</td></tr>`).join('')}</tbody></table>
+    ${privMissing ? '<p class="qwarn sm">ยังไม่ได้เข้าสู่ระบบ ไฟล์สำรองจะไม่มีรายชื่อนักกีฬาและรายชื่อนักเรียน</p>' : ''}
+    <div class="actions m0"><button class="btn" id="dlbk">ดาวน์โหลดไฟล์สำรอง (.json)</button></div>
+    <p class="muted sm">เก็บไฟล์ไว้ในคอมพิวเตอร์และ Google Drive ทุกวันหลังจบการแข่ง ชื่อไฟล์มีวันที่และเวลา</p>
+    ${adm ? `<h4 class="bkh">2. กู้คืน / นำเข้าข้อมูล</h4>
+    <div class="bksrc">
+      <label class="btn ghost">เลือกไฟล์สำรอง (.json)<input type="file" id="bkfile" accept=".json,application/json" hidden></label>
+      ${trial ? `<button class="btn ghost" id="bktrial">ใช้ข้อมูลโหมดทดลองในเครื่องนี้</button>` : ''}
+    </div>
+    ${trial ? `<p class="muted sm">ข้อมูลที่เคยกรอกในโหมดทดลองบนเบราว์เซอร์นี้: ${bkPartsLine(bkCount(trial)) || '-'}</p>` : ''}
+    ${sn.length ? `<details class="mt snaps"><summary>สำเนาอัตโนมัติในเครื่องนี้ (${sn.length})</summary><p class="muted sm">เก็บทุก 30 นาทีบนเครื่องผู้ดูแล ใช้กู้คืนเมื่อข้อมูลผิดพลาด</p>${sn.map((x, i) => `<div class="feed sm"><span class="fl">${bkWhen(x.at)}</span><span class="muted sm">${bkPartsLine(bkCount(x.data))} <button type="button" class="btn sm ghost" data-snap="${i}">ตรวจและกู้คืน</button></span></div>`).join('')}</details>` : ''}
+    <details class="mt"><summary>ขั้นสูง: วางข้อความสำรอง</summary><textarea id="bk" rows="5" placeholder="วางข้อความ JSON ที่คัดลอกไว้"></textarea><div class="actions m0"><button class="btn sm ghost" id="bkpaste">ตรวจข้อมูลนี้</button><button class="btn sm ghost" id="cp">คัดลอกข้อมูลปัจจุบัน</button></div></details>` : ''}
+    <p class="err" id="err"></p>
+    <div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`);
+  $('#dlbk').onclick = downloadBackup;
+  $('#cp')?.addEventListener('click', () => copy(JSON.stringify(makeBackup())));
+  $('#bkfile')?.addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+    r.onload = () => { let o; try { o = JSON.parse(r.result); } catch (x) { $('#err').textContent = 'อ่านไฟล์ไม่ได้: ไม่ใช่ไฟล์สำรองของระบบนี้'; return; } bkPreview(o, 'ไฟล์ ' + f.name); };
+    r.onerror = () => { $('#err').textContent = 'อ่านไฟล์ไม่ได้'; }; r.readAsText(f); });
+  $('#bktrial')?.addEventListener('click', () => bkPreview(trial, 'ข้อมูลโหมดทดลองในเครื่องนี้'));
+  $('#bkpaste')?.addEventListener('click', () => { let o; try { o = JSON.parse($('#bk').value); } catch (x) { $('#err').textContent = 'ข้อความไม่ใช่ข้อมูลสำรองที่ถูกต้อง'; return; } bkPreview(o, 'ข้อความที่วาง'); });
+  document.querySelectorAll('[data-snap]').forEach(b => b.onclick = () => bkPreview(sn[+b.dataset.snap].data, 'สำเนาอัตโนมัติ ' + bkWhen(sn[+b.dataset.snap].at)));
 }
 
-async function importAll(o, label) {
-  const jobs = [];
-  ['sports', 'events', 'rosters', 'students', 'scores'].forEach(col => Object.entries(o[col] || {}).forEach(([id, v]) => { if (/^[\w.:@+~-]+$/.test(id) && v && typeof v === 'object') jobs.push([col, id, v]); }));
-  if (o.meta && typeof o.meta === 'object') { const mt = { ...o.meta }; if (mode === 'shared') delete mt.users; /* บัญชี/PIN ของโหมดทดลองไม่ขึ้นฐานข้อมูลกลาง (meta อ่านได้ทุกคน) */ jobs.push(['meta', 'config', mt]); }
-  if (mode !== 'shared') { jobs.forEach(([c, id, v]) => { if (c === 'meta') S.meta = v; else S[c][id] = v; }); saveLocal(); render(); toast(`${label}แล้ว`); return; }
-  if (sb) { let done = 0; const rows = jobs.map(([col, id, v]) => col === 'meta' ? [['meta', 'config', (() => { const x = { ...v }; delete x.roles; return x; })()], ...(v.roles ? [['roles', 'config', { roles: v.roles }]] : [])] : [[col, id, v]]).flat().map(([col, id, data]) => ({ col, id, data }));
-    for (let k = 0; k < rows.length; k += 200) { const r = await sb.from('docs').upsert(rows.slice(k, k + 200)); if (r.error) { toast(sbErr(r.error).code === 'permission-denied' ? 'บัญชีนี้ไม่มีสิทธิ์บันทึก' : 'นำเข้าไม่สำเร็จ: ' + r.error.message); return; } done += Math.min(200, rows.length - k); toast(`${label}… ${done}/${rows.length}`); }
-    await sbReload(); toast(`${label}แล้ว`); return; }
-  let i = 0;
-  for (const [col, id, v] of jobs) {
-    for (let tries = 0; tries < 5; tries++) {
-      try { await db.collection(col).doc(id).set(v); break; }
-      catch (e) { if (e?.code === 'invalid_argument' || e?.code === 'permission-denied') { toast('บัญชีนี้ไม่มีสิทธิ์บันทึก'); return; } await new Promise(r => setTimeout(r, 800 * (tries + 1))); }
-    }
-    i++; if (i % 10 === 0 || i === jobs.length) { const t = $('#toast'); t.hidden = false; t.textContent = `${label} ${i}/${jobs.length}`; }
-  }
-  toast(`${label}ครบ ${jobs.length} รายการ`);
+function bkPreview(o, src) {
+  if (!o || typeof o !== 'object' || !(o.events || o.sports || o.students || o.rosters)) { const e = $('#err'); if (e) e.textContent = 'ไม่พบข้อมูลของระบบนี้ในไฟล์'; return; }
+  const fc = bkCount(o), cc = bkCount(S), h = o._backup;
+  const rows = BK_PARTS.map(p => { const has = !!bkPartText(p.k, fc);
+    return `<tr class="${has ? '' : 'off'}"><td><label class="ck"><input type="checkbox" data-bkp="${p.k}" ${has ? 'checked' : 'disabled'}> ${p.n}</label></td><td>${bkPartText(p.k, fc) || '<span class="muted">ไม่มีในไฟล์</span>'}</td><td class="muted">${bkPartText(p.k, cc) || 'ไม่มี'}</td></tr>`; }).join('');
+  const notes = [];
+  if (!fc.students) notes.push('ไฟล์นี้ไม่มีรายชื่อนักเรียน (สำเนาอัตโนมัติรุ่นก่อน v1.22.3 และแม่แบบสูจิบัตรไม่เก็บรายชื่อนักเรียน) ถ้าต้องการรายชื่อนักเรียน ให้ใช้ไฟล์สำรองที่ดาวน์โหลดจากโหมดทดลอง หรือนำเข้า Excel ใหม่ที่หน้าคณะสี › นักเรียน');
+  if (mode === 'shared' && o.meta && o.meta.users) notes.push('บัญชีและ PIN ของโหมดทดลองจะไม่ถูกนำขึ้นฐานข้อมูลกลาง');
+  modal(`<div class="dlg wide bkdlg"><h3>ตรวจข้อมูลก่อนกู้คืน</h3>
+    <p class="muted sm">ที่มา: ${esc(src)}${h && h.at ? ` · สร้างเมื่อ ${bkWhen(h.at)}${h.version ? ' · รุ่น ' + esc(h.version) : ''}${h.by ? ' · โดย ' + esc(h.by) : ''}` : ' · ไฟล์รุ่นเก่า (ไม่มีส่วนหัว)'}</p>
+    <table class="bktbl"><thead><tr><th>ส่วนข้อมูล (เลือกที่จะกู้คืน)</th><th>ในไฟล์</th><th>ตอนนี้ในระบบ</th></tr></thead><tbody>${rows}</tbody></table>
+    ${notes.map(n => `<p class="qwarn sm">${esc(n)}</p>`).join('')}
+    <fieldset class="bkmode"><legend>วิธีกู้คืน</legend>
+      <label class="ck"><input type="radio" name="bkm" value="merge" checked> <b>รวมข้อมูล</b> <span class="muted sm">เขียนทับเฉพาะเอกสารที่มีในไฟล์ ข้อมูลอื่นในระบบยังอยู่</span></label>
+      <label class="ck"><input type="radio" name="bkm" value="replace"> <b>แทนที่ทั้งหมด</b> <span class="muted sm">ส่วนที่เลือกจะเหมือนไฟล์ทุกอย่าง เอกสารที่ไม่มีในไฟล์จะถูกลบ</span></label>
+    </fieldset>
+    <p class="err" id="err"></p>
+    <div class="actions"><button class="btn" id="bkgo">เริ่มกู้คืน</button><button class="btn ghost" id="bkback">กลับ</button></div></div>`);
+  $('#bkback').onclick = openBackup;
+  $('#bkgo').onclick = () => {
+    const parts = [...document.querySelectorAll('[data-bkp]:checked')].map(x => x.dataset.bkp); const replace = document.querySelector('[name=bkm]:checked').value === 'replace';
+    if (!parts.length) { $('#err').textContent = 'เลือกอย่างน้อย 1 ส่วน'; return; } $('#err').textContent = '';
+    const names = BK_PARTS.filter(p => parts.includes(p.k)).map(p => p.n).join(', ');
+    askFinal(`<b>${replace ? 'แทนที่' : 'รวม'}ข้อมูล</b>: ${esc(names)}${mode === 'shared' ? '<br>ข้อมูลกลางจะเปลี่ยนทันทีบนทุกเครื่อง' : ''}`, () => bkRun(o, parts, replace, 'กู้คืนข้อมูล', src), 'กู้คืน', { forcePin: true, word: 'กู้คืน' });
+  };
 }
+
+/* ทำงานกู้คืน: เขียน → ตรวจซ้ำจากเซิร์ฟเวอร์ → รายงาน */
+function bkStable(v) { return Array.isArray(v) ? '[' + v.map(bkStable).join(',') + ']' : (v && typeof v === 'object') ? '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + bkStable(v[k])).join(',') + '}' : JSON.stringify(v ?? null); }
+function bkMeta(o) { const mt = clone(o.meta || {}); if (mode === 'shared') delete mt.users; if (!Object.keys(mt.roles || {}).length && S.meta.roles && Object.keys(S.meta.roles).length) mt.roles = clone(S.meta.roles); return mt; }
+function bkJobs(o, parts, replace, only) {
+  const jobs = [], skipped = [];
+  BK_PARTS.filter(p => parts.includes(p.k)).forEach(p => p.cols.forEach(col => {
+    if (col === 'meta') { if (o.meta) jobs.push({ part: p.k, col, id: 'config', v: bkMeta(o) }); return; }
+    const src = o[col] || {};
+    Object.entries(src).forEach(([id, v]) => { if (!v || typeof v !== 'object') return; if (!BK_ID.test(id)) { skipped.push(col + '/' + id); return; } jobs.push({ part: p.k, col, id, v }); });
+    if (replace) Object.keys(S[col] || {}).forEach(id => { if (!(id in src)) jobs.push({ part: p.k, col, id, v: null }); });
+  }));
+  return { jobs: only ? jobs.filter(j => only.has(j.col + '/' + j.id)) : jobs, skipped };
+}
+function bkProgress(parts, label) {
+  modal(`<div class="dlg wide bkdlg"><h3>${esc(label)}…</h3><p class="muted sm">อย่าปิดหน้านี้จนกว่าจะเสร็จ</p>
+    <div id="bkprog">${BK_PARTS.filter(p => parts.includes(p.k)).map(p => `<div class="bkrow" data-bkr="${p.k}"><span>${p.n}</span><span class="bkbar2"><i style="width:0"></i></span><span class="bkn">รอ</span></div>`).join('')}</div>
+    <p class="muted sm" id="bkstage"></p></div>`);
+  mDirty = true;
+}
+function bkTick(part, done, total, txt) { const r = document.querySelector(`[data-bkr="${part}"]`); if (!r) return; r.querySelector('i').style.width = (total ? Math.round(done / total * 100) : 100) + '%'; r.querySelector('.bkn').textContent = txt || `${done}/${total}`; }
+async function bkWrite(jobs) {
+  /* คืน { failed:[{job,err}], denied } */
+  const failed = []; const per = {}; jobs.forEach(j => per[j.part] = per[j.part] || { done: 0, total: 0 }); jobs.forEach(j => per[j.part].total++);
+  const step = j => { per[j.part].done++; bkTick(j.part, per[j.part].done, per[j.part].total); };
+  if (mode !== 'shared') {
+    jobs.forEach(j => { if (j.col === 'meta') S.meta = j.v; else if (j.v === null) delete S[j.col][j.id]; else S[j.col][j.id] = clone(j.v); step(j); });
+    try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { return { failed: jobs.map(job => ({ job, err: 'พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม' })), denied: false }; }
+    render(); return { failed, denied: false };
+  }
+  if (sb) {
+    const rows = []; jobs.forEach(j => { if (j.col === 'meta') { const x = { ...j.v }; const roles = x.roles; delete x.roles; rows.push({ j, r: { col: 'meta', id: 'config', data: x } }); if (roles) rows.push({ j, r: { col: 'roles', id: 'config', data: { roles } } }); } else if (j.v !== null) rows.push({ j, r: { col: j.col, id: j.id, data: j.v } }); });
+    for (let k = 0; k < rows.length; k += 200) { const part = rows.slice(k, k + 200); const r = await sb.from('docs').upsert(part.map(x => x.r));
+      if (r.error) { if (sbErr(r.error).code === 'permission-denied') return { failed: jobs.map(job => ({ job, err: 'ไม่มีสิทธิ์' })), denied: true }; part.forEach(x => failed.push({ job: x.j, err: r.error.message })); } else part.forEach(x => step(x.j)); }
+    for (const j of jobs.filter(j => j.v === null)) { const r = await sb.from('docs').delete().eq('col', j.col).eq('id', j.id); if (r.error) failed.push({ job: j, err: r.error.message }); else step(j); }
+    await sbReload(); return { failed, denied: false };
+  }
+  const one = async j => { const ref = db.collection(j.col).doc(j.id); if (j.v === null) await ref.delete(); else await ref.set(fsEnc(j.v)); };
+  for (let k = 0; k < jobs.length; k += 40) {
+    const chunk = jobs.slice(k, k + 40); let ok = false, last;
+    for (let t = 0; t < 4 && !ok; t++) {
+      try { const b = db.batch(); chunk.forEach(j => { const ref = db.collection(j.col).doc(j.id); if (j.v === null) b.delete(ref); else b.set(ref, fsEnc(j.v)); }); await withTimeout(b.commit(), 30000); ok = true; }
+      catch (e) { last = e; if (e?.code === 'permission-denied') return { failed: jobs.slice(k).map(job => ({ job, err: 'บัญชีนี้ไม่มีสิทธิ์บันทึก' })), denied: true }; if (e?.code === 'invalid-argument') break; await new Promise(r => setTimeout(r, 1000 * (t + 1))); }
+    }
+    if (ok) { chunk.forEach(step); continue; }
+    /* ชุดนี้ส่งไม่ผ่าน → ส่งทีละเอกสารเพื่อหาว่าเอกสารไหนมีปัญหา */
+    for (const j of chunk) { try { await withTimeout(one(j), 20000); step(j); } catch (e) { failed.push({ job: j, err: e?.code === 'invalid-argument' ? 'ข้อมูลผิดรูปแบบ/ใหญ่เกิน 1 MB' : (e?.message || e?.code || String(last?.code || 'ไม่ทราบสาเหตุ')) }); } }
+  }
+  return { failed, denied: false };
+}
+async function bkVerify(o, parts, replace) {
+  /* อ่านกลับจากเซิร์ฟเวอร์ (หรือจากที่เก็บในเครื่อง) แล้วเทียบกับไฟล์ทีละเอกสาร */
+  const res = {}; let server = {};
+  const cols = BK_PARTS.filter(p => parts.includes(p.k)).flatMap(p => p.cols);
+  if (mode !== 'shared') { try { server = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { server = {}; } }
+  else if (sb) server = S;
+  else for (const col of cols) { const sn = await withTimeout(db.collection(col).get({ source: 'server' }), 30000); server[col] = {}; sn.docs.forEach(d => server[col][d.id] = fsDec(d.data())); if (col === 'meta') server.meta = server.meta.config || {}; }
+  BK_PARTS.filter(p => parts.includes(p.k)).forEach(p => {
+    const r = res[p.k] = { want: 0, ok: 0, missing: [], diff: [], extra: [] };
+    p.cols.forEach(col => {
+      if (col === 'meta') { r.want++; if (server.meta && Object.keys(server.meta).length) r.ok++; else r.missing.push('meta/config'); return; }
+      const want = o[col] || {}, got = server[col] || {};
+      Object.entries(want).forEach(([id, v]) => { if (!v || typeof v !== 'object' || !BK_ID.test(id)) return; r.want++;
+        if (!(id in got)) r.missing.push(col + '/' + id); else if (bkStable(got[id]) !== bkStable(v)) r.diff.push(col + '/' + id); else r.ok++; });
+      Object.keys(got).forEach(id => { if (!(id in want)) r.extra.push(col + '/' + id); });
+    });
+  });
+  return res;
+}
+async function bkRun(o, parts, replace, label, src, only) {
+  if (mode === 'shared' && !sb && !canWrite) { toast('ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลก่อน'); return; }
+  const { jobs, skipped } = bkJobs(o, parts, replace, only);
+  bkProgress(parts, label); BK_PARTS.forEach(p => { if (parts.includes(p.k) && !jobs.some(j => j.part === p.k)) bkTick(p.k, 0, 0, 'ไม่มีข้อมูล'); });
+  let w; try { w = await bkWrite(jobs); } catch (e) { w = { failed: jobs.map(job => ({ job, err: e?.message || 'ผิดพลาด' })), denied: false }; }
+  if (w.denied) { mDirty = false; modal(`<div class="dlg"><h3>กู้คืนไม่สำเร็จ</h3><p>บัญชีนี้ไม่มีสิทธิ์บันทึกข้อมูลกลาง ตรวจว่าเข้าสู่ระบบด้วยบัญชีผู้ดูแล และได้ Publish กฎ Firestore แล้ว</p><div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`); return; }
+  $('#bkstage') && ($('#bkstage').textContent = 'กำลังตรวจสอบข้อมูลที่บันทึกกับไฟล์…');
+  let v = null, verr = ''; try { if (mode === 'shared' && !sb) await new Promise(r => setTimeout(r, 600)); v = await bkVerify(o, parts, replace); } catch (e) { verr = 'ตรวจสอบซ้ำไม่ได้ (' + (e?.message || 'เครือข่าย') + ')'; }
+  mDirty = false; bkReport(o, parts, replace, label, src, v, w.failed, skipped, verr);
+}
+function bkReport(o, parts, replace, label, src, v, failed, skipped, verr) {
+  const fc = bkCount(o); let allOk = !verr && !failed.length;
+  const rows = BK_PARTS.filter(p => parts.includes(p.k)).map(p => { const r = v && v[p.k]; const bad = r ? r.missing.length + r.diff.length : 0; const extra = r && replace ? r.extra.length : 0; if (bad || extra) allOk = false;
+    return `<tr><td>${r ? (bad || extra ? '<b class="bkx">✗</b>' : '<b class="bkok">✓</b>') : '–'} ${p.n}</td><td>${bkPartText(p.k, fc) || '-'}</td><td>${r ? `${r.ok}/${r.want} เอกสาร${bad ? ` · <b class="bkx">ขาด/ไม่ตรง ${bad}</b>` : ''}${r.extra.length ? ` · <span class="muted">มีเพิ่มนอกไฟล์ ${r.extra.length}</span>` : ''}` : '-'}</td></tr>`; }).join('');
+  const missing = new Set(); if (v) Object.values(v).forEach(r => [...r.missing, ...r.diff].forEach(x => missing.add(x))); failed.forEach(f => missing.add(f.job.col + '/' + f.job.id));
+  const sum = `${label}: ${allOk ? 'ครบถ้วน' : 'ไม่ครบ'} · ` + BK_PARTS.filter(p => parts.includes(p.k)).map(p => `${p.n} ${v?.[p.k] ? v[p.k].ok + '/' + v[p.k].want : '?'}`).join(' · ');
+  logIt(label, `${src || ''} · ${sum}`.slice(0, 300));
+  modal(`<div class="dlg wide bkdlg"><h3>${allOk ? '✓ ' + esc(label) + 'ครบถ้วน' : 'ผลการ' + esc(label)}</h3>
+    <p class="${allOk ? 'muted' : 'qwarn'} sm">${allOk ? 'ระบบอ่านข้อมูลกลับจาก' + (mode === 'shared' ? 'ฐานข้อมูลกลาง' : 'เครื่องนี้') + 'แล้ว ทุกเอกสารตรงกับไฟล์' : verr ? esc(verr) + ' ข้อมูลอาจบันทึกครบแล้ว ลองเปิดหน้านี้ใหม่และกดกู้คืนซ้ำได้โดยไม่เสียหาย' : 'บางส่วนยังไม่ถูกบันทึก ตรวจรายการด้านล่างแล้วกด “ส่งส่วนที่ขาดอีกครั้ง”'}</p>
+    <table class="bktbl"><thead><tr><th>ส่วนข้อมูล</th><th>ในไฟล์</th><th>ตรวจแล้วในระบบ</th></tr></thead><tbody>${rows}</tbody></table>
+    ${failed.length ? `<details class="mt" open><summary>เอกสารที่บันทึกไม่ได้ (${failed.length})</summary><ul class="sm">${failed.slice(0, 30).map(f => `<li>${esc(f.job.col + '/' + f.job.id)} — ${esc(f.err)}</li>`).join('')}</ul></details>` : ''}
+    ${skipped.length ? `<p class="muted sm">ข้าม ${skipped.length} เอกสารที่ชื่อไม่ถูกต้อง: ${esc(skipped.slice(0, 5).join(', '))}</p>` : ''}
+    ${parts.includes('students') || !fc.students ? '' : '<p class="muted sm">ไม่ได้เลือกกู้คืนรายชื่อนักเรียน</p>'}
+    <div class="actions">${missing.size ? '<button class="btn" id="bkretry">ส่งส่วนที่ขาดอีกครั้ง</button>' : ''}<button class="btn ${missing.size ? 'ghost' : ''}" data-close>ปิด</button></div></div>`);
+  $('#bkretry')?.addEventListener('click', () => bkRun(o, parts, false, label, src, missing));
+  render();
+}
+/* ใช้กับการนำเข้าแม่แบบ/ล้างข้อมูล: นำเข้าทุกส่วนที่มีในข้อมูล แบบรวม พร้อมรายงาน */
+async function importAll(o, label) { const parts = BK_PARTS.filter(p => p.k === 'meta' ? !!o.meta : bkHas(o, p.k)).map(p => p.k); await bkRun(o, parts, false, label, ''); }
 async function importTemplate() {
   const o = clone(TEMPLATE);
   await importAll(o, 'นำเข้าโปรแกรม'); logIt('นำเข้าโปรแกรมจากสูจิบัตร', '');
@@ -4034,7 +4218,7 @@ document.addEventListener('click', e => {
     const t = $('#mtitle').value.trim(), y = $('#myear').value.trim(), sc = $('#mschool').value.trim();
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
     const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
-  else if (d.act === 'bknow') { takeSnap(true); download(`สำรองข้อมูล-${evName()}-${todayStr()}.json`, JSON.stringify(S)); logIt('ดาวน์โหลดไฟล์สำรอง', todayISO()); markBackup(); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); }
+  else if (d.act === 'bknow') { takeSnap(true); downloadBackup(); }
   else if (d.act === 'bklater') { try { sessionStorage.setItem('gem-bklater', todayISO()); } catch (e) { } render(); }
   else if (d.act === 'gorules') { UI.teamTab = 'rules'; location.hash = 'teams'; }
   else if (d.act === 'autorooms') openAutoRooms();
