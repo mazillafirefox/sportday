@@ -653,10 +653,18 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .mrow.g2 .ta{justify-self:end}.mrow.g2 .tb{justify-self:start}.mrow.g2 .sc{justify-self:center;text-align:center;min-width:56px}
 .mrow.g2 .ncol{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-start;min-width:0}.mrow.g2 .ncol .pill{white-space:normal;line-height:1.3}
 .mrow.g2 .rbtns{display:grid;grid-template-columns:repeat(2,84px);gap:6px;justify-content:end}.mrow.g2 .rbtns .btn{width:100%;justify-content:center;padding-left:4px;padding-right:4px}
-.mrow.g2 .rbtns .btn:only-child{grid-column:2}.bysport .mrow.g2 .sname{display:none}.mrow.g2.isdone .tt::after{content:none}.mrow.g2 .elab{font-weight:600}
+.mrow.g2 .rbtns .btn:only-child{grid-column:2}.bysport .mrow.g2 .sname{display:none}.mrow.g2.isdone .tt::after,.mrow.c2.isdone .tt::after{content:none}.mrow.g2 .elab{font-weight:600}
 @media (max-width:900px){.mrow.g2 .rbtns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start}.mrow.g2 .rbtns .btn{width:auto;padding-left:14px;padding-right:14px}.mrow.g2 .ncol .pill,.mrow.g2 .pill{display:inline-flex}}
-@media (max-width:900px){.mrow.g2,.mrow.g2.ed,.mrow.g2.ed:not(.compact){grid-template-columns:72px 1fr auto auto auto;grid-template-areas:"t i i i i" "t a s b ." "t n n n n" "x x x x x"}
-  .mrow.g2 .tcol{grid-area:t;align-self:start}.mrow.g2 .ml{grid-area:i}.mrow.g2 .ta{grid-area:a;justify-self:start}.mrow.g2 .sc{grid-area:s}.mrow.g2 .tb{grid-area:b}.mrow.g2 .ncol{grid-area:n}.mrow.g2 .rbtns{grid-area:x;justify-content:start}.mrow.g2 .ncol:empty{display:none}}
+@media (max-width:900px){.mrow.g2,.mrow.g2.ed,.mrow.g2.ed:not(.compact){grid-template-columns:64px minmax(0,1fr) 44px minmax(0,1fr) 64px;grid-template-areas:"t i i i i" "a a s b b" "n n n n n" "x x x x x"}
+  .mrow.g2 .tcol{grid-area:t;align-self:start}.mrow.g2 .ml{grid-area:i}.mrow.g2 .ta{grid-area:a;justify-self:end}.mrow.g2 .sc{min-width:0}.mrow.g2 .sc{grid-area:s}.mrow.g2 .tb{grid-area:b}.mrow.g2 .ncol{grid-area:n}.mrow.g2 .rbtns{grid-area:x;justify-content:start}.mrow.g2 .ncol:empty{display:none}.mrow.g2 .tcol .pmin{white-space:normal}.mrow.g2.ci .cis{font-size:12px}}
+.mrow.g2 .span3{grid-column:span 3;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center}
+.mrow.g2.ci .tcol .pmin{color:var(--muted)}.mrow.g2.ci .cis{white-space:nowrap}
+.mrow.compact.c2{display:grid;grid-template-columns:70px 1fr;gap:4px 10px;align-items:start;padding:8px 6px}
+.mrow.c2 .tcol{display:flex;flex-direction:column;align-items:flex-start;gap:3px;line-height:1.15}.mrow.c2 .tcol .tt{font:600 15px var(--display)}
+.mrow.c2 .cbody{display:flex;flex-direction:column;gap:6px;min-width:0}.mrow.c2 .ml{display:flex;flex-wrap:wrap;gap:0 5px;align-items:baseline}.mrow.c2 .ml small{flex-basis:100%;color:var(--muted)}
+.mrow.c2 .vs3{display:grid;grid-template-columns:1fr 56px 1fr;align-items:center;gap:6px}.mrow.c2 .vs3 .ta{justify-self:end}.mrow.c2 .vs3 .tb{justify-self:start}.mrow.c2 .vs3 .sc{text-align:center}
+.mrow.c2 .cnote{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.mrow.c2 .pill{display:inline-flex}
+@media (max-width:900px){.mrow.g2 .span3{grid-column:1/-1;grid-row:auto;justify-content:flex-start}}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -823,8 +831,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.21.4', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.21.5', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.21.5', 'จัดคอลัมน์แบบเดียวกันทุกหน้า: รายงานตัว แผนที่สนาม สนามแข่งขัน ตารางเหรียญ (เวลา/สถานะซ้าย · ทีมตรงกัน · หมายเหตุ · ปุ่ม)'],
   ['1.21.4', 'โปรแกรม & ผล: จัดคอลัมน์ใหม่ (เวลา/สถานะซ้าย · ทีมตรงกัน · หมายเหตุ · ปุ่ม) · แสดงแข่งมากี่นาที/ใช้เวลากี่นาที และรวมเวลาแข่งต่อชนิดกีฬา'],
   ['1.21.3', 'ใบบันทึกผลที่พิมพ์: กีฬาแบบเซตมีตารางคะแนนรายเซต'],
   ['1.21.2', 'สัญลักษณ์ ⚑ ที่คู่ที่มีการประท้วง (รอพิจารณา/รับคำร้อง/ยกคำร้อง/รอแก้ผล) · ยื่นประท้วงได้หลังจบเกม · รับคำร้องแก้ผล: เตือนจนกว่าจะแก้ผล · แข่งใหม่: กำหนดวัน เวลา สนามใหม่ พร้อมตรวจสนามว่าง'],
@@ -1835,10 +1844,12 @@ function matchRow(ev, m, compact) {
   const nx = !['live', 'done'].includes(st.k) && isNext(ev, m); const nxp = nx ? '<span class="pill nextp">ถัดไป</span>' : '';
   const scls = compact && !['live', 'done'].includes(st.k) ? '' : STATE_CLS[st.k] || '';
   const pm = playedMin(m); const du = durOf(ev, venueOf(ev, m)); const over = lv && pm != null && pm > du + 5;
-  if (compact) return `<div class="mrow compact${ed ? ' click' : ''} ${scls}${nx ? ' isnext' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}>
-    <span class="tt num">${esc(m.time || '–')}</span>
-    <span class="ml"${tip('match', ev.id, m.id)}>${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)} ${nxp}${shortPill(ev, m, st)}${pm != null ? ` <small class="pmin${over ? ' over' : ''}">${lv ? 'แข่งมา' : 'ใช้เวลา'} ${pm}′</small>` : ''}<small> · คู่ ${m.no} ${esc(m.round || '')}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
-    <span class="vsline">${chip(t.a, { ph: slotLabel(ev, m.a), tip: slotTip(ev, m.a), win: s === 'a', lose: s === 'b' })}${score}${chip(t.b, { ph: slotLabel(ev, m.b), tip: slotTip(ev, m.b), win: s === 'b', lose: s === 'a' })}${flags}</span>${lv && setStrip(ev, m) ? `<span class="ssrow">${setStrip(ev, m)}</span>` : ''}</div>`;
+  if (compact) { const sp = lv || s ? '' : shortPill(ev, m, st);
+    return `<div class="mrow compact c2${ed ? ' click' : ''} ${scls}${nx ? ' isnext' : ''}" ${ed ? `data-res="${ev.id}|${m.id}" tabindex="0"` : ''}>
+    <span class="tcol"><b class="tt num">${esc(m.time || '–')}</b>${lv ? '<span class="tst live"><i></i>กำลังแข่ง</span>' : s ? '<span class="tst done">✓ จบแล้ว</span>' : nx ? '<span class="tst next">ถัดไป</span>' : ''}${pm != null ? `<small class="pmin${over ? ' over' : ''}">${lv ? 'แข่งมา' : 'ใช้เวลา'} ${pm}′</small>` : ''}</span>
+    <span class="cbody"><span class="ml"${tip('match', ev.id, m.id)}>${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}<small>คู่ ${m.no} ${esc(m.round || '')}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
+    <span class="vs3"><span class="ta">${chip(t.a, { ph: slotLabel(ev, m.a), tip: slotTip(ev, m.a), win: s === 'a', lose: s === 'b' })}</span>${score}<span class="tb">${chip(t.b, { ph: slotLabel(ev, m.b), tip: slotTip(ev, m.b), win: s === 'b', lose: s === 'a' })}</span></span>
+    ${lv && setStrip(ev, m) || sp || flags ? `<span class="cnote">${lv ? setStrip(ev, m) : ''}${sp}${flags}</span>` : ''}</span></div>`; }
   /* แถวเต็ม: เวลา+สถานะ | รายการ | ทีม A | คะแนน | ทีม B | หมายเหตุ | ปุ่ม */
   const stTop = lv ? `<span class="tst live"><i></i>กำลังแข่ง</span>` : s ? '<span class="tst done">✓ จบแล้ว</span>' : nx ? '<span class="tst next">ถัดไป</span>' : '';
   const stMin = pm != null ? `<small class="pmin${over ? ' over' : ''}" title="${lv ? `เริ่ม ${new Date(m.startedAt).toTimeString().slice(0, 5)} น. · เวลาต่อนัด ${du} นาที` : 'เวลาที่ใช้แข่งจริง'}">${lv ? `แข่งมา ${pm} นาที` : `ใช้เวลา ${pm} นาที`}${over ? ' · เกินเวลา' : ''}</small>` : '';
@@ -1866,7 +1877,10 @@ function vSchedule() {
   if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(e => {
     const r = (e.rounds || []).filter(r => r.date === d).map(r => `${r.label} ${r.time}`).join(' · ');
     const m = medalsOf(e);
-    return `<div class="mrow click${editOn && canScore(e.sport) ? ' ed' : ''}" data-open="${e.id}" tabindex="0"><span class="tt num">${esc(e.time || (e.rounds || []).find(r => r.date === d)?.time || '–')}</span><span class="ml">${sIcon(e.sport, 'sm')}<b>${esc(sportName(e.sport))}</b> ${esc(e.label)}<small>${r ? ' · ' + esc(r) : ''}</small></span><span class="vsline">${e.medal ? medalLine(m) : ''}</span>${e.startedAt && !hasResults(e) ? LIVEB : `<span class="pill">${FORMATS[e.format]}</span>`}${editOn && canScore(e.sport) ? `<button class="btn sm rowbtn" ${e.format === 'points' ? `data-open="${e.id}"` : `data-evres="${e.id}"`}>${e.format === 'points' ? 'กรอกคะแนน' : 'บันทึกผล'}</button>` : ''}</div>`;
+    const ed = editOn && canScore(e.sport); const lv = e.startedAt && !hasResults(e); const dn = hasResults(e);
+    return `<div class="mrow g2 click${ed ? ' ed' : ''}${lv ? ' islive' : dn ? ' isdone' : ''}" data-open="${e.id}" tabindex="0"><span class="tcol"><b class="tt num">${esc(e.time || (e.rounds || []).find(r => r.date === d)?.time || '–')}</b>${lv ? '<span class="tst live"><i></i>กำลังแข่ง</span>' : dn ? '<span class="tst done">✓ มีผลแล้ว</span>' : ''}</span>
+      <span class="ml">${sIcon(e.sport, 'sm')}<b class="sname">${esc(sportName(e.sport))}</b> <b class="elab">${esc(e.label)}</b><small>${esc(FORMATS[e.format] || '')}${r ? ' · ' + esc(r) : ''}${e.venue ? ' · ' + esc(e.venue) : ''}</small></span>
+      <span class="span3">${e.medal ? medalLine(m) : ''}</span><span class="ncol"></span>${ed ? `<span class="rbtns"><button class="btn sm rowbtn" ${e.format === 'points' ? `data-open="${e.id}"` : `data-evres="${e.id}"`}>${e.format === 'points' ? 'กรอกคะแนน' : 'บันทึกผล'}</button></span>` : ''}</div>`;
   }).join('')}</section>`;
   return `<section class="hero"><h1>โปรแกรมและผลการแข่งขัน</h1><p class="muted">${editOn ? 'แตะที่นัดเพื่อบันทึกผล ผู้ชนะจะถูกส่งเข้านัดถัดไปอัตโนมัติ' : 'เปิดโหมดแก้ไขเพื่อบันทึกผล (เฉพาะผู้มีสิทธิ์)'}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-day="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div>
@@ -2165,10 +2179,13 @@ function vCheckin() {
   const NOWK = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit'];
   const row = ({ ev, m }) => { const t = teamsOf(ev, m); const ed = editOn && canScore(ev.sport); const st = mState(ev, m); const nx = false; /* หน้ารายงานตัวใช้กลุ่มบอกความเร่งด่วนแทนป้าย “ถัดไป” รายสนาม */
     const ciAt = m.time ? toMin(m.time) - mins : null; const soon = isToday && ciAt != null && st.k === 'sched' && ciAt - now > 0 && ciAt - now <= 30;
-    return `<div class="cirow${ed ? ' click ed' : ''} ${STATE_CLS[st.k] || ''}${nx ? ' isnext' : ''}" ${ed ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}>
-    <span class="tt num">${esc(m.time || '–')}<small>รายงานตัว ${ciAt != null ? toTime(ciAt) : '–'}</small></span>
-    <span class="ml">${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}<small> · คู่ ${m.no}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
-    <span class="vsline">${side(ev, m, 'a', t.a)}${side(ev, m, 'b', t.b)}</span><span class="stc">${nx ? '<span class="pill nextp">ถัดไป</span>' : ''}${soon ? `<span class="pill cip">เปิดรายงานตัวอีก ${ciAt - now} นาที</span>` : statePill(ev, m, st)}</span>${ed ? `<span class="rbtns">${rowButtons(ev, m, st)}</span>` : ''}</div>`; };
+    const s = sideWin(m), lv = st.k === 'live'; const pm = playedMin(m);
+    const sc = s ? `<span class="sc num">${esc(m.sa ?? '')}<i>–</i>${esc(m.sb ?? '')}</span>` : lv && (m.sa || m.sb) ? `<span class="sc num lvsc">${esc(m.sa || 0)}<i>–</i>${esc(m.sb || 0)}</span>` : '<span class="sc vs">VS</span>';
+    return `<div class="mrow g2 ci${ed ? ' click ed' : ''} ${STATE_CLS[st.k] || ''}" ${ed ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}>
+    <span class="tcol"><b class="tt num">${esc(m.time || '–')}</b><small class="pmin">รายงานตัว ${ciAt != null ? toTime(ciAt) : '–'}</small>${lv ? `<span class="tst live"><i></i>กำลังแข่ง</span>` : s ? '<span class="tst done">✓ จบแล้ว</span>' : ''}${pm != null ? `<small class="pmin">${lv ? 'แข่งมา' : 'ใช้เวลา'} ${pm} นาที</small>` : ''}</span>
+    <span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b><small>คู่ ${m.no}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
+    <span class="ta">${side(ev, m, 'a', t.a)}</span>${sc}<span class="tb">${side(ev, m, 'b', t.b)}</span>
+    <span class="ncol">${soon ? `<span class="pill cip">เปิดรายงานตัวอีก ${ciAt - now} นาที</span>` : lv || s ? matchFlags(m) : statePill(ev, m, st)}</span>${ed ? `<span class="rbtns">${rowButtons(ev, m, st)}</span>` : ''}</div>`; };
   /* แบ่งกลุ่ม: ต้องรายงานตัวตอนนี้ → ใกล้ถึงเวลา → กำลังแข่ง → ภายหลัง → จบแล้ว */
   const NOW = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit'];
   const g = { now: [], soon: [], live: [], later: [], done: [] };
@@ -2186,8 +2203,8 @@ function vCheckin() {
   <div class="filters"><div class="seg">${days().map(x => `<button data-ciday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div></div>
   <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button></div>
   <section class="card">${body || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>'}
-  ${others.length ? `<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>${others.map(ev => `<div class="cirow${editOn && canScore(ev.sport) ? ' click' : ''}" ${editOn && canScore(ev.sport) ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tt num">${esc(ev.time || '–')}</span><span class="ml">${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}</span>
-    <span class="vsline">${(ev.teams || []).map(c => { const n = (ev.ci?.[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span></div>`).join('')}` : ''}</section>`;
+  ${others.length ? `<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>${others.map(ev => `<div class="mrow g2 ci${editOn && canScore(ev.sport) ? ' click' : ''}" ${editOn && canScore(ev.sport) ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ev.time || '–')}</b></span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
+    <span class="span3 cimany">${(ev.teams || []).map(c => { const n = (ev.ci?.[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span><span class="ncol"></span></div>`).join('')}` : ''}</section>`;
 }
 
 /* ---------- คณะสีและนักเรียน ---------- */
@@ -2772,7 +2789,7 @@ function vVenues() {
     const lv = l.filter(x => x.m && isLive(x.m)).length; const dl = l.filter(x => x.m && ['delay', 'hold', 'waiting', 'forfeit'].includes(mState(x.ev, x.m).k)).length;
     return `<section class="card venue${lv ? ' haslive' : ''}${n === UI.vFocus ? ' focus' : ''}"><div class="maphead"><div class="mh"><span class="pin" aria-hidden="true"></span><div><h2>${esc(n)}</h2><p class="muted sm">${v.courts > 1 ? `${v.courts} คอร์ท/สนามย่อย · ` : ''}${l.length} รายการวันนี้${v.note ? ' · ' + esc(v.note) : ''}</p></div></div>
       <div class="actions m0">${lv ? LIVEB : ''}${dl ? `<span class="pill delayp">ล่าช้า ${dl}</span>` : ''}${cfDay.some(c => c.venue === n) ? '<span class="pill delayp" title="มีช่วงเวลาที่ใช้สนามชนกัน">⚠ ชนกัน</span>' : ''}${adm && vs.find(x => x.name === n) ? `<button class="btn sm ghost" data-editvenue="${esc(n)}">แก้ไข</button>` : ''}</div></div>
-      ${l.map(x => x.m ? matchRow(x.ev, x.m, true) : `<div class="mrow compact"><span class="tt num">${esc(x.ev.time || '–')}</span><span class="ml">${sIcon(x.ev.sport, 'sm')}<b>${esc(sportName(x.ev.sport))}</b> ${esc(x.ev.label)}</span></div>`).join('') || '<p class="muted sm">ว่างทั้งวัน</p>'}</section>`; }).join('')}</div>`;
+      ${l.map(x => x.m ? matchRow(x.ev, x.m, true) : `<div class="mrow compact c2"><span class="tcol"><b class="tt num">${esc(x.ev.time || '–')}</b></span><span class="cbody"><span class="ml">${sIcon(x.ev.sport, 'sm')}<b>${esc(sportName(x.ev.sport))}</b> ${esc(x.ev.label)}<small>${esc(FORMATS[x.ev.format] || '')}</small></span></span></div>`).join('') || '<p class="muted sm">ว่างทั้งวัน</p>'}</section>`; }).join('')}</div>`;
 }
 function openVenue(name) {
   const vs = clone(venuesList()); const v = name ? vs.find(x => x.name === name) : { name: '', courts: 1, note: '' };
