@@ -750,6 +750,10 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .bkn{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted,#5B6B82)}
 .bkok{color:#1B8A4B}.bkx{color:#C62828}
 @media(max-width:600px){.bkrow{grid-template-columns:1fr 70px}.bkrow .bkbar2{grid-column:1/-1;grid-row:2}}
+.athdur{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px}
+.athtbl{max-height:46vh;overflow:auto;border:1px solid var(--line,#E3E8F0);border-radius:10px;margin-top:8px}
+.athtbl table{margin:0}.athtbl thead th{position:sticky;top:0;background:#fff}
+.athtbl tr.fieldr td{background:#F4F8FF}
 </style>
 </head>
 <body>
@@ -849,8 +853,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.7', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.8', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.8', 'เริ่มแข่งได้เฉพาะวันแข่ง · จัดเวลากรีฑาตามสูจิบัตร (ประเภทลานแข่งพร้อมลู่) · คู่ที่ยังไม่ทราบทีมไม่ขวางคู่ถัดไปที่สนามเดียวกัน'],
   ['1.22.7', 'แก้คอลัมน์หน้ารายงานตัวเมื่อดูวันที่ยังไม่ถึงวันแข่ง'],
   ['1.22.6', 'รายงานตัวได้เฉพาะวันแข่ง (ก่อนถึงวันแข่งปุ่มเช็คชื่อปิดไว้)'],
   ['1.22.5', 'แก้รายชื่อนักกีฬา/นักเรียนไม่แสดงเมื่อเข้าสู่ระบบเสร็จก่อนโหลดข้อมูลชุดแรก'],
@@ -1746,6 +1751,7 @@ function rowButtons(ev, m, st) {
   const ciA = st.A || ciInfo(ev, m, 'a'), ciB = st.B || ciInfo(ev, m, 'b'); const nOk = [ciA, ciB].filter(x => x.ok).length; const any = [ciA, ciB].some(x => x.n || x.manual);
   const ciT = nOk === 2 ? 'ทั้งสองทีมรายงานตัวครบแล้ว' : nOk === 1 || any ? `รายงานตัวแล้ว ${[ciA, ciB].map(x => x.manual ? 'ครบ' : x.n + '/' + x.need).join(' · ')}` : 'ยังไม่มีใครรายงานตัว';
   const ci = S.meta.requireCheckin === false ? '' : ciEarly(ev, m) ? `<button class="btn sm rowbtn ghost cib" disabled title="${esc(ciEarlyMsg(ev, m))}">รอวันแข่ง</button>` : `<button class="btn sm rowbtn ghost cib${nOk === 2 ? ' ok' : nOk || any ? ' part' : ''}" data-ci="${id}" title="${ciT}">${nOk === 2 ? '✓ เช็คชื่อครบ' : nOk || any ? `เช็คชื่อ ${nOk}/2 ทีม` : 'เช็คชื่อ'}</button>`;
+  if (ciEarly(ev, m)) return `${ci}<button class="btn sm rowbtn startb" disabled title="ยังเริ่มแข่งไม่ได้ คู่นี้แข่ง ${esc(fmtDate(m.date, true))}">เริ่มแข่ง</button>`;
   if (st.k === 'forfeit') return `${ci}<button class="btn sm rowbtn startb notready" data-start="${id}">เริ่มแข่ง</button><button class="btn sm rowbtn forf" data-forf="${id}">ปรับแพ้</button>`;
   const v = venueOf(ev, m); const q = v ? earlierPending(v, ev, m) : []; const qBlock = q.length && liveAtVenue(v, ev.id, m.id).length + q.length >= courtsOf(v);
   return `${ci}<button class="btn sm rowbtn startb${st.both && !qBlock ? '' : ' notready'}" data-start="${id}"${qBlock ? ` title="รอคู่ ${q[0].m.time} น. ที่สนามนี้แข่งก่อน"` : ''}>เริ่มแข่ง</button>`;
@@ -2858,7 +2864,7 @@ function vAdmin() {
       <details class="menu"><summary class="btn sm ghost">จัดการ ▾</summary><div class="menupop">
       ${['ko', 'rr', 'rrko'].includes(e.format) ? `<button data-draw="${e.id}">จับคู่ใหม่</button><button data-sched="${e.id}">จัดเวลาอัตโนมัติ</button><button data-mlist="${e.id}">ตารางคู่ (แก้รายคู่)</button>` : ''}
       <button data-editev="${e.id}">ตั้งค่ารายการ</button>${hasResults(e) ? `<button data-clrev="${e.id}">ล้างผลรายการนี้</button>` : ''}<button class="dz" data-delev="${e.id}">ลบรายการ</button></div></details></div></div>`; }).join('') || '<p class="muted">ยังไม่มีรายการ</p>'}</div>
-    <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button></div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
+    <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button>${sp.isAthletics && evsAll.length ? `<button class="btn sm ghost" data-athsched="${sp.id}">จัดเวลากรีฑาตามสูจิบัตร</button>` : ''}</div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
   ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending' || x.m.protest?.status === 'upheld' && x.m.protest.outcome === 'edit' && !x.m.protest.editedAt); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงที่ต้องดำเนินการ <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง ${x.m.protest.status === 'pending' ? '<span class="protf-ic pending">รอพิจารณา</span>' : '<span class="protf-ic need">รอแก้ผลตามมติ</span>'}</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
   ${conflictCard(conflicts, true)}
   ${rolesCard()}${scoringCard()}
@@ -3244,10 +3250,11 @@ function replayClash(ev, m, d, t, v) {
 /* คู่ที่ต้องรอผลการประท้วงของคู่ต้นทาง */
 const protHold = (ev, m) => [m.a, m.b].map(s => s?.m ? mOf(ev, s.m) : null).filter(x => x && x.protest?.status === 'pending');
 /* คู่ที่กำหนดเวลาก่อนหน้าที่สนามเดียวกันในวันเดียวกัน ยังไม่เริ่มและยังไม่จบ (ต้องได้แข่งก่อน) */
-function earlierPending(v, ev, m) { if (!v || !m.date || !m.time) return []; return allMatches().filter(x => !(x.ev.id === ev.id && x.m.id === m.id) && venueOf(x.ev, x.m) === v && x.m.date === m.date && x.m.time && x.m.time < m.time && !sideWin(x.m) && !isLive(x.m)).sort((p, q) => p.m.time.localeCompare(q.m.time)); }
+function earlierPending(v, ev, m) { if (!v || !m.date || !m.time) return []; return allMatches().filter(x => !(x.ev.id === ev.id && x.m.id === m.id) && venueOf(x.ev, x.m) === v && x.m.date === m.date && x.m.time && x.m.time < m.time && !sideWin(x.m) && !isLive(x.m) && (() => { const t = teamsOf(x.ev, x.m); return t.a >= 0 && t.b >= 0; })()).sort((p, q) => p.m.time.localeCompare(q.m.time)); }
 function liveAtVenue(v, eid, mid) { return allMatches().filter(x => !(x.ev.id === eid && x.m.id === mid) && isLive(x.m) && venueOf(x.ev, x.m) === v); }
 function openStart(eid, mid) {
-  const ev = evById(eid); const m = mOf(ev, mid); const t = teamsOf(ev, m); const ok = {}; let skipQ = false;
+  const ev = evById(eid); const m = mOf(ev, mid);
+  if (ciEarly(ev, m)) { toast(`ยังเริ่มแข่งไม่ได้ คู่นี้แข่ง ${fmtDate(m.date, true)}`); return; } const t = teamsOf(ev, m); const ok = {}; let skipQ = false;
   const draw = () => {
     const m2 = mOf(evById(eid), mid); const st = mState(evById(eid), m2);
     const side = sd => { const c = ciInfo(evById(eid), m2, sd); const okNow = c.ok || ok[sd];
@@ -3505,6 +3512,61 @@ function openCheckin(eid, mid) {
       closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci } } : { eid, set: { ci } })); return; }
     const f = e.target.closest('[data-forfeit]'); if (f) { const loser = f.dataset.forfeit; const lc = sides.find(s => s[0] === loser)[1], wc = sides.find(s => s[0] !== loser)[1];
       askFinal(`<b>ปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${chip(lc)} สละสิทธิ์ · ${chip(wc)} ชนะ</div>`, () => { closeModal(); resetModalHandlers(); recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[lc]?.n || ''}`, patchEv({ eid, mid, set: { w: loser === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note: 'ชนะเพราะคู่แข่งสละสิทธิ์', at: Date.now(), by: ME.id || '', forfeit: loser, endedAt: Date.now(), ci }, unset: ['live'] }), 'ปรับแพ้แล้ว · ยกเลิกได้ที่ “แก้ผล” ของคู่นี้'); }, 'ยืนยันปรับแพ้', { forcePin: true, word: COLORS[lc]?.n }); }
+  };
+}
+
+/* ---------- จัดเวลากรีฑาตามลำดับในสูจิบัตร ----------
+   ประเภทลู่ (วิ่ง/ผลัด) ต่อกันตามลำดับเลขในสูจิบัตร · ประเภทลาน (ขว้างจักร กระโดดไกล ทุ่มน้ำหนัก) เริ่มเมื่อถึงลำดับของตัวเอง
+   และแข่งพร้อมกับประเภทลู่ได้ในลานของตัวเอง (ลานเดียวกันต้องรอรายการก่อนหน้าจบ) */
+const ATH_FIELD = [['discus', /ขว้างจักร/, 'สนามกรีฑา · ลานขว้างจักร', 'ขว้างจักร'], ['lj', /กระโดดไกล/, 'สนามกรีฑา · บ่อกระโดดไกล', 'กระโดดไกล'], ['shot', /ทุ่มน้ำหนัก/, 'สนามกรีฑา · ลานทุ่มน้ำหนัก', 'ทุ่มน้ำหนัก']];
+const ATH_TRACK = [['medley', /ผลัด\s*4\s*ระยะ/, 'ผลัด 4 ระยะ', 10], ['r4x400', /4\s*×\s*400/, '4×400 ม.', 10], ['r4x100', /4\s*×\s*100/, '4×100 ม.', 6], ['m800', /800/, '800 ม.', 7], ['m400', /400/, '400 ม.', 6], ['m200', /200/, '200 ม.', 5], ['m100', /100/, '100 ม.', 5]];
+function athKind(label) { const f = ATH_FIELD.find(x => x[1].test(label)); if (f) return { field: true, k: f[0], venue: f[2] }; const t = ATH_TRACK.find(x => x[1].test(label)); return { field: false, k: t ? t[0] : 'other' }; }
+function athPlan(evs, o) {
+  let clock = toMin(o.start); const free = {}; const rows = [];
+  evs.forEach(e => { const kd = athKind(e.label);
+    if (kd.field) { const st = Math.max(clock, free[kd.k] || 0); const du = +o.dur.field || 30; free[kd.k] = st + du + (+o.gap || 0); rows.push({ e, kd, st, du, venue: o.split ? kd.venue : o.venue }); }
+    else { const du = +(o.dur[kd.k] ?? 6) || 6; rows.push({ e, kd, st: clock, du, venue: o.venue }); clock += du + (+o.gap || 0); } });
+  return { rows, trackEnd: clock, end: Math.max(clock, ...rows.map(r => r.st + r.du)) };
+}
+function athClashes(rows) {
+  /* นักกีฬาคนเดียวกันลงสองรายการที่เวลาทับกัน (จากรายชื่อที่ส่งแล้ว) */
+  const by = {}; rows.forEach(r => (r.e.teams || [0, 1, 2, 3, 4, 5]).forEach(c => (rosterOf(r.e.id, c).players || []).filter(p => normName(p.name)).forEach(p => { const k = c + '~' + pkey(p); (by[k] = by[k] || { c, name: p.name, cls: p.cls, l: [] }).l.push(r); })));
+  const out = []; Object.values(by).forEach(a => { const l = a.l.sort((x, y) => x.st - y.st); for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length; j++) if (l[j].st < l[i].st + l[i].du) out.push({ ...a, x: l[i], y: l[j] }); });
+  return out;
+}
+function openAthSched(sid) {
+  const evs = eventsOf(sid); if (!evs.length) { toast('ยังไม่มีรายการกรีฑา'); return; }
+  const dates = evs.map(e => e.date).filter(Boolean); const date0 = dates.sort((a, b) => dates.filter(x => x === b).length - dates.filter(x => x === a).length)[0] || days()[days().length - 1] || '';
+  const venue0 = evs.find(e => e.venue && !/·/.test(e.venue))?.venue || 'สนามกรีฑา';
+  const o = { date: date0, start: '08:30', gap: 0, split: true, venue: venue0, dur: { field: 30, ...Object.fromEntries(ATH_TRACK.map(t => [t[0], t[3]])) } };
+  const draw = () => {
+    const p = athPlan(evs, o); const cl = athClashes(p.rows);
+    $('#modal').innerHTML = `<div class="dlg wide athdlg"><h3>จัดเวลากรีฑาตามลำดับในสูจิบัตร</h3>
+      <p class="muted sm">ประเภทลู่แข่งต่อกันตามเลขลำดับ · ขว้างจักร กระโดดไกล ทุ่มน้ำหนัก เริ่มเมื่อถึงลำดับของตัวเองและแข่งพร้อมกับประเภทลู่ได้ (ลานเดียวกันรอรายการก่อนหน้าจบ)</p>
+      <div class="g3"><label class="fld">วันแข่ง<select id="ad">${days().map(d => `<option value="${d}" ${d === o.date ? 'selected' : ''}>${fmtDate(d, true)}</option>`).join('')}</select></label>
+      <label class="fld">เริ่มรายการแรก<input id="as" type="time" value="${o.start}"></label>
+      <label class="fld">เว้นระหว่างรายการ (นาที)<input id="ag" type="number" min="0" max="30" value="${o.gap}"></label></div>
+      <details class="mt"><summary>เวลาที่ใช้ต่อรายการ (นาที)</summary><div class="athdur">${ATH_TRACK.map(t => `<label class="fld">${t[2]}<input type="number" min="1" max="60" data-adur="${t[0]}" value="${o.dur[t[0]]}"></label>`).join('')}<label class="fld">ประเภทลาน<input type="number" min="5" max="120" data-adur="field" value="${o.dur.field}"></label></div></details>
+      <label class="ck mt"><input type="checkbox" id="asp" ${o.split ? 'checked' : ''}> แยกสนามประเภทลาน (ลานขว้างจักร · บ่อกระโดดไกล · ลานทุ่มน้ำหนัก) เพื่อให้ตรวจเวลาชนถูกต้อง</label>
+      <p class="sm"><b>ประเภทลู่จบ ${toTime(p.trackEnd - (+o.gap || 0))} น.</b> · ทุกรายการจบ ${toTime(p.end)} น.</p>
+      ${cl.length ? `<details class="qwarn sm" open><summary>นักกีฬา ${cl.length} คู่รายการมีเวลาทับกัน (จากรายชื่อที่ส่งแล้ว) ปรับเวลาหรือเปลี่ยนตัวได้ภายหลัง</summary><ul>${cl.slice(0, 15).map(x => `<li>${chip(x.c)} ${esc(x.name)} ${esc(x.cls || '')}: ${esc(x.x.e.label)} ${toTime(x.x.st)} กับ ${esc(x.y.e.label)} ${toTime(x.y.st)}</li>`).join('')}${cl.length > 15 ? `<li>และอีก ${cl.length - 15}</li>` : ''}</ul></details>` : '<p class="muted sm">ไม่พบนักกีฬาที่เวลาทับกันจากรายชื่อที่ส่งแล้ว</p>'}
+      <div class="scroll athtbl"><table class="bktbl"><thead><tr><th>เวลา</th><th>รายการ</th><th>สนาม</th><th>เดิม</th></tr></thead><tbody>
+      ${p.rows.map(r => `<tr${r.kd.field ? ' class="fieldr"' : ''}><td class="num">${toTime(r.st)}–${toTime(r.st + r.du)}</td><td>${esc(r.e.label)}${r.kd.field ? ' <small class="pill">ลาน · พร้อมลู่</small>' : ''}</td><td class="sm">${esc(r.venue)}</td><td class="muted sm">${r.e.time ? esc(r.e.time) : '–'}</td></tr>`).join('')}</tbody></table></div>
+      <p class="err" id="aerr"></p>
+      <div class="actions"><button class="btn" id="asave">บันทึกเวลา ${p.rows.length} รายการ</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`;
+  };
+  $('#modal').hidden = false; draw();
+  $('#modal').onchange = e => { const t = e.target;
+    if (t.id === 'ad') o.date = t.value; else if (t.id === 'as') o.start = t.value || '08:30'; else if (t.id === 'ag') o.gap = Math.max(0, +t.value || 0); else if (t.id === 'asp') o.split = t.checked; else if (t.dataset.adur) o.dur[t.dataset.adur] = Math.max(1, +t.value || 1); else return;
+    const op = !!$('#modal details[open]') && $('#modal .athdur'); draw(); if (op) $('#modal details').open = true; };
+  $('#modal').onclick = async e => {
+    if (e.target.id !== 'asave') return; const p = athPlan(evs, o); if (p.end > 24 * 60) { $('#aerr').textContent = 'เวลาเกินเที่ยงคืน ปรับเวลาเริ่ม'; return; }
+    const hasRes = evs.filter(x => hasResults(x)).length;
+    ask(`บันทึกเวลากรีฑา ${p.rows.length} รายการ วัน${fmtDate(o.date, true)} เริ่ม ${o.start} น.?${hasRes ? ` (ผลที่บันทึกแล้ว ${hasRes} รายการไม่เปลี่ยน)` : ''}`, async () => {
+      if (o.split) { const m = clone(S.meta); m.venues = clone(venuesList()); ATH_FIELD.forEach(f => { if (!m.venues.some(v => v.name === f[2])) m.venues.push({ name: f[2], courts: 1, note: 'ประเภทลาน ' + f[3] }); }); await put('meta', 'config', m); }
+      for (const r of p.rows) { const { id, ...d } = clone(S.events[r.e.id] ? { id: r.e.id, ...S.events[r.e.id] } : r.e); d.date = o.date; d.time = toTime(r.st); d.dur = r.du; d.venue = r.venue; await saveEventKeep(r.e.id, d); }
+      logIt('จัดเวลากรีฑา', `${p.rows.length} รายการ · ${fmtDate(o.date)} ${o.start}–${toTime(p.end)}`); closeModal(); resetModalHandlers(); toast(`บันทึกเวลากรีฑาแล้ว ${p.rows.length} รายการ`); render();
+    }, 'บันทึกเวลา');
   };
 }
 
@@ -4156,7 +4218,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -4185,6 +4247,7 @@ document.addEventListener('click', e => {
   else if (d.editsport) openSport(d.editsport);
   else if (d.delsport) { const n = eventsOf(d.delsport).length; ask(`ลบชนิดกีฬา “${sportName(d.delsport)}”${n ? ` และ ${n} รายการในนั้น` : ''}?`, () => { const nm = sportName(d.delsport); eventsOf(d.delsport).forEach(ev => put('events', ev.id, null)); put('sports', d.delsport, null); UI.adSport = null; logIt('ลบชนิดกีฬา', nm); }, 'ลบ'); }
   else if (d.addev) openEvent(null, d.addev);
+  else if (d.athsched) openAthSched(d.athsched);
   else if (d.editev) { WIZ = d.wiz ? d.editev : null; openEvent(d.editev); }
   else if (d.delev) { const t = evTitle(evById(d.delev)); ask(`ลบรายการ “${t}” พร้อมคู่และผลทั้งหมด?`, () => { put('events', d.delev, null); logIt('ลบรายการ', t); }, 'ลบ'); }
   else if (d.draw) openDraw(d.draw);
