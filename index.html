@@ -636,6 +636,7 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .ss small{font:500 10px var(--body);color:var(--muted);margin-right:3px}.ss b{font-weight:600}.ss b.w{color:var(--blue-d);font-weight:800}
 .ss.cur{background:#FFF0F2;border-color:#F3B8BE;color:var(--live)}.ss.cur::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--live);margin-left:4px;align-self:center;animation:liveblink 1.4s infinite}
 .mrow.compact .ssrow{grid-column:2}.tvlive .ss{font-size:15px}
+.qwarn{border:1px solid #F1C38A;background:#FFF8EC;border-radius:12px;padding:10px 12px;margin:8px 0;color:#7A4A00}.qwarn>b{display:block;margin-bottom:4px}.qwarn p{margin:6px 0 4px}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -802,8 +803,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.7', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.20.8', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.20.8', 'เริ่มแข่งไม่ได้ถ้าคู่ที่กำหนดก่อนหน้าที่สนามเดียวกันยังไม่ได้แข่ง (ผู้ดูแลยืนยันข้ามลำดับได้) · คะแนนรายเซตใช้ #1 #2 #3'],
   ['1.20.7', 'กีฬาที่แข่งเป็นเซต แสดงคะแนนรายเซตระหว่างแข่ง (ตาราง แผนที่สนาม การ์ดสนาม จอประกาศผล)'],
   ['1.20.6', 'ส่งรายชื่อ: กรองชั้น/ห้อง และมุมมองตารางติ๊กเลือกหลายคนหรือเลือกทั้งหมด แล้วกดเพิ่มทีเดียว (เหมาะกับขบวนพาเรด/กองเชียร์)'],
   ['1.20.5', 'หน้ารายงานตัว: เลิกใช้ป้าย “ถัดไป” รายสนาม (ใช้กลุ่มความเร่งด่วนแทน) · ป้าย “เปิดรายงานตัว · แข่งในอีก X นาที”'],
@@ -1001,7 +1003,7 @@ function setErr(SET, i, x, final) {
 function setStrip(ev, m) {
   const SET = setsOf(ev); if (!SET) return ''; const l = (m.sets || []).filter(x => x && (x[0] !== '' && x[0] != null || x[1] !== '' && x[1] != null)); if (!l.length) return '';
   return `<span class="setstrip" title="คะแนนรายเซต">${l.map((x, i) => { const full = x[0] !== '' && x[1] !== '' && x[0] != null && x[1] != null; const fin = full && !setErr(SET, i, x, true); const cur = !sideWin(m) && i === l.length - 1 && !fin;
-    return `<span class="ss${cur ? ' cur' : ''}"><small>ซ${i + 1}</small><b class="${fin && +x[0] > +x[1] ? 'w' : ''}">${esc(x[0] || 0)}</b>–<b class="${fin && +x[1] > +x[0] ? 'w' : ''}">${esc(x[1] || 0)}</b></span>`; }).join('')}</span>`;
+    return `<span class="ss${cur ? ' cur' : ''}"><small>#${i + 1}</small><b class="${fin && +x[0] > +x[1] ? 'w' : ''}">${esc(x[0] || 0)}</b>–<b class="${fin && +x[1] > +x[0] ? 'w' : ''}">${esc(x[1] || 0)}</b></span>`; }).join('')}</span>`;
 }
 const setNote = sets => (sets || []).filter(x => x && x[0] !== '' && x[1] !== '' && x[0] != null && x[1] != null).map(x => `${x[0]}-${x[1]}`).join(', ');
 const days = () => S.meta.days || [];
@@ -1239,7 +1241,7 @@ const putEvent = ev => { const { id, ...d } = ev; d.at = Date.now(); d.ub = ME.i
 /* ===================== บันทึกเฉพาะส่วน: กันผลทับกันเมื่อหลายเครื่องบันทึกพร้อมกัน =====================
    ผลการแข่งขัน/เริ่มแข่ง/รายงานตัว เขียนเป็น "op" แก้เฉพาะคู่นั้น แล้วส่งผ่าน transaction ของ Firestore
    (อ่านเอกสารล่าสุดจากเซิร์ฟเวอร์ → แก้เฉพาะส่วน → เขียน) op ที่ยังส่งไม่ได้ (ออฟไลน์) เก็บในเครื่องและส่งต่อเมื่อออนไลน์ */
-const RES_KEYS = ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit'];
+const RES_KEYS = ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit', 'skipQ'];
 const OBX_KEY = 'gem-outbox';
 let OUTBOX = (() => { try { const x = JSON.parse(localStorage.getItem(OBX_KEY) || '[]'); return Array.isArray(x) ? x : []; } catch (e) { return []; } })();
 let inflight = 0, flushing = false, lastSync = 0; const RECENT = [];
@@ -1540,7 +1542,8 @@ function rowButtons(ev, m, st) {
   if (st.k === 'tbd') return '';
   const ci = S.meta.requireCheckin === false ? '' : `<button class="btn sm rowbtn ghost" data-ci="${id}">เช็คชื่อ</button>`;
   if (st.k === 'forfeit') return `${ci}<button class="btn sm rowbtn startb notready" data-start="${id}">เริ่มแข่ง</button><button class="btn sm rowbtn forf" data-forf="${id}">ปรับแพ้</button>`;
-  return `${ci}<button class="btn sm rowbtn startb${st.both ? '' : ' notready'}" data-start="${id}">เริ่มแข่ง</button>`;
+  const v = venueOf(ev, m); const q = v ? earlierPending(v, ev, m) : []; const qBlock = q.length && liveAtVenue(v, ev.id, m.id).length + q.length >= courtsOf(v);
+  return `${ci}<button class="btn sm rowbtn startb${st.both && !qBlock ? '' : ' notready'}" data-start="${id}"${qBlock ? ` title="รอคู่ ${q[0].m.time} น. ที่สนามนี้แข่งก่อน"` : ''}>เริ่มแข่ง</button>`;
 }
 const STATE_CLS = { live: 'islive', delay: 'isdelay', hold: 'isdelay', waiting: 'iswait', forfeit: 'isforf', checkin: 'isci', ready: 'isready', done: 'isdone' };
 /* นัดถัดไปของแต่ละสนามในวันนั้น (ยังไม่เริ่ม ยังไม่มีผล เวลาเร็วสุด) */
@@ -2686,7 +2689,7 @@ function openReset() {
   };
 }
 function stripResults(e) {
-  (e.matches || []).forEach(m => ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit'].forEach(k => delete m[k]));
+  (e.matches || []).forEach(m => ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit', 'skipQ'].forEach(k => delete m[k]));
   delete e.res; delete e.ci; return e;
 }
 async function resetData(what, students) {
@@ -2925,33 +2928,39 @@ function openResult(eid, mid) {
   $('#goforf')?.addEventListener('click', () => openForfeit(eid, mid));
   $('#unstart')?.addEventListener('click', () => { closeModal(); recUndo('ยกเลิกการเริ่มแข่ง', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, unset: ['startedAt', 'live', 'sa', 'sb'] })); });
 }
+/* คู่ที่กำหนดเวลาก่อนหน้าที่สนามเดียวกันในวันเดียวกัน ยังไม่เริ่มและยังไม่จบ (ต้องได้แข่งก่อน) */
+function earlierPending(v, ev, m) { if (!v || !m.date || !m.time) return []; return allMatches().filter(x => !(x.ev.id === ev.id && x.m.id === m.id) && venueOf(x.ev, x.m) === v && x.m.date === m.date && x.m.time && x.m.time < m.time && !sideWin(x.m) && !isLive(x.m)).sort((p, q) => p.m.time.localeCompare(q.m.time)); }
 function liveAtVenue(v, eid, mid) { return allMatches().filter(x => !(x.ev.id === eid && x.m.id === mid) && isLive(x.m) && venueOf(x.ev, x.m) === v); }
 function openStart(eid, mid) {
-  const ev = evById(eid); const m = mOf(ev, mid); const t = teamsOf(ev, m); const ok = {};
+  const ev = evById(eid); const m = mOf(ev, mid); const t = teamsOf(ev, m); const ok = {}; let skipQ = false;
   const draw = () => {
     const m2 = mOf(evById(eid), mid); const st = mState(evById(eid), m2);
     const side = sd => { const c = ciInfo(evById(eid), m2, sd); const okNow = c.ok || ok[sd];
       return `<div class="stside ${okNow ? 'ok' : 'no'}">${chip(c.t)}<b class="num">${S.meta.requireCheckin === false ? 'ไม่บังคับเช็คชื่อ' : c.manual || ok[sd] ? 'ยืนยันครบ' : `รายงานตัว ${c.n}/${c.need}`}</b>
         ${c.ok ? '<span class="okt">พร้อม</span>' : c.roster ? `<button type="button" class="btn sm ghost" data-goci="1">เช็คชื่อ (${c.roster} คนในรายชื่อ)</button>` : `<span class="errt sm">ยังไม่ส่งรายชื่อนักกีฬา จึงรายงานตัวไม่ได้</span>${c.t >= 0 && canRoster(c.t) ? `<button type="button" class="btn sm ghost" data-goroster="${c.t}">ไปส่งรายชื่อ</button>` : '<small class="muted">ให้ครูคณะสีส่งรายชื่อก่อน หรือปรับแพ้</small>'}`}</div>`; };
     const v = venueOf(evById(eid), m2); const busy = v ? liveAtVenue(v, eid, mid) : []; const full = v && busy.length >= courtsOf(v);
-    const ready = !full && ['a', 'b'].every(sd => ciInfo(evById(eid), m2, sd).ok || ok[sd]);
+    const pend = v && !full ? earlierPending(v, evById(eid), m2) : []; const queued = pend.length && busy.length + pend.length >= courtsOf(v); const blockQ = queued && !skipQ;
+    const ready = !full && !blockQ && ['a', 'b'].every(sd => ciInfo(evById(eid), m2, sd).ok || ok[sd]);
     $('#modal').innerHTML = `<div class="dlg wide"><h3>เริ่มการแข่งขัน · ${esc(evTitle(ev))} คู่ ${m.no}</h3>
       <p class="muted sm">กติกาสูจิบัตร: นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${S.meta.checkinMin ?? 20} นาที · ต้องมีตัวจริงครบ ${starters(ev)} คนจึงเริ่มแข่งได้ · ไม่ลงแข่งภายใน ${S.meta.forfeitMin ?? 10} นาทีหลังคู่ก่อนหน้าจบ ถือว่าสละสิทธิ์ (ข้อ 4)</p>
       <div class="stgrid">${side('a')}${side('b')}</div>
       <p class="sm">${statePill(ev, m2, st)}${st.prev && !sideWin(st.prev.m) ? ` คู่ก่อนหน้าที่สนามนี้ (${esc(evTitle(st.prev.ev))} คู่ ${st.prev.m.no}) ยังไม่จบ` : ''}</p>
       <p class="muted sm">ก่อนเริ่ม ตรวจการแต่งกายและความปลอดภัยตามข้อ 3 และข้อ 8 (มัดผม ถอดเครื่องประดับ ตัดเล็บ เสื้อคณะสี 2569 สนับแข้งสำหรับฟุตบอล/ฟุตซอล)</p>
-      <p class="err" id="err">${full ? `ยังเริ่มไม่ได้: ${esc(v)} ไม่ว่าง (${courtsOf(v)} คอร์ท) กำลังแข่ง ${busy.map(x => esc(evTitle(x.ev)) + ' คู่ ' + x.m.no).join(', ')} บันทึกผลคู่นั้นให้จบก่อน` : ready ? '' : (['a', 'b'].some(sd => !ciInfo(evById(eid), m2, sd).ok && !ciInfo(evById(eid), m2, sd).roster) ? 'ยังเริ่มไม่ได้: มีทีมที่ยังไม่ส่งรายชื่อนักกีฬา ส่งรายชื่อแล้วเช็คชื่อ หรือปรับแพ้ทีมนั้น' : 'ยังเริ่มไม่ได้: นักกีฬารายงานตัวไม่ครบ')}</p>
+      ${queued ? `<div class="qwarn"><b>คู่ก่อนหน้าที่สนามนี้ยังไม่ได้แข่ง</b>${pend.slice(0, 4).map(x => `<div class="sm">${esc(x.m.time)} น. · ${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${mState(x.ev, x.m).k === 'tbd' ? 'ยังไม่ทราบคู่' : 'ยังไม่เริ่ม'}</div>`).join('')}
+        <p class="muted sm">${esc(v)} มี ${courtsOf(v)} คอร์ท ต้องแข่งตามลำดับเวลา ให้เริ่มหรือจบคู่ก่อนหน้าก่อน (ถ้าทีมไม่มา ใช้ “ปรับแพ้” ที่คู่นั้น)</p>
+        ${isAdmin() ? `<label class="ck sm"><input type="checkbox" id="skipq" ${skipQ ? 'checked' : ''}> ผู้ดูแล: ยืนยันเริ่มก่อน (คู่ก่อนหน้าเลื่อนหรือย้ายสนามแล้ว) ระบบบันทึกชื่อผู้ยืนยัน</label>` : ''}</div>` : ''}
+      <p class="err" id="err">${full ? `ยังเริ่มไม่ได้: ${esc(v)} ไม่ว่าง (${courtsOf(v)} คอร์ท) กำลังแข่ง ${busy.map(x => esc(evTitle(x.ev)) + ' คู่ ' + x.m.no).join(', ')} บันทึกผลคู่นั้นให้จบก่อน` : blockQ ? `ยังเริ่มไม่ได้: ต้องแข่งคู่ ${pend[0].m.time} น. (${esc(evTitle(pend[0].ev))} คู่ ${pend[0].m.no}) ก่อน` : ready ? '' : (['a', 'b'].some(sd => !ciInfo(evById(eid), m2, sd).ok && !ciInfo(evById(eid), m2, sd).roster) ? 'ยังเริ่มไม่ได้: มีทีมที่ยังไม่ส่งรายชื่อนักกีฬา ส่งรายชื่อแล้วเช็คชื่อ หรือปรับแพ้ทีมนั้น' : 'ยังเริ่มไม่ได้: นักกีฬารายงานตัวไม่ครบ')}</p>
       <div class="actions"><button class="btn" id="dostart" ${ready ? '' : 'disabled'}>เริ่มแข่งตอนนี้ (${toTime(nowMin())} น.)</button>${st.k === 'forfeit' || ['a', 'b'].some(sd => !ciInfo(evById(eid), m2, sd).ok && !ciInfo(evById(eid), m2, sd).roster) ? '<button class="btn danger" id="toforf">ปรับแพ้</button>' : ''}<button class="btn ghost" data-close>ปิด</button></div></div>`;
   };
   $('#modal').hidden = false; draw();
-  $('#modal').onchange = e => { const sd = e.target.dataset.okside; if (sd) { ok[sd] = e.target.checked; draw(); } };
+  $('#modal').onchange = e => { if (e.target.id === 'skipq') { skipQ = e.target.checked; draw(); return; } const sd = e.target.dataset.okside; if (sd) { ok[sd] = e.target.checked; draw(); } };
   $('#modal').onclick = e => {
     if (e.target.dataset.goci) { resetModalHandlers(); openCheckin(eid, mid); return; }
     if (e.target.dataset.goroster) { closeModal(); resetModalHandlers(); UI.regColor = +e.target.dataset.goroster; location.hash = 'register'; setTimeout(() => openRoster(eid), 80); return; }
     if (e.target.id === 'toforf') { resetModalHandlers(); openForfeit(eid, mid); return; }
     if (e.target.id === 'dostart') {
       const mm = mOf(evById(eid), mid); const ciOk = Object.assign({}, mm.ciOk || {}, ...Object.keys(ok).filter(k => ok[k]).map(k => ({ [k]: true })));
-      closeModal(); resetModalHandlers(); const r = patchEv({ eid, mid, set: { startedAt: Date.now(), startedBy: ME.id || '', ciOk }, unset: ['live'] }); recUndo('เริ่มการแข่งขัน', `${evTitle(ev)} คู่ ${m.no}`, r);
+      closeModal(); resetModalHandlers(); const r = patchEv({ eid, mid, set: { startedAt: Date.now(), startedBy: ME.id || '', ciOk, ...(skipQ ? { skipQ: true } : {}) }, unset: ['live'] }); recUndo(skipQ ? 'เริ่มการแข่งขัน (ข้ามลำดับ)' : 'เริ่มการแข่งขัน', `${evTitle(ev)} คู่ ${m.no}`, r);
     }
   };
 }
