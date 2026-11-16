@@ -758,6 +758,7 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .rtop{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.rtop b{margin:0 4px 0 2px;font-size:13px}
 .clashbox{margin:0 0 10px;padding:8px 12px;border-radius:10px}.clashbox summary{cursor:pointer}
 .clrow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:6px 0;border-top:1px solid #F1D9A8}.clrow>small:last-child{flex-basis:100%;color:#7A4B00}
+.pfilt{margin:0 0 8px;display:inline-flex;width:auto}
 </style>
 </head>
 <body>
@@ -857,8 +858,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.13', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.14', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.14', 'รายชื่อนักกีฬาคณะสี: คนที่มีปัญหาอยู่บนสุด · ปุ่มกรอง “มีปัญหา”'],
   ['1.22.13', 'ส่งรายชื่อ: รายการคนเวลาชนพร้อมคู่ที่ชน กดแก้ได้ทันที · วันแข่งที่ใกล้ใช้นัด/รอบถัดไปที่ยังไม่แข่ง (แก้ 00:00)'],
   ['1.22.12', 'รายการสะสมคะแนนแสดงแยกแถวละรอบ กรอกคะแนนทีละรอบ · แสดงในหน้าสนามแข่งขันตามวันของแต่ละรอบ'],
   ['1.22.11', 'รายการสะสมคะแนน (Free Fire): สถานะตามรอบของแต่ละวัน · ตั้งวันเวลาทุกรอบได้ในหน้าตั้งค่ารายการ'],
@@ -2360,7 +2362,11 @@ function vRegister() {
   const people = Object.values(idx).sort((a, b) => String(a.cls).localeCompare(String(b.cls), 'th', { numeric: true }));
   const sched = athleteSchedule(c); const B = bannedSet();
   people.forEach(p => { p.cl = clashesOf(sched[pkey(p)] || []); p.clash = p.cl.length; p.ban = isBanned(c, p, B); });
-  people.sort((a, b) => (b.ban ? 2 : b.clash ? 1 : 0) - (a.ban ? 2 : a.clash ? 1 : 0));
+  const maxS = S.meta.maxSports ?? 2, maxA = S.meta.maxAthletics ?? 2;
+  people.forEach(p => { p.over = chkOn('max') && (p.sports.size > maxS || p.ath.size > maxA); p.prob = p.ban || p.clash || p.over; });
+  people.sort((a, b) => (b.ban ? 3 : b.clash ? 2 : b.over ? 1 : 0) - (a.ban ? 3 : a.clash ? 2 : a.over ? 1 : 0));
+  const nProb = people.filter(p => p.prob).length; const onlyProb = UI.regPF && nProb;
+  const shown = onlyProb ? people.filter(p => p.prob) : people;
   const nClash = people.filter(p => p.clash).length;
   const flagged = people.filter(p => chkOn('max') && (p.sports.size > (S.meta.maxSports ?? 2) || p.ath.size > (S.meta.maxAthletics ?? 2)));
   const matrix = `<div class="scroll"><table class="std mx"><thead><tr><th>ชนิดกีฬา</th>${COLORS.map((_, i) => `<th>${chip(i)}</th>`).join('')}</tr></thead><tbody>${sportsList().map(sp => {
@@ -2373,7 +2379,8 @@ function vRegister() {
   <section class="card"><h2>นักกีฬาคณะ${COLORS[c].n} <small class="muted">${people.length} คน</small></h2>
     ${flagged.length ? `<p class="warn">${flagged.length} คนลงเกินจำนวนที่กติกากำหนด</p>` : ''}${nClash ? `<details class="qwarn clashbox" open><summary><b>${nClash} คนมีนัดแข่งเวลาทับกัน</b> <span class="sm">(นัดถัดไปเริ่มก่อนนัดก่อนหน้าจบ หรือห่างไม่ถึง ${S.meta.clashMin ?? 30} นาที) แก้โดยเปลี่ยนตัวในรายการใดรายการหนึ่ง · กดชื่อเพื่อแก้</span></summary>
       ${people.filter(p => p.clash).map(p => `<div class="clrow click" data-ath="${c}~${esc(pkey(p))}" tabindex="0"><span class="plink">${esc(p.name)}</span> <small class="muted">${esc(p.cls)}</small><small>${p.cl.slice(0, 2).map(pr => { const [x, y] = Array.isArray(pr) ? pr : [pr.a || pr[0], pr.b || pr[1]]; return x && y ? `${esc(x.label)} ${fmtDate(x.date)} ${esc(x.time)} ↔ ${esc(y.label)} ${esc(y.time)}` : ''; }).join(' · ')}</small></div>`).join('')}</details>` : ''}
-    <div class="plist">${people.map(p => { const bad = chkOn('max') && (p.sports.size > (S.meta.maxSports ?? 2) || p.ath.size > (S.meta.maxAthletics ?? 2)); return `<div class="prow click${bad ? ' bad' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูข้อมูลนักกีฬาและแก้ไขการส่งรายชื่อ"><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="errt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="muted sm">${p.evs.map(id => esc(S.events[id] ? sportName(S.events[id].sport) : '')).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span></div>`; }).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
+    ${nProb ? `<div class="seg mini pfilt"><button data-regpf="" class="${onlyProb ? '' : 'on'}">ทุกคน ${people.length}</button><button data-regpf="1" class="${onlyProb ? 'on' : ''}">มีปัญหา ${nProb}</button></div>` : ''}
+    <div class="plist">${shown.map(p => { const bad = p.prob; return `<div class="prow click${bad ? ' bad' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูข้อมูลนักกีฬาและแก้ไขการส่งรายชื่อ"><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="errt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="muted sm">${p.evs.map(id => esc(S.events[id] ? sportName(S.events[id].sport) : '')).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span></div>`; }).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
     <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
   <section class="card"><h2>ภาพรวมการส่งรายชื่อทุกคณะสี</h2><p class="muted sm">ส่งครบ / รายการที่คณะสีนั้นลงแข่ง (ไม่นับรายการที่ไม่ได้อยู่ในสาย)</p>${matrix}</section>`;
 }
@@ -4269,7 +4276,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -4288,6 +4295,7 @@ document.addEventListener('click', e => {
     const st = (UI.mapF = UI.mapF || {})[key] = UI.mapF[key] || {};
     if (k === '*') UI.mapF[key] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; if (key === UI.mapSport) UI.mapEv = null; render(); }
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
+  else if (d.regpf != null) { UI.regPF = !!d.regpf; render(); }
   else if (d.schv) { UI.schView = d.schv; render(); }
   else if (d.regc) { UI.regColor = +d.regc; render(); }
   else if (d.roster) openRoster(d.roster);
