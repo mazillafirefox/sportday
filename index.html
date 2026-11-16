@@ -849,8 +849,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.6', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.7', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.7', 'แก้คอลัมน์หน้ารายงานตัวเมื่อดูวันที่ยังไม่ถึงวันแข่ง'],
   ['1.22.6', 'รายงานตัวได้เฉพาะวันแข่ง (ก่อนถึงวันแข่งปุ่มเช็คชื่อปิดไว้)'],
   ['1.22.5', 'แก้รายชื่อนักกีฬา/นักเรียนไม่แสดงเมื่อเข้าสู่ระบบเสร็จก่อนโหลดข้อมูลชุดแรก'],
   ['1.22.4', 'ปุ่มตรวจฐานข้อมูลกลาง (อ่าน/เขียนแต่ละส่วน) · แจ้งและลองใหม่เมื่ออ่านรายชื่อไม่ได้ · กู้คืนแสดงสาเหตุเมื่อส่งไม่สำเร็จ'],
@@ -1744,7 +1745,7 @@ function rowButtons(ev, m, st) {
   if (st.k === 'tbd') return '';
   const ciA = st.A || ciInfo(ev, m, 'a'), ciB = st.B || ciInfo(ev, m, 'b'); const nOk = [ciA, ciB].filter(x => x.ok).length; const any = [ciA, ciB].some(x => x.n || x.manual);
   const ciT = nOk === 2 ? 'ทั้งสองทีมรายงานตัวครบแล้ว' : nOk === 1 || any ? `รายงานตัวแล้ว ${[ciA, ciB].map(x => x.manual ? 'ครบ' : x.n + '/' + x.need).join(' · ')}` : 'ยังไม่มีใครรายงานตัว';
-  const ci = S.meta.requireCheckin === false ? '' : ciEarly(ev, m) ? `<button class="btn sm rowbtn ghost cib" disabled title="${esc(ciEarlyMsg(ev, m))}">เช็คชื่อวันแข่ง</button>` : `<button class="btn sm rowbtn ghost cib${nOk === 2 ? ' ok' : nOk || any ? ' part' : ''}" data-ci="${id}" title="${ciT}">${nOk === 2 ? '✓ เช็คชื่อครบ' : nOk || any ? `เช็คชื่อ ${nOk}/2 ทีม` : 'เช็คชื่อ'}</button>`;
+  const ci = S.meta.requireCheckin === false ? '' : ciEarly(ev, m) ? `<button class="btn sm rowbtn ghost cib" disabled title="${esc(ciEarlyMsg(ev, m))}">รอวันแข่ง</button>` : `<button class="btn sm rowbtn ghost cib${nOk === 2 ? ' ok' : nOk || any ? ' part' : ''}" data-ci="${id}" title="${ciT}">${nOk === 2 ? '✓ เช็คชื่อครบ' : nOk || any ? `เช็คชื่อ ${nOk}/2 ทีม` : 'เช็คชื่อ'}</button>`;
   if (st.k === 'forfeit') return `${ci}<button class="btn sm rowbtn startb notready" data-start="${id}">เริ่มแข่ง</button><button class="btn sm rowbtn forf" data-forf="${id}">ปรับแพ้</button>`;
   const v = venueOf(ev, m); const q = v ? earlierPending(v, ev, m) : []; const qBlock = q.length && liveAtVenue(v, ev.id, m.id).length + q.length >= courtsOf(v);
   return `${ci}<button class="btn sm rowbtn startb${st.both && !qBlock ? '' : ' notready'}" data-start="${id}"${qBlock ? ` title="รอคู่ ${q[0].m.time} น. ที่สนามนี้แข่งก่อน"` : ''}>เริ่มแข่ง</button>`;
@@ -2362,7 +2363,7 @@ function vCheckin() {
     const s = sideWin(m), lv = st.k === 'live'; const pm = playedMin(m);
     const sc = s ? `<span class="sc num">${esc(m.sa ?? '')}<i>–</i>${esc(m.sb ?? '')}</span>` : lv && (m.sa || m.sb) ? `<span class="sc num lvsc">${esc(m.sa || 0)}<i>–</i>${esc(m.sb || 0)}</span>` : '<span class="sc vs">VS</span>';
     const early = ciEarly(ev, m); const edc = ed && !early;
-    return `<div class="mrow g2 ci${edc ? ' click ed' : ''} ${STATE_CLS[st.k] || ''}" ${edc ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}${early && ed ? ` title="${esc(ciEarlyMsg(ev, m))}"` : ''}>
+    return `<div class="mrow g2 ci${ed ? ' ed' : ''}${edc ? ' click' : ''} ${STATE_CLS[st.k] || ''}" ${edc ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}${early && ed ? ` title="${esc(ciEarlyMsg(ev, m))}"` : ''}>
     <span class="tcol"><b class="tt num">${esc(m.time || '–')}</b><small class="pmin">รายงานตัว ${ciAt != null ? toTime(ciAt) : '–'}</small>${lv ? `<span class="tst live"><i></i>กำลังแข่ง</span>` : s ? '<span class="tst done">✓ จบแล้ว</span>' : ''}${pm != null ? `<small class="pmin">${lv ? 'แข่งมา' : 'ใช้เวลา'} ${pm} นาที</small>` : ''}</span>
     <span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b><small>คู่ ${m.no}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
     <span class="ta">${side(ev, m, 'a', t.a)}</span>${sc}<span class="tb">${side(ev, m, 'b', t.b)}</span>
