@@ -625,6 +625,12 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .athevs{display:flex;flex-direction:column;gap:6px}.athev{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
 .athev.clash{border-color:#F1C38A;background:#FFF8EC}@media(max-width:640px){.athev{grid-template-columns:1fr auto}.athev .btn{grid-column:1/-1;justify-self:start}}
 .rline.focus{background:#FFF6D6;border-radius:10px;box-shadow:0 0 0 2px #F1C38A}
+.pkbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:4px 0 8px}.pkbar .fld.sm{display:flex;flex-direction:column;font-size:12px;gap:2px;margin:0}.pkbar select{min-width:110px}.pkview{margin-left:auto}
+.pktable{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}.pktable table{margin:0}.pktable thead th{position:sticky;top:0;background:#F4F6FB;z-index:1}
+.pktable td,.pktable th{padding:6px 8px}.pktable .ckc{width:34px;text-align:center}.pktable input[type=checkbox]{width:18px;height:18px;cursor:pointer}
+.pktable tbody tr:not(.blocked){cursor:pointer}.pktable tbody tr:not(.blocked):hover td{background:#F5F8FF}.pktable tr.on td{background:#EEF3FF}.pktable tr.blocked td{color:#9AA1B2}.pktable tr.blocked .why{color:var(--bad)}.pktable .why{font-size:11px}
+.pkfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}.pkfoot p{margin:0}.pkfoot .grow{flex:1}
+@media(max-width:640px){.pkview{margin-left:0}.pktable td:nth-child(5),.pktable th:nth-child(5){display:none}}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -791,8 +797,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.5', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.20.6', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.20.6', 'ส่งรายชื่อ: กรองชั้น/ห้อง และมุมมองตารางติ๊กเลือกหลายคนหรือเลือกทั้งหมด แล้วกดเพิ่มทีเดียว (เหมาะกับขบวนพาเรด/กองเชียร์)'],
   ['1.20.5', 'หน้ารายงานตัว: เลิกใช้ป้าย “ถัดไป” รายสนาม (ใช้กลุ่มความเร่งด่วนแทน) · ป้าย “เปิดรายงานตัว · แข่งในอีก X นาที”'],
   ['1.20.4', 'ตารางนักกีฬาคณะสี: กดชื่อเพื่อดูข้อมูลนักกีฬา (รายการที่ลง สถานะ เวลาชน) และไปแก้รายชื่อของรายการนั้นได้ทันที'],
   ['1.20.3', 'หน้ารายงานตัว: แบ่งกลุ่ม ต้องรายงานตัวตอนนี้ / ใกล้ถึงเวลา / กำลังแข่ง / ภายหลัง / จบแล้ว พร้อมไฮไลต์นัดถัดไปและจบแล้ว'],
@@ -3060,7 +3067,7 @@ function openRoster(eid, focusKey) {
     $('#submit')?.addEventListener('click', () => { save(true); logIt('ส่งรายชื่อ', `${evTitle(ev)} · ${COLORS[c].n} ${r.players.length} คน`); toast('ส่งรายชื่อแล้ว'); closeModal(); });
     $('#unsub')?.addEventListener('click', () => { r.submitted = false; save(false); logIt('ยกเลิกการส่งรายชื่อ', `${evTitle(ev)} · ${COLORS[c].n}`); draw(); });
   };
-  const elig = eligible(ev, c);
+  const elig = eligible(ev, c); const PSEL = new Set();
   /* เหตุที่เลือกนักเรียนคนนี้ไม่ได้: ลงกีฬา/กรีฑาครบโควตาแล้ว หรือเวลาแข่งชนกับรายการที่ลงไว้ */
   function blockReason(st, idx) {
     const p = { name: stName(st), cls: st.cls }; const k = pkey(p); const a = idx[k]; const sp = S.sports[ev.sport] || {}; const why = [];
@@ -3073,15 +3080,32 @@ function openRoster(eid, focusKey) {
     if (cl.length) { const o = cl[0].find(x => x.eid !== eid); why.push(`เวลาชน: ${o.label} ${fmtDate(o.date)} ${o.time} น.`); }
     return why;
   }
+  /* ตัวเลือกนักเรียน: กรองชั้น/ห้อง · มุมมองการ์ด หรือ ตารางติ๊กเลือกหลายคน (เหมาะกับรายการคนเยอะ เช่น ขบวนพาเรด) */
   function pickHits() {
     const q = (UI.pickq || '').trim(); const have = new Set(r.players.map(p => p.sid || normName(p.name)));
     const tmp = clone(S.rosters); S.rosters[rosterId(eid, c)] = { ...r }; const idx = athleteIndex(c); S.rosters = tmp;
-    const l = elig.filter(st => !have.has(st.sid || normName(`${st.fn} ${st.ln}`)) && (!q || stName(st).includes(q) || st.cls === q.replace(/^ม\./, '') || String(st.sid).includes(q)))
-      .map(st => ({ st, why: blockReason(st, idx) })).sort((x, y) => (x.why.length ? 1 : 0) - (y.why.length ? 1 : 0));
     if (!elig.length) return `<p class="muted sm">ไม่มีนักเรียนที่ลงรายการนี้ได้ ตรวจการกำหนดห้องให้คณะ${COLORS[c].n}ในเมนู “คณะสีและนักเรียน”</p>`;
-    const nb = l.filter(x => x.why.length).length; const full = rosterMax(ev) && r.players.length >= rosterMax(ev);
-    return `${full ? `<p class="warn sm">ครบ ${rosterMax(ev)} คนแล้ว ลบรายชื่อเดิมก่อนจึงจะเพิ่มได้</p>` : ''}<div class="hits">${l.slice(0, 24).map(({ st, why }) => `<button type="button" class="hit${why.length ? ' blocked' : ''}" data-stadd="${esc(st.cls + '|' + (st.sid || st.no))}" ${why.length || full ? 'disabled' : ''} ${why.length ? `title="${esc(why.join(' · '))}"` : ''}><b>${esc(stName(st))}</b><small>ม.${st.cls} · ${st.no}${st.sid ? ' · ' + esc(st.sid) : ''}</small>${why.length ? `<small class="why">${esc(why.join(' · '))}</small>` : ''}</button>`).join('')}</div><p class="muted sm">${q ? `พบ ${l.length} คน` : `ลงได้ ${elig.length} คน`}${nb ? ` · เลือกไม่ได้ ${nb} คน (ครบโควตาหรือเวลาชน)` : ''}${l.length > 24 ? ' · พิมพ์เพื่อค้นหาเพิ่ม' : ''}</p>`;
+    const grades = [...new Set(elig.map(st => st.cls.split('/')[0]))].sort((x, y) => x - y);
+    if (UI.pickG && !grades.includes(UI.pickG)) UI.pickG = ''; const rooms = [...new Set(elig.filter(st => !UI.pickG || st.cls.split('/')[0] === UI.pickG).map(st => st.cls))].sort(clsSort);
+    if (UI.pickR && !rooms.includes(UI.pickR)) UI.pickR = '';
+    const view = UI.pickView || (rosterMax(ev) > 30 ? 'table' : 'cards');
+    const l = elig.filter(st => !have.has(st.sid || normName(`${st.fn} ${st.ln}`)) && (!UI.pickG || st.cls.split('/')[0] === UI.pickG) && (!UI.pickR || st.cls === UI.pickR)
+      && (!q || stName(st).includes(q) || st.cls === q.replace(/^ม\./, '') || String(st.sid).includes(q)))
+      .map(st => ({ st, k: st.cls + '|' + (st.sid || st.no), why: blockReason(st, idx) }));
+    if (view === 'cards') l.sort((x, y) => (x.why.length ? 1 : 0) - (y.why.length ? 1 : 0)); else l.sort((x, y) => clsSort(x.st.cls, y.st.cls) || (+x.st.no || 0) - (+y.st.no || 0));
+    const nb = l.filter(x => x.why.length).length; const max = rosterMax(ev); const left = max ? Math.max(0, max - r.players.length) : Infinity; const full = max && left <= 0;
+    [...PSEL].forEach(k => { if (!l.some(x => x.k === k && !x.why.length) && !elig.some(st => st.cls + '|' + (st.sid || st.no) === k && !have.has(st.sid || normName(`${st.fn} ${st.ln}`)))) PSEL.delete(k); });
+    const bar = `<div class="pkbar"><label class="fld sm">ชั้น<select data-pkf="g"><option value="">ทุกชั้น</option>${grades.map(g => `<option value="${g}" ${UI.pickG === g ? 'selected' : ''}>ม.${g}</option>`).join('')}</select></label>
+      <label class="fld sm">ห้อง<select data-pkf="r"><option value="">ทุกห้อง</option>${rooms.map(x => `<option value="${x}" ${UI.pickR === x ? 'selected' : ''}>ม.${x}</option>`).join('')}</select></label>
+      <div class="seg mini pkview"><button type="button" data-pkv="cards" class="${view === 'cards' ? 'on' : ''}">การ์ด</button><button type="button" data-pkv="table" class="${view === 'table' ? 'on' : ''}">ตาราง (เลือกหลายคน)</button></div></div>`;
+    const foot = `<p class="muted sm">${q || UI.pickG || UI.pickR ? `พบ ${l.length} คน` : `ลงได้ ${elig.length} คน`}${nb ? ` · เลือกไม่ได้ ${nb} คน (ครบโควตาหรือเวลาชน)` : ''}${max ? ` · รายการนี้ใส่ได้อีก ${left} คน` : ''}</p>`;
+    if (view === 'cards') return `${bar}${full ? `<p class="warn sm">ครบ ${max} คนแล้ว ลบรายชื่อเดิมก่อนจึงจะเพิ่มได้</p>` : ''}<div class="hits">${l.slice(0, 24).map(({ st, why }) => `<button type="button" class="hit${why.length ? ' blocked' : ''}" data-stadd="${esc(st.cls + '|' + (st.sid || st.no))}" ${why.length || full ? 'disabled' : ''} ${why.length ? `title="${esc(why.join(' · '))}"` : ''}><b>${esc(stName(st))}</b><small>ม.${st.cls} · ${st.no}${st.sid ? ' · ' + esc(st.sid) : ''}</small>${why.length ? `<small class="why">${esc(why.join(' · '))}</small>` : ''}</button>`).join('')}</div>${foot.replace('</p>', l.length > 24 ? ' · แสดง 24 คนแรก พิมพ์ค้นหา เลือกชั้น/ห้อง หรือใช้มุมมองตาราง</p>' : '</p>')}`;
+    const ok = l.filter(x => !x.why.length); const nSel = [...PSEL].length; const allOn = ok.length && ok.every(x => PSEL.has(x.k));
+    return `${bar}<div class="pktable"><table class="std"><thead><tr><th class="ckc"><input type="checkbox" data-pkall ${allOn ? 'checked' : ''} ${ok.length && !full ? '' : 'disabled'} aria-label="เลือกทั้งหมดที่แสดง"></th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>เลขที่</th><th>เลขประจำตัว</th><th></th></tr></thead><tbody>
+      ${l.map(x => `<tr class="${x.why.length ? 'blocked' : PSEL.has(x.k) ? 'on' : ''}"><td class="ckc"><input type="checkbox" data-pksel="${esc(x.k)}" ${PSEL.has(x.k) ? 'checked' : ''} ${x.why.length || full ? 'disabled' : ''}></td><td>${esc(stName(x.st))}</td><td class="num">${esc(x.st.cls)}</td><td class="num">${esc(x.st.no ?? '')}</td><td class="num muted">${esc(x.st.sid || '')}</td><td>${x.why.length ? `<small class="why">${esc(x.why.join(' · '))}</small>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">ไม่พบนักเรียนตามตัวกรอง</td></tr>'}</tbody></table></div>
+      <div class="pkfoot">${foot}<span class="grow"></span>${nSel ? `<button type="button" class="btn sm ghost" data-pkclr>ล้างที่เลือก</button>` : ''}<button type="button" class="btn sm" id="pkadd" ${nSel && nSel <= left ? '' : 'disabled'}>เพิ่มที่เลือก (${nSel} คน)</button></div>${nSel > left ? `<p class="errt sm">เลือก ${nSel} คน เกินที่ใส่ได้อีก ${left} คน</p>` : ''}`;
   }
+
 
   const save = (sub) => { r.players = r.players.filter(p => normName(p.name) || p.cls); r.submitted = !!sub; r.ev = eid; r.c = c; r.at = Date.now(); r.by = ME.id || ''; if (sub) r.submittedBy = ME.id || ''; if (sub) r.submittedAt = Date.now(); put('rosters', rosterId(eid, c), clone(r)); };
   $('#modal').hidden = false; draw(); if (focusKey) setTimeout(() => $('#modal .rline.focus')?.scrollIntoView({ block: 'center' }), 80);
@@ -3090,9 +3114,21 @@ function openRoster(eid, focusKey) {
   function clashTxt(p) { const { other } = clashSplit(p); return other.length ? `<small class="muted sm clt">ⓘ ชนกันระหว่างรายการอื่นของคนนี้ (ไม่เกี่ยวกับรายการนี้): ${other.slice(0, 2).map(clLine).join(' · ')} — แก้ที่รายการนั้น</small>` : ''; }
   function evItems(p) { if ((sched[pkey(p)] || []).some(x => x.eid === eid)) return []; const out = []; (ev.matches || []).forEach(m => { const t = teamsOf(ev, m); if ((t.a === c || t.b === c) && m.date && m.time && !sideWin(m)) out.push({ eid, label: `${evTitle(ev)} คู่ ${m.no}`, date: m.date, time: m.time }); }); if (!(ev.matches || []).length && ev.date && ev.time) out.push({ eid, label: evTitle(ev), date: ev.date, time: ev.time }); return out; }
   $('#modal').oninput = e => { if (e.target.id === 'stpick') { UI.pickq = e.target.value; $('#pickhits').innerHTML = pickHits(); return; } const f = e.target.dataset.pf; if (!f) return; const [i, k] = f.split('|'); r.players[+i][k] = e.target.value; if (k === 'name' && !r.players[+i].sex) r.players[+i].sex = sexFromPrefix(e.target.value); };
-  $('#modal').onchange = e => { if (e.target.dataset.pf) setTimeout(() => { const a = document.activeElement?.dataset?.pf; draw(); if (a) $(`#modal [data-pf="${a}"]`)?.focus(); }, 0); };
+  const repick = () => { const sc = $('.pktable')?.scrollTop; $('#pickhits').innerHTML = pickHits(); if (sc && $('.pktable')) $('.pktable').scrollTop = sc; };
+  $('#modal').onchange = e => { const dd = e.target.dataset;
+    if (dd.pkf) { if (dd.pkf === 'g') { UI.pickG = e.target.value; UI.pickR = ''; } else UI.pickR = e.target.value; repick(); return; }
+    if (dd.pksel != null) { e.target.checked ? PSEL.add(dd.pksel) : PSEL.delete(dd.pksel); repick(); return; }
+    if (dd.pkall != null) { const on = e.target.checked; document.querySelectorAll('#pickhits [data-pksel]:not(:disabled)').forEach(x => on ? PSEL.add(x.dataset.pksel) : PSEL.delete(x.dataset.pksel)); repick(); return; }
+    if (e.target.dataset.pf) setTimeout(() => { const a = document.activeElement?.dataset?.pf; draw(); if (a) $(`#modal [data-pf="${a}"]`)?.focus(); }, 0); };
   $('#modal').onclick = e => {
     const b = e.target.closest('[data-prm]'); if (b) { r.players.splice(+b.dataset.prm, 1); draw(); mDirty = true; return; }
+    const tr = e.target.closest('.pktable tbody tr'); if (tr && e.target.tagName !== 'INPUT') { const cb = tr.querySelector('[data-pksel]:not(:disabled)'); if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); } return; }
+    const pv = e.target.closest('[data-pkv]'); if (pv) { UI.pickView = pv.dataset.pkv; repick(); return; }
+    if (e.target.closest('[data-pkclr]')) { PSEL.clear(); repick(); return; }
+    if (e.target.id === 'pkadd') { const tmp = clone(S.rosters); S.rosters[rosterId(eid, c)] = { ...r }; const idx = athleteIndex(c); S.rosters = tmp; let added = 0, skip = 0;
+      [...PSEL].forEach(k => { const st = elig.find(x => x.cls + '|' + (x.sid || x.no) === k); if (!st) return; if (rosterMax(ev) && r.players.length >= rosterMax(ev)) { skip++; return; } if (blockReason(st, idx).length) { skip++; return; }
+        r.players.push({ id: uid('p'), sid: st.sid, fromList: true, name: stName(st), cls: st.cls, num: '', sex: st.sex }); added++; });
+      PSEL.clear(); mDirty = true; draw(); toast(`เพิ่ม ${added} คนแล้ว${skip ? ` · ข้าม ${skip} คน (ครบจำนวนหรือเลือกไม่ได้)` : ''}`); return; }
     const h = e.target.closest('[data-stadd]'); if (h) { const [cls, key] = h.dataset.stadd.split('|'); const st = elig.find(x => x.cls === cls && String(x.sid || x.no) === key); if (!st) return;
       if (rosterMax(ev) && r.players.length >= rosterMax(ev)) { toast(`ครบ ${rosterMax(ev)} คนแล้ว`); return; }
       { const tmp = clone(S.rosters); S.rosters[rosterId(eid, c)] = { ...r }; const idx = athleteIndex(c); S.rosters = tmp; const why = blockReason(st, idx); if (why.length) { toast(why.join(' · ')); return; } }
