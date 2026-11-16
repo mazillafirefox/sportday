@@ -858,8 +858,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.14', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.15', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.15', 'ตัวเลือกนักเรียนตรวจเวลาชนด้วยเงื่อนไขเดียวกับคำเตือน (รวมรอบของรายการสะสมคะแนน) คนที่ชนเลือกไม่ได้ตั้งแต่ในตาราง'],
   ['1.22.14', 'รายชื่อนักกีฬาคณะสี: คนที่มีปัญหาอยู่บนสุด · ปุ่มกรอง “มีปัญหา”'],
   ['1.22.13', 'ส่งรายชื่อ: รายการคนเวลาชนพร้อมคู่ที่ชน กดแก้ได้ทันที · วันแข่งที่ใกล้ใช้นัด/รอบถัดไปที่ยังไม่แข่ง (แก้ 00:00)'],
   ['1.22.12', 'รายการสะสมคะแนนแสดงแยกแถวละรอบ กรอกคะแนนทีละรอบ · แสดงในหน้าสนามแข่งขันตามวันของแต่ละรอบ'],
@@ -1646,15 +1647,20 @@ function matchFlags(m) {
   return f;
 }
 const SCHED_C = {};
+/* นัด/รอบที่ยังไม่แข่งของคณะ c ในรายการ ev (ใช้ร่วมกันทุกจุดที่ตรวจเวลาชน) */
+function evSlots(eid, ev, c, full) {
+  const e = { id: eid, ...ev }; const items = []; const T = x => full ? `${evTitle(e)} ${x}` : x;
+  if ((ev.matches || []).length) (ev.matches || []).forEach(m => { const t = teamsOf(e, m); if ((t.a === c || t.b === c) && m.date && m.time && !sideWin(m)) items.push({ eid, label: T(`คู่ ${m.no}`), date: m.date, time: m.time, venue: m.venue || ev.venue }); });
+  else if ((ev.rounds || []).length) ev.rounds.forEach((rd, i) => { if (rd.date && rd.time && !ev.res?.rounds?.[i]) items.push({ eid, label: T(rd.label), date: rd.date, time: rd.time, venue: ev.venue }); });
+  else if (ev.date && ev.time) items.push({ eid, label: full ? evTitle(e) : ev.label, date: ev.date, time: ev.time, venue: ev.venue });
+  return items;
+}
 function athleteSchedule(c) {
   const mk = c + '|' + DATA_TICK; if (SCHED_C[c]?.k === mk) return SCHED_C[c].v;
   const out = {};
   Object.entries(S.rosters).forEach(([rid, r]) => {
     const [eid, cc] = rid.split('__'); if (+cc !== c) return; const ev = S.events[eid]; if (!ev) return; const e = { id: eid, ...ev };
-    const items = [];
-    if ((ev.matches || []).length) (ev.matches || []).forEach(m => { const t = teamsOf(e, m); if ((t.a === c || t.b === c) && m.date && m.time && !sideWin(m)) items.push({ eid, label: `${evTitle(e)} คู่ ${m.no}`, date: m.date, time: m.time, venue: m.venue || ev.venue }); });
-    else if ((ev.rounds || []).length) ev.rounds.forEach((rd, i) => { if (rd.date && rd.time && !ev.res?.rounds?.[i]) items.push({ eid, label: `${evTitle(e)} ${rd.label}`, date: rd.date, time: rd.time, venue: ev.venue }); });
-    else if (ev.date && ev.time) items.push({ eid, label: evTitle(e), date: ev.date, time: ev.time, venue: ev.venue });
+    const items = evSlots(eid, ev, c, true);
     (r.players || []).forEach(p => { if (!normName(p.name)) return; (out[pkey(p)] = out[pkey(p)] || []).push(...items); });
   });
   SCHED_C[c] = { k: mk, v: out }; return out;
@@ -3454,8 +3460,7 @@ function openRoster(eid, focusKey) {
     if (a && chkOn('max')) { const maxS = S.meta.maxSports ?? 2, maxA = S.meta.maxAthletics ?? 2;
       if (sp.isAthletics && !a.ath.has(eid) && a.ath.size >= maxA) why.push(`ลงกรีฑาครบ ${maxA} ประเภทแล้ว`);
       if (!sp.isAthletics && !sp.isActivity && !a.sports.has(ev.sport) && a.sports.size >= maxS) why.push(`ลงกีฬาครบ ${maxS} ชนิดแล้ว (${[...a.sports].map(sportName).join(', ')})`); }
-    const mine = []; (ev.matches || []).forEach(m => { const t = teamsOf(ev, m); if ((t.a === c || t.b === c) && m.date && m.time && !sideWin(m)) mine.push({ eid, label: `คู่ ${m.no}`, date: m.date, time: m.time }); });
-    if (!(ev.matches || []).length && ev.date && ev.time) mine.push({ eid, label: ev.label, date: ev.date, time: ev.time });
+    const mine = evSlots(eid, S.events[eid] || ev, c, false);
     const cl = clashesOf((sched[k] || []).filter(x => x.eid !== eid).concat(mine)).filter(([x, y]) => (x.eid === eid) !== (y.eid === eid));
     if (cl.length) { const o = cl[0].find(x => x.eid !== eid); why.push(`เวลาชน: ${o.label} ${fmtDate(o.date)} ${o.time} น.`); }
     return why;
@@ -3492,7 +3497,7 @@ function openRoster(eid, focusKey) {
   function clashSplit(p) { const cl = clashesOf((sched[pkey(p)] || []).concat(evItems(p))); return { mine: cl.filter(([x, y]) => x.eid === eid || y.eid === eid), other: cl.filter(([x, y]) => x.eid !== eid && y.eid !== eid) }; }
   function clLine([x, y]) { return `${fmtDate(x.date)} ${x.time} ${esc(x.label)} กับ ${y.time} ${esc(y.label)}`; }
   function clashTxt(p) { const { other } = clashSplit(p); return other.length ? `<small class="muted sm clt">ⓘ ชนกันระหว่างรายการอื่นของคนนี้ (ไม่เกี่ยวกับรายการนี้): ${other.slice(0, 2).map(clLine).join(' · ')} — แก้ที่รายการนั้น</small>` : ''; }
-  function evItems(p) { if ((sched[pkey(p)] || []).some(x => x.eid === eid)) return []; const out = []; (ev.matches || []).forEach(m => { const t = teamsOf(ev, m); if ((t.a === c || t.b === c) && m.date && m.time && !sideWin(m)) out.push({ eid, label: `${evTitle(ev)} คู่ ${m.no}`, date: m.date, time: m.time }); }); if (!(ev.matches || []).length && ev.date && ev.time) out.push({ eid, label: evTitle(ev), date: ev.date, time: ev.time }); return out; }
+  function evItems(p) { if ((sched[pkey(p)] || []).some(x => x.eid === eid)) return []; return evSlots(eid, S.events[eid] || ev, c, true); }
   $('#modal').oninput = e => { if (e.target.id === 'stpick') { UI.pickq = e.target.value; $('#pickhits').innerHTML = pickHits(); return; } const f = e.target.dataset.pf; if (!f) return; const [i, k] = f.split('|'); r.players[+i][k] = e.target.value; if (k === 'name' && !r.players[+i].sex) r.players[+i].sex = sexFromPrefix(e.target.value); };
   const repick = () => { const sc = $('.pktable')?.scrollTop; $('#pickhits').innerHTML = pickHits(); if (sc && $('.pktable')) $('.pktable').scrollTop = sc; };
   $('#modal').onchange = e => { const dd = e.target.dataset;
