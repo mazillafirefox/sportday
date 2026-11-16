@@ -849,8 +849,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.4', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.5', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.5', 'แก้รายชื่อนักกีฬา/นักเรียนไม่แสดงเมื่อเข้าสู่ระบบเสร็จก่อนโหลดข้อมูลชุดแรก'],
   ['1.22.4', 'ปุ่มตรวจฐานข้อมูลกลาง (อ่าน/เขียนแต่ละส่วน) · แจ้งและลองใหม่เมื่ออ่านรายชื่อไม่ได้ · กู้คืนแสดงสาเหตุเมื่อส่งไม่สำเร็จ'],
   ['1.22.3', 'ระบบสำรอง/กู้คืนใหม่: เลือกไฟล์ · ตรวจก่อนกู้คืน · เลือกส่วนข้อมูล · ตรวจซ้ำจากเซิร์ฟเวอร์และรายงานความครบ · แก้คะแนนเซตบันทึกใน Firestore ไม่ได้'],
   ['1.22.2', 'เชื่อม Firebase โปรเจกต์ sportday · เก็บอีเมลผู้ดูแลแบบ hash'],
@@ -1393,7 +1394,7 @@ function loadScript(src) { return new Promise((ok, bad) => { const s = document.
 function updateWrite(force) {
   const before = canWrite;
   canWrite = mode !== 'shared' ? true : sb ? !!ME.id && !!SB_ACC?.role : !!ME.id && (ME.owner || !!(S.meta.roles || {})[ME.id]);
-  if (force || before !== canWrite) subscribePrivate();
+  if (force || before !== canWrite || (mode === 'shared' && canWrite && !sb && !UNSUB.rosters)) subscribePrivate();
 }
 const PRIV_ERR = {}; let PRIV_T = 0;
 function subscribePrivate() {
@@ -1419,14 +1420,14 @@ async function initData() {
     firebase.initializeApp(CONFIG.firebase); db = firebase.firestore(); auth = firebase.auth();
     try { await db.enablePersistence({ synchronizeTabs: true }); } catch (e) { /* เปิดหลายแท็บ/เบราว์เซอร์ไม่รองรับ: ยังใช้งานได้แต่ไม่เก็บออฟไลน์ */ }
   } catch (e) { mode = 'local'; loadLocal(); LOG = S.log || []; canWrite = true; render(); toast('เชื่อมต่อ Firebase ไม่ได้ กำลังใช้ข้อมูลในเครื่องนี้'); return; }
-  const timer = setTimeout(() => { if (mode === 'connecting') { mode = 'shared'; render(); toast('โหลดข้อมูลช้ากว่าปกติ ตรวจสอบอินเทอร์เน็ต'); } }, 12000);
+  const timer = setTimeout(() => { if (mode === 'connecting') { mode = 'shared'; updateWrite(); render(); toast('โหลดข้อมูลช้ากว่าปกติ ตรวจสอบอินเทอร์เน็ต'); } }, 12000);
   ['sports', 'events', 'meta', 'scores'].forEach(col => db.collection(col).onSnapshot(snap => {
     const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = fsDec(d.data()); });
     if (col === 'events') { const now = Date.now(); while (RECENT.length && RECENT[0].until < now) RECENT.shift();
       RECENT.forEach(({ op }) => { const d = o[op.eid]; if (d && (d.at || 0) < op.ts) applyOp(d, op); }); /* snapshot เก่าที่มาถึงช้ากว่าการบันทึก */
       OUTBOX.forEach(op => { if (o[op.eid]) applyOp(o[op.eid], op); }); }
     if (col === 'meta') S.meta = o.config || {}; else S[col] = o;
-    if (!snap.metadata.fromCache) { clearTimeout(timer); mode = 'shared'; }
+    if (!snap.metadata.fromCache) { clearTimeout(timer); if (mode !== 'shared') { mode = 'shared'; updateWrite(); } }
     if (col === 'meta') updateWrite();
     render(); if (col === 'events') flush();
   }, e => { clearTimeout(timer); toast('อ่านข้อมูลไม่ได้: ตรวจสอบ Firestore rules'); }));
