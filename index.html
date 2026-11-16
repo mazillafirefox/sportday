@@ -791,8 +791,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.4', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.20.5', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.20.5', 'หน้ารายงานตัว: เลิกใช้ป้าย “ถัดไป” รายสนาม (ใช้กลุ่มความเร่งด่วนแทน) · ป้าย “เปิดรายงานตัว · แข่งในอีก X นาที”'],
   ['1.20.4', 'ตารางนักกีฬาคณะสี: กดชื่อเพื่อดูข้อมูลนักกีฬา (รายการที่ลง สถานะ เวลาชน) และไปแก้รายชื่อของรายการนั้นได้ทันที'],
   ['1.20.3', 'หน้ารายงานตัว: แบ่งกลุ่ม ต้องรายงานตัวตอนนี้ / ใกล้ถึงเวลา / กำลังแข่ง / ภายหลัง / จบแล้ว พร้อมไฮไลต์นัดถัดไปและจบแล้ว'],
   ['1.20.2', 'เวลาชนนับจากเวลาแข่งจริงของแต่ละนัด · คนที่เวลาชนกับรายการนี้เป็นข้อผิดพลาด ส่งรายชื่อไม่ได้ (ทุกวิธี: เลือก พิมพ์ วางจาก Excel) · เวลาชนระหว่างรายการอื่นแสดงเป็นข้อมูล ไม่บล็อกรายการนี้'],
@@ -1499,7 +1500,7 @@ function statePill(ev, m, st = mState(ev, m)) {
     case 'tbd': return '<span class="pill">รอคู่</span>';
     case 'sched': return '<span class="pill">รอแข่ง</span>';
     case 'ready': return '<span class="pill readyp">พร้อมแข่ง</span>';
-    case 'checkin': return `<span class="pill cip">เปิดรายงานตัว${st.left != null ? ' · อีก ' + st.left + ' นาที' : ''}</span>`;
+    case 'checkin': return `<span class="pill cip">เปิดรายงานตัว${st.left != null ? ' · แข่งในอีก ' + st.left + ' นาที' : ''}</span>`;
     case 'hold': return `<span class="pill delayp">รอคู่ก่อนหน้าจบ${st.late >= 1e3 ? '' : ' · ช้า' + mm(st.late)}</span>`;
     case 'delay': return `<span class="pill delayp">ล่าช้า (Delay)${mm(st.late)}</span>`;
     case 'waiting': return `<span class="pill waitp">รอ${st.miss.map(sd => sideName(st, sd)).join(', ')} · ปรับแพ้ใน ${st.left} นาที</span>`;
@@ -2098,12 +2099,12 @@ function vCheckin() {
     return `<span class="cis ${cls}"${tip('ci', ev.id, m.id, sd)}>${chip(c)}<b class="num">${ci.manual ? 'ครบ' : ci.n + '/' + ci.need}</b></span>`;
   };
   const NOWK = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit'];
-  const row = ({ ev, m }) => { const t = teamsOf(ev, m); const ed = editOn && canScore(ev.sport); const st = mState(ev, m); const nx = !['live', 'done', ...NOWK].includes(st.k) && isNext(ev, m);
+  const row = ({ ev, m }) => { const t = teamsOf(ev, m); const ed = editOn && canScore(ev.sport); const st = mState(ev, m); const nx = false; /* หน้ารายงานตัวใช้กลุ่มบอกความเร่งด่วนแทนป้าย “ถัดไป” รายสนาม */
     const ciAt = m.time ? toMin(m.time) - mins : null; const soon = isToday && ciAt != null && st.k === 'sched' && ciAt - now > 0 && ciAt - now <= 30;
     return `<div class="cirow${ed ? ' click ed' : ''} ${STATE_CLS[st.k] || ''}${nx ? ' isnext' : ''}" ${ed ? `data-ci="${ev.id}|${m.id}" tabindex="0"` : ''}>
     <span class="tt num">${esc(m.time || '–')}<small>รายงานตัว ${ciAt != null ? toTime(ciAt) : '–'}</small></span>
     <span class="ml">${sIcon(ev.sport, 'sm')}<b>${esc(sportName(ev.sport))}</b> ${esc(ev.label)}<small> · คู่ ${m.no}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
-    <span class="vsline">${side(ev, m, 'a', t.a)}${side(ev, m, 'b', t.b)}</span><span class="stc">${nx ? '<span class="pill nextp">ถัดไป</span>' : ''}${soon ? `<span class="pill cip">เปิดรายงานตัวอีก ${ciAt - now} นาที</span>` : ''}${statePill(ev, m, st)}</span>${ed ? `<span class="rbtns">${rowButtons(ev, m, st)}</span>` : ''}</div>`; };
+    <span class="vsline">${side(ev, m, 'a', t.a)}${side(ev, m, 'b', t.b)}</span><span class="stc">${nx ? '<span class="pill nextp">ถัดไป</span>' : ''}${soon ? `<span class="pill cip">เปิดรายงานตัวอีก ${ciAt - now} นาที</span>` : statePill(ev, m, st)}</span>${ed ? `<span class="rbtns">${rowButtons(ev, m, st)}</span>` : ''}</div>`; };
   /* แบ่งกลุ่ม: ต้องรายงานตัวตอนนี้ → ใกล้ถึงเวลา → กำลังแข่ง → ภายหลัง → จบแล้ว */
   const NOW = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit'];
   const g = { now: [], soon: [], live: [], later: [], done: [] };
