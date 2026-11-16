@@ -638,6 +638,8 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .mrow.compact .ssrow{grid-column:2}.tvlive .ss{font-size:15px}
 .qwarn{border:1px solid #F1C38A;background:#FFF8EC;border-radius:12px;padding:10px 12px;margin:8px 0;color:#7A4A00}.qwarn>b{display:block;margin-bottom:4px}.qwarn p{margin:6px 0 4px}
 .btn.cib.ok{background:#E8F7EE;border-color:#7BC79A;color:#17703F;font-weight:600}.btn.cib.part{background:#FFF6E6;border-color:#F1C38A;color:#9A5A00}
+.protc{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;margin-bottom:8px}.protc.pending{border-color:#F1C38A;background:#FFF8EC}.protc.upheld{border-color:#9BD3B0;background:#F1FBF5}.protc.rejected{background:#F7F8FA}
+.prott{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.protd{border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}.protf{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -804,8 +806,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.20.9', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.21.1', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.21.1', 'การประท้วง: ยื่นแยกจากการบันทึกผล (ฝ่าย ผู้ยื่น เรื่อง หลักฐาน เวลา) → รอพิจารณา → ผู้ดูแลตัดสิน (ยกคำร้อง / รับคำร้อง: คงผล แก้ผล หรือแข่งใหม่) ยืนยันด้วย PIN · คู่รอบถัดไปรอจนพิจารณาเสร็จ · รายการคำร้องรอพิจารณาในหน้าจัดการ'],
   ['1.20.9', 'ปุ่มเช็คชื่อในตารางเปลี่ยนสีตามการรายงานตัว: ✓ เช็คชื่อครบ (เขียว) · เช็คชื่อ 1/2 ทีม (ส้ม)'],
   ['1.20.8', 'เริ่มแข่งไม่ได้ถ้าคู่ที่กำหนดก่อนหน้าที่สนามเดียวกันยังไม่ได้แข่ง (ผู้ดูแลยืนยันข้ามลำดับได้) · คะแนนรายเซตใช้ #1 #2 #3'],
   ['1.20.7', 'กีฬาที่แข่งเป็นเซต แสดงคะแนนรายเซตระหว่างแข่ง (ตาราง แผนที่สนาม การ์ดสนาม จอประกาศผล)'],
@@ -2622,6 +2625,7 @@ function vAdmin() {
       ${['ko', 'rr', 'rrko'].includes(e.format) ? `<button data-draw="${e.id}">จับคู่ใหม่</button><button data-sched="${e.id}">จัดเวลาอัตโนมัติ</button><button data-mlist="${e.id}">ตารางคู่ (แก้รายคู่)</button>` : ''}
       <button data-editev="${e.id}">ตั้งค่ารายการ</button>${hasResults(e) ? `<button data-clrev="${e.id}">ล้างผลรายการนี้</button>` : ''}<button class="dz" data-delev="${e.id}">ลบรายการ</button></div></details></div></div>`; }).join('') || '<p class="muted">ยังไม่มีรายการ</p>'}</div>
     <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button></div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
+  ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending'); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงรอพิจารณา <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
   ${conflictCard(conflicts, true)}
   ${rolesCard()}${scoringCard()}
   <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button></div>
@@ -2828,7 +2832,7 @@ const NODIRTY = '#stpick,[type=search],#rsc,[data-nodirty]';
 ['input', 'change'].forEach(t => $('#modal').addEventListener(t, e => { if (!e.target.matches(NODIRTY)) { mDirty = true; $('#dirtybar')?.remove(); } }, true));
 /* กันกดซ้ำ: ฟอร์มส่งได้ครั้งเดียวในช่วงสั้น ๆ และปุ่มหลักกดซ้ำเร็ว ๆ ไม่ได้ */
 $('#modal').addEventListener('submit', e => { const f = e.target; if (f.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } f.dataset.busy = '1'; setTimeout(() => { if (f.querySelector('.err')?.textContent) delete f.dataset.busy; }, 0); setTimeout(() => { delete f.dataset.busy; }, 900); }, true);
-$('#modal').addEventListener('click', e => { const b = e.target.closest('button.btn:not(.ghost):not([type=submit])'); if (!b || b.closest('form') && b.type !== 'button') return; if (b.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } b.dataset.busy = '1'; setTimeout(() => { delete b.dataset.busy; }, 900); }, true);
+$('#modal').addEventListener('click', e => { const b = e.target.closest('button.btn:not(.ghost):not([type=submit])'); if (!b || b.closest('form') && b.type !== 'button') return; if (b.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } b.dataset.busy = '1'; setTimeout(() => { if ([...(b.closest('.protf, .cfbox, .dlg')?.querySelectorAll('.err') || [])].some(x => x.textContent.trim())) delete b.dataset.busy; }, 0); setTimeout(() => { delete b.dataset.busy; }, 900); }, true);
 function ask(msg, yes, label = 'ยืนยัน') {
   modal(`<div class="dlg"><h3>${esc(msg)}</h3><div class="actions"><button class="btn danger" id="yes">${esc(label)}</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`, () => $('#yes').onclick = () => { closeModal(); yes(); });
 }
@@ -2877,17 +2881,14 @@ function openResult(eid, mid) {
       ${people.length ? `<div class="ov"><label class="fld">นักกีฬา<select id="cdp">${people.map((p, i) => `<option value="${i}">${COLORS[p.c].n} · ${esc(p.num ? '#' + p.num + ' ' : '')}${esc(p.name)}</option>`).join('')}</select></label>
         <label class="fld">ประเภท<select id="cdt">${Object.entries(TYPES).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
         <label class="fld">เหตุ<input id="cdn" placeholder="เช่น เจตนาทำร้ายคู่แข่ง"></label><button type="button" class="btn sm ghost self-end" id="cdadd">เพิ่ม</button></div>` : '<p class="muted sm">ทีมยังไม่ส่งรายชื่อ จึงบันทึกใบเหลือง/แดงรายคนไม่ได้</p>'}
-      <h4 class="sub">การประท้วง (ครูผู้ควบคุมทีมยื่นภายใน 15 นาทีหลังจบเกม พร้อมหลักฐาน)</h4>
-      <div class="ov"><label class="fld">ฝ่ายที่ประท้วง<select id="ps"><option value="">ไม่มี</option>${['a', 'b'].map(sd => t[sd] >= 0 ? `<option value="${sd}" ${prot.side === sd ? 'selected' : ''}>${COLORS[t[sd]].n}</option>` : '').join('')}</select></label>
-      <label class="fld">สถานะ<select id="pst"><option value="pending" ${prot.status === 'pending' ? 'selected' : ''}>รอพิจารณา</option><option value="upheld" ${prot.status === 'upheld' ? 'selected' : ''}>รับคำร้อง</option><option value="rejected" ${prot.status === 'rejected' ? 'selected' : ''}>ยกคำร้อง</option></select></label></div>
-      <label class="fld">รายละเอียด/หลักฐาน<input id="ptx" value="${esc(prot.text || '')}" placeholder="เช่น คลิปวิดีโอนาทีที่ 12"></label>
+      <h4 class="sub">การประท้วง</h4><div id="protbox"></div>
     </details>
     ${(() => { const l = LOG.find(x => x.undo?.eid === eid && x.undo?.mid === mid); return l && canUndo(l) ? `<p class="sm undoln">ล่าสุด: ${esc(l.what)} · ${new Date(l.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. <button type="button" class="btn sm ghost" data-undo="${esc(l.id)}">ย้อนกลับ</button></p>` : ''; })()}
     ${m.by || m.at ? `<p class="muted sm">บันทึกล่าสุดโดย ${esc(nameOf(m.by))}${m.at ? ' · ' + new Date(m.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''}</p>` : ''}
     <p class="err" id="err"></p><div class="actions">${sideWin(m) ? '<button class="btn">บันทึกการแก้ไขผล</button>' : started(m) ? '<button class="btn" title="สรุปผู้ชนะและปิดเกม">จบเกม · ยืนยันผล</button><button type="button" class="btn ghost" id="savelive" title="บันทึกคะแนน/วินัยระหว่างแข่ง เกมยังไม่จบ">บันทึกคะแนนระหว่างแข่ง</button>' : ''}<button type="button" class="btn ghost" data-close>${sideWin(m) || started(m) ? 'ยกเลิก' : 'ปิด'}</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div>
     ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
-    const r = patchEv({ eid, mid, unset: ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'liveAt', 'endedAt'], set: { ...fields, by: ME.id || '', at: Date.now() } });
+    const r = patchEv({ eid, mid, unset: ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], set: { ...fields, by: ME.id || '', at: Date.now() } });
     closeModal(); recUndo(msg, `${evTitle(ev)} คู่ ${m.no}`, r);
   };
   $('#modal').onclick = e => {
@@ -2907,7 +2908,7 @@ function openResult(eid, mid) {
   if (locked) document.querySelectorAll('#mf #sa, #mf #sb, #mf [data-set], #mf [name=w], #mf #note').forEach(x => { x.disabled = true; x.title = 'กด “เริ่มการแข่งขัน” ก่อนจึงกรอกได้'; });
   setTimeout(() => { const f = locked ? $('#gostart') : SET ? [...document.querySelectorAll('#mf [data-set]')].find(x => !x.disabled && x.value === '') || $('#mf [data-set]') : $('#sa'); f?.focus(); }, 40);
   const extras = f => { if (SET) f.sets = trimSets(readSets()); const note = $('#note').value.trim(); if (note) f.note = note; if (cards.length) f.cards = cards;
-    const ps = $('#ps').value; if (ps) f.protest = { side: ps, status: $('#pst').value, text: $('#ptx').value.trim(), at: m.protest?.at || Date.now() }; if (m.ci) f.ci = m.ci; return f; };
+    if (m.ci) f.ci = m.ci; return f; };
   $('#unforf')?.addEventListener('click', () => askFinal(`<b>ยกเลิกการปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>คู่นี้จะกลับเป็นยังไม่มีผล แข่งต่อหรือปรับแพ้ใหม่ได้</div>`, () => { closeModal();
     const r = patchEv({ eid, mid, unset: ['w', 'auto', 'sa', 'sb', 'note', 'forfeit', 'endedAt', 'sets'], set: { by: ME.id || '', at: Date.now() } }); recUndo('ยกเลิกการปรับแพ้', `${evTitle(ev)} คู่ ${m.no}`, r); }, 'ยกเลิกการปรับแพ้', { forcePin: true, word: 'ยกเลิก' }));
   $('#savelive')?.addEventListener('click', () => { const cur = mOf(evById(eid), mid); if (!started(cur)) { $('#err').textContent = 'ยังไม่เริ่มการแข่งขัน'; return; }
@@ -2928,10 +2929,71 @@ function openResult(eid, mid) {
     askFinal(sum, () => save(f, sideWin(m) ? 'แก้ไขผล' : 'จบเกม · บันทึกผล'), sideWin(m) ? 'ยืนยันแก้ไขผล' : 'ยืนยันจบเกม');
   };
   $('#clr')?.addEventListener('click', () => { const f = {}; if (cards.length) f.cards = cards; if (m.ci) f.ci = m.ci; save(f, 'ล้างผล'); });
+  protestUI(eid, mid);
   $('#gostart')?.addEventListener('click', () => openStart(eid, mid));
   $('#goforf')?.addEventListener('click', () => openForfeit(eid, mid));
   $('#unstart')?.addEventListener('click', () => { closeModal(); recUndo('ยกเลิกการเริ่มแข่ง', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, unset: ['startedAt', 'live', 'sa', 'sb'] })); });
 }
+/* ===== การประท้วง: ยื่น → รอพิจารณา → ตัดสิน (รับคำร้อง: คงผล/แก้ผล/แข่งใหม่ · ยกคำร้อง) ===== */
+const PROT_N = { pending: 'รอพิจารณา', upheld: 'รับคำร้อง', rejected: 'ยกคำร้อง' };
+const PROT_OUT = { keep: 'ผลการแข่งขันคงเดิม', edit: 'แก้ผลการแข่งขัน', replay: 'ล้างผล ให้แข่งใหม่' };
+const PROT_MIN = 15;
+function protestUI(eid, mid) {
+  const box = $('#protbox'); if (!box) return; let mode = '';
+  const draw = () => {
+    const ev = evById(eid), m = mOf(ev, mid), t = teamsOf(ev, m), p = m.protest; const can = canScore(ev.sport), adm = isAdmin();
+    const ended = m.endedAt ? Math.floor((Date.now() - m.endedAt) / 60000) : null; const late = ended != null && ended > PROT_MIN;
+    const deps = depMatches(ev, mid);
+    if (!p?.side) {
+      if (mode !== 'file') { box.innerHTML = `<p class="muted sm">ครูผู้ควบคุมทีมยื่นได้ภายใน ${PROT_MIN} นาทีหลังจบเกม พร้อมหลักฐาน${ended != null ? ` · จบเกมมาแล้ว ${ended} นาที${late ? ' <b class="warnt">(เกินเวลายื่น)</b>' : ''}` : ''}</p>${can ? '<button type="button" class="btn sm ghost" data-pr="file">ยื่นประท้วง</button>' : ''}`; return; }
+      box.innerHTML = `<div class="protf">${late ? `<p class="warn sm">เกิน ${PROT_MIN} นาทีหลังจบเกมแล้ว (${ended} นาที) ตามกติกาไม่รับคำร้อง บันทึกได้แต่จะมีหมายเหตุว่ายื่นเกินเวลา</p>` : ''}
+        <div class="ov"><label class="fld">ฝ่ายที่ประท้วง<select id="prs"><option value="">เลือก</option>${['a', 'b'].map(sd => t[sd] >= 0 ? `<option value="${sd}">${COLORS[t[sd]].n}</option>` : '').join('')}</select></label>
+        <label class="fld">ผู้ยื่น (ครูผู้ควบคุมทีม)<input id="prw" placeholder="ชื่อครู"></label></div>
+        <label class="fld">เรื่องที่ประท้วง<input id="prt" placeholder="เช่น ผู้เล่นหมายเลข 7 ไม่ใช่นักกีฬาที่ส่งชื่อ"></label>
+        <label class="fld">หลักฐาน<input id="pre" placeholder="เช่น คลิปวิดีโอนาทีที่ 12 / ภาพถ่าย / พยาน"></label>
+        <p class="err" id="prerr"></p><div class="actions m0"><button type="button" class="btn sm" data-pr="filego">บันทึกการยื่นประท้วง</button><button type="button" class="btn sm ghost" data-pr="cancel">ยกเลิก</button></div></div>`; return;
+    }
+    const head = `<div class="protc ${p.status}"><div class="prott"><span class="pill ${p.status === 'pending' ? 'warnp' : p.status === 'upheld' ? 'done' : ''}">${PROT_N[p.status] || ''}</span> <b>${chip(t[p.side])} ประท้วง</b>${p.late ? ' <small class="warnt">ยื่นเกินเวลา</small>' : ''}</div>
+      <div class="sm">${esc(p.text || '')}</div>${p.evid ? `<div class="muted sm">หลักฐาน: ${esc(p.evid)}</div>` : ''}
+      <div class="muted sm">ยื่น ${p.at ? new Date(p.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.' : ''}${p.who ? ' โดย ' + esc(p.who) : ''}${p.by ? ' · รับเรื่อง ' + esc(nameOf(p.by)) : ''}</div>
+      ${p.status !== 'pending' ? `<div class="sm protd"><b>ผลการพิจารณา:</b> ${PROT_N[p.status]}${p.status === 'upheld' && p.outcome ? ' · ' + PROT_OUT[p.outcome] : ''}${p.decision ? ' — ' + esc(p.decision) : ''}<div class="muted sm">โดย ${esc(nameOf(p.decidedBy))}${p.decidedAt ? ' · ' + new Date(p.decidedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.' : ''}</div></div>` : ''}</div>`;
+    if (p.status === 'pending') {
+      if (mode !== 'decide') { box.innerHTML = head + `<p class="muted sm">ระหว่างรอพิจารณา คู่ในรอบถัดไปที่ใช้ผลคู่นี้จะยังเริ่มแข่งไม่ได้</p><div class="actions m0">${adm ? '<button type="button" class="btn sm" data-pr="decide">พิจารณาคำร้อง</button>' : '<span class="muted sm">ผู้ดูแล (คณะกรรมการ) เป็นผู้พิจารณา</span>'}${can ? '<button type="button" class="btn sm ghost danger" data-pr="withdraw">ถอนคำร้อง</button>' : ''}</div>`; return; }
+      box.innerHTML = head + `<div class="protf"><fieldset class="win col"><legend>ผลการพิจารณา</legend>
+          <label><input type="radio" name="prd" value="rejected"> ยกคำร้อง (ผลคงเดิม)</label>
+          <label><input type="radio" name="prd" value="keep"> รับคำร้อง แต่ผลการแข่งขันคงเดิม (เช่น ตักเตือน/ลงโทษรายบุคคล)</label>
+          <label><input type="radio" name="prd" value="edit"> รับคำร้อง และแก้ผลการแข่งขัน (แก้คะแนน/ผู้ชนะด้านบนหลังบันทึก)</label>
+          <label><input type="radio" name="prd" value="replay" ${deps.length ? 'disabled' : ''}> รับคำร้อง ล้างผลให้แข่งใหม่${deps.length ? ` <small class="muted">(ทำไม่ได้: ${deps.map(x => 'คู่ ' + x.no).join(', ')} ใช้ผลคู่นี้และเริ่มแข่งแล้ว)</small>` : ''}</label></fieldset>
+        <label class="fld">เหตุผล/มติคณะกรรมการ<input id="prdn" placeholder="เช่น ตรวจสอบแล้วผู้เล่นมีรายชื่อถูกต้อง"></label>
+        <p class="err" id="prerr"></p><div class="actions m0"><button type="button" class="btn sm" data-pr="decidego">บันทึกผลการพิจารณา</button><button type="button" class="btn sm ghost" data-pr="cancel">ยกเลิก</button></div></div>`; return;
+    }
+    box.innerHTML = head + (adm ? '<div class="actions m0"><button type="button" class="btn sm ghost" data-pr="reopen">เปิดพิจารณาใหม่</button></div>' : '');
+  };
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-pr]'); if (!b) return; e.preventDefault(); e.stopPropagation(); const k = b.dataset.pr; const ev = evById(eid), m = mOf(ev, mid), t = teamsOf(ev, m);
+    const err = x => { if ($('#prerr')) $('#prerr').textContent = x; };
+    if (k === 'file' || k === 'decide') { mode = k === 'file' ? 'file' : 'decide'; draw(); return; }
+    if (k === 'cancel') { mode = ''; draw(); return; }
+    if (k === 'filego') { const side = $('#prs').value, text = $('#prt').value.trim(); if (!side) return err('เลือกฝ่ายที่ประท้วง'); if (!text) return err('ใส่เรื่องที่ประท้วง');
+      const ended = m.endedAt ? (Date.now() - m.endedAt) / 60000 : 0;
+      const r = patchEv({ eid, mid, set: { protest: { side, text, evid: $('#pre').value.trim(), who: $('#prw').value.trim(), status: 'pending', at: Date.now(), by: ME.id || '', ...(ended > PROT_MIN ? { late: true } : {}) } } });
+      recUndo('ยื่นประท้วง', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[t[side]]?.n || ''}`, r); mode = ''; mDirty = false; setTimeout(draw, 30); return; }
+    if (k === 'withdraw') { ask('ถอนคำร้องนี้? (ลบการประท้วงออก)', () => { recUndo('ถอนคำร้องประท้วง', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, unset: ['protest'] })); }, 'ถอนคำร้อง'); return; }
+    if (k === 'reopen') { const p = { ...m.protest, status: 'pending' }; ['decision', 'decidedAt', 'decidedBy', 'outcome'].forEach(x => delete p[x]); recUndo('เปิดพิจารณาคำร้องใหม่', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, set: { protest: p } })); setTimeout(draw, 30); return; }
+    if (k === 'decidego') { const d = document.querySelector('#protbox [name=prd]:checked')?.value; const note = $('#prdn').value.trim(); if (!d) return err('เลือกผลการพิจารณา'); if (!note) return err('ใส่เหตุผล/มติคณะกรรมการ');
+      const status = d === 'rejected' ? 'rejected' : 'upheld'; const p = { ...m.protest, status, decision: note, decidedAt: Date.now(), decidedBy: ME.id || '', ...(status === 'upheld' ? { outcome: d } : {}) };
+      const html = `<b>ผลการพิจารณาคำร้อง: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${PROT_N[status]}${status === 'upheld' ? ' · ' + PROT_OUT[d] : ''}</div><div class="muted sm">${esc(note)}</div>`;
+      askFinal(html, () => {
+        const set = { protest: p }; const unset = d === 'replay' ? ['w', 'auto', 'sa', 'sb', 'sets', 'note', 'endedAt', 'startedAt', 'live', 'forfeit'] : [];
+        const r = patchEv({ eid, mid, set, unset }); recUndo('พิจารณาคำร้องประท้วง', `${evTitle(ev)} คู่ ${m.no} · ${PROT_N[status]}`, r);
+        if (d === 'edit' || d === 'replay') { closeModal(); resetModalHandlers(); setTimeout(() => openResult(eid, mid), 60); } else { mode = ''; $('#cfbox')?.remove(); setTimeout(draw, 30); }
+      }, 'ยืนยันผลการพิจารณา', { forcePin: true, word: 'ยืนยัน' }); return; }
+  });
+  box.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
+  draw();
+}
+/* คู่ที่ต้องรอผลการประท้วงของคู่ต้นทาง */
+const protHold = (ev, m) => [m.a, m.b].map(s => s?.m ? mOf(ev, s.m) : null).filter(x => x && x.protest?.status === 'pending');
 /* คู่ที่กำหนดเวลาก่อนหน้าที่สนามเดียวกันในวันเดียวกัน ยังไม่เริ่มและยังไม่จบ (ต้องได้แข่งก่อน) */
 function earlierPending(v, ev, m) { if (!v || !m.date || !m.time) return []; return allMatches().filter(x => !(x.ev.id === ev.id && x.m.id === m.id) && venueOf(x.ev, x.m) === v && x.m.date === m.date && x.m.time && x.m.time < m.time && !sideWin(x.m) && !isLive(x.m)).sort((p, q) => p.m.time.localeCompare(q.m.time)); }
 function liveAtVenue(v, eid, mid) { return allMatches().filter(x => !(x.ev.id === eid && x.m.id === mid) && isLive(x.m) && venueOf(x.ev, x.m) === v); }
@@ -2944,7 +3006,8 @@ function openStart(eid, mid) {
         ${c.ok ? '<span class="okt">พร้อม</span>' : c.roster ? `<button type="button" class="btn sm ghost" data-goci="1">เช็คชื่อ (${c.roster} คนในรายชื่อ)</button>` : `<span class="errt sm">ยังไม่ส่งรายชื่อนักกีฬา จึงรายงานตัวไม่ได้</span>${c.t >= 0 && canRoster(c.t) ? `<button type="button" class="btn sm ghost" data-goroster="${c.t}">ไปส่งรายชื่อ</button>` : '<small class="muted">ให้ครูคณะสีส่งรายชื่อก่อน หรือปรับแพ้</small>'}`}</div>`; };
     const v = venueOf(evById(eid), m2); const busy = v ? liveAtVenue(v, eid, mid) : []; const full = v && busy.length >= courtsOf(v);
     const pend = v && !full ? earlierPending(v, evById(eid), m2) : []; const queued = pend.length && busy.length + pend.length >= courtsOf(v); const blockQ = queued && !skipQ;
-    const ready = !full && !blockQ && ['a', 'b'].every(sd => ciInfo(evById(eid), m2, sd).ok || ok[sd]);
+    const ph = protHold(evById(eid), m2);
+    const ready = !full && !blockQ && !ph.length && ['a', 'b'].every(sd => ciInfo(evById(eid), m2, sd).ok || ok[sd]);
     $('#modal').innerHTML = `<div class="dlg wide"><h3>เริ่มการแข่งขัน · ${esc(evTitle(ev))} คู่ ${m.no}</h3>
       <p class="muted sm">กติกาสูจิบัตร: นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${S.meta.checkinMin ?? 20} นาที · ต้องมีตัวจริงครบ ${starters(ev)} คนจึงเริ่มแข่งได้ · ไม่ลงแข่งภายใน ${S.meta.forfeitMin ?? 10} นาทีหลังคู่ก่อนหน้าจบ ถือว่าสละสิทธิ์ (ข้อ 4)</p>
       <div class="stgrid">${side('a')}${side('b')}</div>
@@ -2953,7 +3016,7 @@ function openStart(eid, mid) {
       ${queued ? `<div class="qwarn"><b>คู่ก่อนหน้าที่สนามนี้ยังไม่ได้แข่ง</b>${pend.slice(0, 4).map(x => `<div class="sm">${esc(x.m.time)} น. · ${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${mState(x.ev, x.m).k === 'tbd' ? 'ยังไม่ทราบคู่' : 'ยังไม่เริ่ม'}</div>`).join('')}
         <p class="muted sm">${esc(v)} มี ${courtsOf(v)} คอร์ท ต้องแข่งตามลำดับเวลา ให้เริ่มหรือจบคู่ก่อนหน้าก่อน (ถ้าทีมไม่มา ใช้ “ปรับแพ้” ที่คู่นั้น)</p>
         ${isAdmin() ? `<label class="ck sm"><input type="checkbox" id="skipq" ${skipQ ? 'checked' : ''}> ผู้ดูแล: ยืนยันเริ่มก่อน (คู่ก่อนหน้าเลื่อนหรือย้ายสนามแล้ว) ระบบบันทึกชื่อผู้ยืนยัน</label>` : ''}</div>` : ''}
-      <p class="err" id="err">${full ? `ยังเริ่มไม่ได้: ${esc(v)} ไม่ว่าง (${courtsOf(v)} คอร์ท) กำลังแข่ง ${busy.map(x => esc(evTitle(x.ev)) + ' คู่ ' + x.m.no).join(', ')} บันทึกผลคู่นั้นให้จบก่อน` : blockQ ? `ยังเริ่มไม่ได้: ต้องแข่งคู่ ${pend[0].m.time} น. (${esc(evTitle(pend[0].ev))} คู่ ${pend[0].m.no}) ก่อน` : ready ? '' : (['a', 'b'].some(sd => !ciInfo(evById(eid), m2, sd).ok && !ciInfo(evById(eid), m2, sd).roster) ? 'ยังเริ่มไม่ได้: มีทีมที่ยังไม่ส่งรายชื่อนักกีฬา ส่งรายชื่อแล้วเช็คชื่อ หรือปรับแพ้ทีมนั้น' : 'ยังเริ่มไม่ได้: นักกีฬารายงานตัวไม่ครบ')}</p>
+      <p class="err" id="err">${ph.length ? `ยังเริ่มไม่ได้: คู่ ${ph.map(x => x.no).join(', ')} ที่ส่งทีมเข้าคู่นี้ มีการประท้วงรอพิจารณา` : full ? `ยังเริ่มไม่ได้: ${esc(v)} ไม่ว่าง (${courtsOf(v)} คอร์ท) กำลังแข่ง ${busy.map(x => esc(evTitle(x.ev)) + ' คู่ ' + x.m.no).join(', ')} บันทึกผลคู่นั้นให้จบก่อน` : blockQ ? `ยังเริ่มไม่ได้: ต้องแข่งคู่ ${pend[0].m.time} น. (${esc(evTitle(pend[0].ev))} คู่ ${pend[0].m.no}) ก่อน` : ready ? '' : (['a', 'b'].some(sd => !ciInfo(evById(eid), m2, sd).ok && !ciInfo(evById(eid), m2, sd).roster) ? 'ยังเริ่มไม่ได้: มีทีมที่ยังไม่ส่งรายชื่อนักกีฬา ส่งรายชื่อแล้วเช็คชื่อ หรือปรับแพ้ทีมนั้น' : 'ยังเริ่มไม่ได้: นักกีฬารายงานตัวไม่ครบ')}</p>
       <div class="actions"><button class="btn" id="dostart" ${ready ? '' : 'disabled'}>เริ่มแข่งตอนนี้ (${toTime(nowMin())} น.)</button>${st.k === 'forfeit' || ['a', 'b'].some(sd => !ciInfo(evById(eid), m2, sd).ok && !ciInfo(evById(eid), m2, sd).roster) ? '<button class="btn danger" id="toforf">ปรับแพ้</button>' : ''}<button class="btn ghost" data-close>ปิด</button></div></div>`;
   };
   $('#modal').hidden = false; draw();
