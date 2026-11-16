@@ -665,6 +665,9 @@ details.cigrp>summary.cih{cursor:pointer;list-style:none}details.cigrp>summary.c
 .mrow.c2 .vs3{display:grid;grid-template-columns:1fr 56px 1fr;align-items:center;gap:6px}.mrow.c2 .vs3 .ta{justify-self:end}.mrow.c2 .vs3 .tb{justify-self:start}.mrow.c2 .vs3 .sc{text-align:center}
 .mrow.c2 .cnote{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.mrow.c2 .pill{display:inline-flex}
 @media (max-width:900px){.mrow.g2 .span3{grid-column:1/-1;grid-row:auto;justify-content:flex-start}}
+.stgrp.live{border:1px solid #F3B8BE;background:linear-gradient(180deg,#FFF6F7,#fff 120px)}.stgrp.live>.cih{color:var(--live)}
+.stgrp.now{border:1px solid #BFD0FF;background:linear-gradient(180deg,#F5F8FF,#fff 120px)}.stgrp.now>.cih{color:var(--blue-d)}
+details.stgrp>summary{cursor:pointer;list-style:none}details.stgrp>summary::before{content:"▸";color:var(--muted)}details.stgrp[open]>summary::before{content:"▾"}
 .cfwarn{border-left:4px solid #D97706}.cfwarn summary{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;cursor:pointer}.cfwarn .feed{flex-wrap:wrap}.cfwarn .actions{flex-wrap:wrap}
 .cfbox{margin-top:12px;border:2px solid var(--blue);border-radius:12px;padding:12px 14px;background:var(--blue-l);display:flex;flex-direction:column;gap:8px;position:sticky;bottom:0}
 .cfsum{display:flex;flex-direction:column;gap:6px}.cfline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cfline b.num{font-size:20px}
@@ -831,8 +834,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.21.5', APP_DATE = '2026-11-12';
+const APP_VERSION = '1.21.6', APP_DATE = '2026-11-12';
 const CHANGELOG = [
+  ['1.21.6', 'โปรแกรม & ผล: จัดเรียงตามสถานะ (กำลังแข่ง·ต้องบันทึกผล / ถึงเวลา·รอเริ่ม / ใกล้ถึงเวลา / ภายหลัง / จบแล้ว) สลับกับมุมมองตามชนิดกีฬาได้'],
   ['1.21.5', 'จัดคอลัมน์แบบเดียวกันทุกหน้า: รายงานตัว แผนที่สนาม สนามแข่งขัน ตารางเหรียญ (เวลา/สถานะซ้าย · ทีมตรงกัน · หมายเหตุ · ปุ่ม)'],
   ['1.21.4', 'โปรแกรม & ผล: จัดคอลัมน์ใหม่ (เวลา/สถานะซ้าย · ทีมตรงกัน · หมายเหตุ · ปุ่ม) · แสดงแข่งมากี่นาที/ใช้เวลากี่นาที และรวมเวลาแข่งต่อชนิดกีฬา'],
   ['1.21.3', 'ใบบันทึกผลที่พิมพ์: กีฬาแบบเซตมีตารางคะแนนรายเซต'],
@@ -1874,17 +1878,30 @@ function vSchedule() {
   const gsum = l => { const dn = l.filter(x => sideWin(x.m)); const tot = dn.reduce((s, x) => s + (playedMin(x.m) || 0), 0); const lvn = l.filter(x => isLive(x.m)).length; return `${l.length} นัด · จบแล้ว ${dn.length}${lvn ? ` · กำลังแข่ง ${lvn}` : ''}${tot ? ` · รวมเวลาแข่ง ${fmtMin(tot)}` : ''}`; };
   let body = sportsList().filter(sp => groups[sp.id]).map(sp => `<section class="card bysport"><h2 class="sh">${sIcon(sp.id, 'tile')}${esc(sp.name)} <small class="muted">${gsum(groups[sp.id])}</small></h2>
     ${groups[sp.id].sort((a, b) => (a.m.time || '').localeCompare(b.m.time || '')).map(x => matchRow(x.ev, x.m)).join('')}</section>`).join('');
-  if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(e => {
+  const evRow = e => {
     const r = (e.rounds || []).filter(r => r.date === d).map(r => `${r.label} ${r.time}`).join(' · ');
     const m = medalsOf(e);
     const ed = editOn && canScore(e.sport); const lv = e.startedAt && !hasResults(e); const dn = hasResults(e);
     return `<div class="mrow g2 click${ed ? ' ed' : ''}${lv ? ' islive' : dn ? ' isdone' : ''}" data-open="${e.id}" tabindex="0"><span class="tcol"><b class="tt num">${esc(e.time || (e.rounds || []).find(r => r.date === d)?.time || '–')}</b>${lv ? '<span class="tst live"><i></i>กำลังแข่ง</span>' : dn ? '<span class="tst done">✓ มีผลแล้ว</span>' : ''}</span>
       <span class="ml">${sIcon(e.sport, 'sm')}<b class="sname">${esc(sportName(e.sport))}</b> <b class="elab">${esc(e.label)}</b><small>${esc(FORMATS[e.format] || '')}${r ? ' · ' + esc(r) : ''}${e.venue ? ' · ' + esc(e.venue) : ''}</small></span>
       <span class="span3">${e.medal ? medalLine(m) : ''}</span><span class="ncol"></span>${ed ? `<span class="rbtns"><button class="btn sm rowbtn" ${e.format === 'points' ? `data-open="${e.id}"` : `data-evres="${e.id}"`}>${e.format === 'points' ? 'กรอกคะแนน' : 'บันทึกผล'}</button></span>` : ''}</div>`;
-  }).join('')}</section>`;
+  };
+  const view = UI.schView || (editOn ? 'status' : 'time');
+  if (view === 'status') {
+    const NOW = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit']; const isT = d === todayStr(); const now = nowMin();
+    const G = { live: [], now: [], soon: [], later: [], done: [] };
+    ms.forEach(x => { const st = mState(x.ev, x.m); const k = st.k === 'done' ? 'done' : st.k === 'live' ? 'live' : NOW.includes(st.k) ? 'now' : isT && x.m.time && toMin(x.m.time) - now <= 60 ? 'soon' : 'later'; G[k].push({ t: x.m.time || '', h: matchRow(x.ev, x.m) }); });
+    others.forEach(e => { const k = hasResults(e) ? 'done' : e.startedAt ? 'live' : isT && e.time && toMin(e.time) - now <= 0 ? 'now' : isT && e.time && toMin(e.time) - now <= 60 ? 'soon' : 'later'; G[k].push({ t: e.time || '', h: evRow(e) }); });
+    const sec = (k, title, sub, open = true) => { const l = G[k].sort((p, q) => p.t.localeCompare(q.t)); if (!l.length) return '';
+      const hd = `<span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small>`;
+      return open ? `<section class="card stgrp ${k}"><h2 class="cih">${hd}</h2>${l.map(x => x.h).join('')}</section>` : `<details class="card stgrp ${k}"><summary class="cih">${hd}</summary>${l.map(x => x.h).join('')}</details>`; };
+    body = isT ? sec('live', '● กำลังแข่ง · ต้องบันทึกผล', 'กด “บันทึกผล” เมื่อจบเกม') + sec('now', '🔔 ถึงเวลาแข่ง · รอเริ่ม', 'รายงานตัว/เริ่มแข่ง หรือปรับแพ้') + sec('soon', 'ใกล้ถึงเวลา', 'ภายใน 1 ชั่วโมง') + sec('later', 'ภายหลังวันนี้', '') + sec('done', '✓ จบแล้ว', '', false)
+      : sec('live', '● กำลังแข่ง · ต้องบันทึกผล', '') + sec('now', 'ยังไม่จบ', '') + sec('soon', 'นัดในวันนั้น', '') + sec('later', d < todayStr() ? 'ยังไม่มีผล' : 'นัดในวันนั้น', '') + sec('done', '✓ จบแล้ว', '', d < todayStr());
+  } else if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(evRow).join('')}</section>`;
   return `<section class="hero"><h1>โปรแกรมและผลการแข่งขัน</h1><p class="muted">${editOn ? 'แตะที่นัดเพื่อบันทึกผล ผู้ชนะจะถูกส่งเข้านัดถัดไปอัตโนมัติ' : 'เปิดโหมดแก้ไขเพื่อบันทึกผล (เฉพาะผู้มีสิทธิ์)'}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-day="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div>
   <button class="btn sm ghost" data-act="dlsched">ตารางแข่งทั้งหมด (CSV)</button><button class="btn sm ghost" data-act="sheets">ใบบันทึกผลกรรมการวันนี้ (พิมพ์)</button>
+  <div class="seg mini" title="วิธีจัดเรียง"><button data-schv="status" class="${(UI.schView || (editOn ? 'status' : 'time')) === 'status' ? 'on' : ''}">ตามสถานะ</button><button data-schv="time" class="${(UI.schView || (editOn ? 'status' : 'time')) === 'time' ? 'on' : ''}">ตามชนิดกีฬา/เวลา</button></div>
   <label class="sel"><span class="vh">ชนิดกีฬา</span><select id="sportF"><option value="all">ทุกชนิดกีฬา</option>${sportsList().map(s => `<option value="${s.id}" ${s.id === UI.sportF ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label></div>
   ${fsum}${body || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้ตามตัวกรอง</p>'}`;
 }
@@ -3783,7 +3800,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -3802,6 +3819,7 @@ document.addEventListener('click', e => {
     const st = (UI.mapF = UI.mapF || {})[key] = UI.mapF[key] || {};
     if (k === '*') UI.mapF[key] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; if (key === UI.mapSport) UI.mapEv = null; render(); }
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
+  else if (d.schv) { UI.schView = d.schv; render(); }
   else if (d.regc) { UI.regColor = +d.regc; render(); }
   else if (d.roster) openRoster(d.roster);
   else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); }
