@@ -892,8 +892,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.10', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.27.0', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.27.0', 'บัตรห้อยคอแบบสากล: ลายอัญมณี 6 ชนิด · รหัสประเภทบัตรขนาดใหญ่ · ช่องพื้นที่ที่เข้าได้ (ACCESS 1–6) · หมายเลขบัตร · แถบคณะ/ประเภท · ด้านหลังโครงเดียวกันทุกบัตร · ตั้งชื่องานภาษาอังกฤษได้ · กันล้นอัตโนมัติหลังโหลดฟอนต์ · ช่องพิมพ์รหัสรายงานตัวรับ A-xxxxx'],
   ['1.26.10', 'โปรแกรม & ผล: กลุ่ม “จบแล้ว” ย่อ/ขยายได้ทุกวัน (วันที่ผ่านมาเปิดไว้ให้ก่อน)'],
   ['1.26.9', 'รายงานตัว: รายการแข่งพร้อมกัน (เช่น Free Fire) ที่จบแล้วย้ายไปกลุ่ม “จบแล้ว” · รายงานตัวแยกรายวัน · แสดงเวลารอบ'],
   ['1.26.8', 'ส่งรายชื่อ: เลือกนักเรียนแล้วช่องค้นหาล้างอัตโนมัติ · รายงานตัวแบบสแกน/พิมพ์รหัส: ครบทุกคนแล้วบันทึกอัตโนมัติ'],
@@ -2815,22 +2816,121 @@ function sportsBlock(list) {
   const sz = L.length <= 4 ? 's' : L.length <= 6 ? 'm' : L.length <= 12 ? 'l' : 'xl';
   return `<div class="bds n-${sz}">${L.map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg><em>${esc(sportName(s))}</em></span>`; }).join('')}</div>`;
 }
+/* ===================== บัตรห้อยคอแบบสากล (international accreditation) ===================== */
+const COLOR_EN = ['RUBY', 'TOPAZ', 'SAPPHIRE', 'DIAMOND', 'ZIRCON', 'EMERALD'];
+/* พื้นที่ที่เข้าได้ (ACCESS) และสิทธิ์ตามประเภทบัตร */
+const ZONES = [[1, 'สนามแข่งขัน'], [2, 'พื้นที่นักกีฬา'], [3, 'ห้องกรรมการ'], [4, 'กองอำนวยการ'], [5, 'พื้นที่สื่อ'], [6, 'ที่นั่งรับรอง']];
+const ZONE_BY = { A: [1, 2], C: [1, 2], J: [1, 2, 3], O: [1, 2, 3, 4], M: [1, 5], V: [6] };
+const CODE_SHORT = { A: 'นักกีฬา', C: 'ครูคณะสี / โค้ช', J: 'กรรมการตัดสิน', O: 'กรรมการจัดการ', M: 'สื่อ / ประชาสัมพันธ์', V: 'แขกผู้มีเกียรติ' };
+const CODE_EN = { A: 'ATHLETE', C: 'COACH', J: 'JUDGE', O: 'OFFICIAL', M: 'MEDIA', V: 'VIP' };
+/* บรรทัดภาษาอังกฤษใต้ชื่องาน: ตั้งได้ในหน้าตั้งค่า (ว่าง = ไม่แสดง) */
+const badgeEnLine = () => S.meta.titleEn != null ? S.meta.titleEn : `GEM GAMES ${evYear() ? +evYear() - 543 : ''} · SINGSAMUT SCHOOL`.replace('  ', ' ');
+/* เส้นรอบนอกของอัญมณีทั้ง 6 ชนิด (ใช้ทำลายพื้นบัตร) */
+const GEM_OUT = ['M7 2.5h10q4.5 0 4.5 4.5v10q0 4.5-4.5 4.5H7Q2.5 21.5 2.5 17V7Q2.5 2.5 7 2.5zM8 8h8v8H8z',
+  'M12 1.8C16.6 6.6 19.6 10 19.6 14.6a7.6 7.6 0 0 1-15.2 0C4.4 10 7.4 6.6 12 1.8zM12 8.5c2 1.6 3.3 3.3 3.3 5.4a3.3 3.3 0 0 1-6.6 0c0-2.1 1.3-3.8 3.3-5.4z',
+  'M12 2.4a9.6 9.6 0 1 1 0 19.2a9.6 9.6 0 1 1 0-19.2zM12 7.2l3.4 1.4 1.4 3.4-1.4 3.4-3.4 1.4-3.4-1.4L7.2 12l1.4-3.4z',
+  'M6.6 3.2h10.8l4.6 5.6L12 21.6 2 8.8zM2 8.8h20M8.8 8.8 12 21.6l3.2-12.8',
+  'M12 1.8l8.8 5.1v10.2L12 22.2 3.2 17.1V6.9zM12 7.4l4.4 2.5v4.2L12 16.6l-4.4-2.5V9.9z',
+  'M7.2 2.4h9.6l3.6 3.6v12l-3.6 3.6H7.2L3.6 18V6zM8.4 5.4h7.2l2 2v9.2l-2 2H8.4l-2-2V7.4z'];
+/* ลายพื้น: อัญมณี 6 ชนิดเรียงสลับกัน 2 แถว (แถวล่างเหลื่อมครึ่งช่อง) */
+let GEMPAT_N = 0;
+function gemPat(op = .14) { const id = 'gpt' + (++GEMPAT_N); const g = (i, x, y) => `<path transform="translate(${x} ${y}) scale(.5)" d="${GEM_OUT[i]}"/>`;
+  return `<svg class="gp" aria-hidden="true"><defs><pattern id="${id}" width="21mm" height="14mm" patternUnits="userSpaceOnUse" viewBox="0 0 54 36"><g fill="none" stroke="#fff" stroke-opacity="${op}" stroke-width="1.3" stroke-linejoin="round">${g(0, 3, 3) + g(1, 21, 3) + g(2, 39, 3) + g(3, 12, 21) + g(4, 30, 21) + g(5, 48, 21) + g(5, -6, 21)}</g></pattern></defs><rect width="100%" height="100%" fill="url(#${id})"/></svg>`; }
+/* ด้านหน้า: { code, c (คณะ หรือ null), tc, img, fn, ln, line1, line2, cardNo, qr, sports(html), team, teamEn } */
+function ibFront(o) { const logo = logoSrc(); const en = badgeEnLine();
+  return `<div class="ib" style="--tc:${o.tc}">
+  <div class="ibh">${gemPat()}<div class="ibl">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b>${en ? `<span class="en">${esc(en)}</span>` : ''}<span>${esc(evSchool())} · ${esc(dayRange())}</span></div></div></div>
+  <div class="ibcat"><b>${o.code}</b><span>${CODE_EN[o.code]}</span></div>
+  <div class="ibm"><div class="ibph">${o.img ? `<img src="${o.img}" alt="">` : PH_SIL}</div>
+    <div class="ibw"><b class="fn">${esc(o.fn)}</b><b class="ln">${esc(o.ln)}</b><span class="l1">${esc(o.line1)}</span>${o.line2 ? `<span class="l2">${esc(o.line2)}</span>` : ''}</div></div>
+  <div class="ibz"><span class="lab">ACCESS<br>พื้นที่</span><div class="izn">${ZONES.map(([n]) => `<i class="${ZONE_BY[o.code].includes(n) ? 'on' : 'off'}">${n}</i>`).join('')}</div></div>
+  ${o.sports ? `<div class="ibt">ชนิดกีฬา · SPORTS</div>${o.sports}` : '<div class="bds"></div>'}
+  <div class="ibf"><div class="ibq">${o.qr}</div><div class="ibn"><span>CARD NO.</span><b>${esc(o.cardNo)}</b><small>${esc(o.note || 'บัตรนี้ห้ามให้ผู้อื่นใช้แทน · Non-transferable')}</small></div></div>
+  <div class="ibband">${gemPat(.18)}${o.c != null && o.c >= 0 ? `<svg class="g" viewBox="0 0 24 24"><use href="#gem-${o.c}"/></svg>` : ''}<b>${esc(o.team)}</b><span>${esc(o.teamEn)}</span></div></div>`; }
+/* ด้านหลัง: ส่วนที่ 1 ชิดบน (กำหนดการ / หน้าที่) · ส่วนที่ 2–3 (แผนที่ + รหัส) ชิดขอบล่างเหมือนกันทุกบัตร */
+function ibBack(o) {
+  return `<div class="ib ibk" style="--tc:${o.tc}">
+  <div class="ibkh">${gemPat()}<div><b>${esc(o.fn)} ${esc(o.ln)}</b><span>${esc(o.sub)}</span></div><i class="cat">${o.code}</i></div>
+  <div class="iks"><div class="ikt"><b>1</b>${esc(o.sec1t)} <em>${o.sec1e}</em></div>${o.sec1}</div>
+  <div class="ikbot">
+  <div class="iks"><div class="ikt"><b>2</b>แผนที่สนาม <em>VENUES</em></div>${o.map}${o.venues}</div>
+  <div class="iks"><div class="ikt"><b>3</b>รหัสบนบัตร <em>ACCESS CODES</em></div>
+    <div class="ikg"><div class="ikz">${ZONES.map(([n, t]) => `<span class="${ZONE_BY[o.code].includes(n) ? 'on' : ''}"><i>${n}</i>${esc(t)}</span>`).join('')}</div>
+    <div class="ikc">${BADGE_CODES.map(([cc]) => `<span class="${cc === o.code ? 'on' : ''}"><i>${cc}</i>${esc(CODE_SHORT[cc])}</span>`).join('')}</div></div></div>
+  <div class="ikf">หากพบบัตรนี้โปรดส่งคืนกองอำนวยการ${esc(evSchool())} · If found, please return to the Games Office</div><div class="ibbar"></div></div></div>`; }
+/* กันล้นหลังโหลดฟอนต์: ถ้าช่องชนิดกีฬาหรือบัตรยังล้น ย่อรูป/ระยะทีละขั้น (fit1→fit3) จนแถวสุดท้ายไม่ถูก QR บัง */
+function fitBadges(w) {
+  const d = w && w.document; if (!d || !d.body) return Promise.resolve();
+  return (d.fonts && d.fonts.ready || Promise.resolve()).then(() => new Promise(r => setTimeout(r, 120))).then(() => {
+    d.querySelectorAll('.ib:not(.ibk)').forEach(b => { const over = () => { const s = b.querySelector('.bds'); const B = b.getBoundingClientRect().bottom + .5;
+        return (s && s.scrollHeight > s.clientHeight + 1) || [...b.children].some(c => !c.classList.contains('ibcat') && c.getBoundingClientRect().bottom > B); };
+      for (let k = 1; k <= 3 && over(); k++) b.classList.add('fit' + k); });
+    d.querySelectorAll('.ibk').forEach(b => { const over = () => { const B = b.getBoundingClientRect().bottom + .5; return [...b.querySelectorAll('.ikf,.ibbar')].some(c => c.getBoundingClientRect().bottom > B); };
+      for (let k = 1; k <= 4 && over(); k++) b.classList.add('fit' + k); });
+  });
+}
+/* เปิดหน้าพิมพ์บัตร: จัดกันล้นก่อน แล้วจึงสั่งพิมพ์ (สติ๊กเกอร์ใช้ปุ่มพิมพ์ในแถบเครื่องมือ) */
+function openBadgeDoc(title, body, css, style) {
+  const pw = printDoc(title, (style === 'sticker' ? STK_BAR : '') + body, BADGE_CSS + IB_CSS + css + (style === 'sticker' ? STK_CSS : ''), true);
+  if (!pw) return; if (style === 'sticker') setupStk(pw);
+  const go = (n = 0) => { if (!pw.document || !pw.document.querySelector('.ib')) { if (n < 40) setTimeout(() => go(n + 1), 150); return; }
+    fitBadges(pw).then(() => { if (style !== 'sticker') setTimeout(() => { try { pw.focus(); pw.print(); } catch (e) { } }, 200); }); };
+  go();
+}
+const IB_CSS = `
+.ib,.ib *{font-family:'Noto Sans Thai',sans-serif}
+.ib{--ht:3.5mm;position:relative;width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;background-image:repeating-linear-gradient(135deg,rgba(11,31,77,.025) 0 .6mm,transparent .6mm 2.4mm)}
+.bgrid>.ib{border:.3mm solid #bbb;border-radius:3mm}.stkp .ib{--ht:12.5mm}
+.ib>*{flex:none}.ib>.bds{flex:1 1 auto;min-height:0}
+.gp{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ibh{position:relative;padding:var(--ht) 4mm 3mm;background:linear-gradient(120deg,#081634 0%,#0B1F4D 55%,#1E3A8A 100%);color:#fff}
+.ibh::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1.6mm;background:var(--tc)}
+.ibl{position:relative;display:flex;align-items:center;gap:2.5mm;padding-right:24mm}.ibl img{width:12mm;height:13mm;object-fit:contain;background:#fff;border-radius:1.5mm;padding:.6mm}
+.ibl div{display:flex;flex-direction:column;line-height:1.15;min-width:0}.ibl b{font-size:17px;letter-spacing:.2px}.ibl .en{font-size:7.4px;letter-spacing:1.2px;font-weight:700;color:#FCD34D;white-space:nowrap}.ibl span{font-size:9px;opacity:.92}
+.ibcat{position:absolute;right:3.5mm;top:calc(var(--ht) + 12.5mm);width:23mm;height:26mm;background:var(--tc);color:#fff;border-radius:2mm;border:.7mm solid #fff;box-shadow:0 .6mm 1.6mm rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3}
+.ibcat b{font-size:52px;line-height:1;font-weight:800}.ibcat span{font-size:8px;letter-spacing:1.2px;font-weight:700;margin-top:.6mm}
+.ibm{display:flex;gap:3.5mm;padding:3mm 4mm 2mm}.ibph{width:28mm;height:37mm;flex:none;border-radius:1.5mm;overflow:hidden;background:#E6EBF3;box-shadow:0 0 0 .5mm #fff,0 0 0 1mm var(--tc)}.ibph img,.ibph svg{width:100%;height:100%;object-fit:cover;display:block}
+.ibw{display:flex;flex-direction:column;min-width:0;padding-top:18.5mm}.ibw .fn{font-size:22px;line-height:1.15;color:#0B1F4D}.ibw .ln{font-size:15px;line-height:1.2;color:#0B1F4D;font-weight:600}
+.ibw .l1{margin-top:1.2mm;font-size:11.5px;font-weight:600}.ibw .l2{font-size:10px;color:#475569}
+.ibz{display:flex;align-items:center;gap:2mm;margin:0 4mm;padding:1mm 0;border-top:.3mm solid #E2E8F0;border-bottom:.3mm solid #E2E8F0}.ibz .lab{font-size:6.6px;line-height:1.15;font-weight:700;color:#64748B;letter-spacing:.5px;width:11mm}
+.izn{display:flex;gap:1.1mm}.izn i{width:6mm;height:6mm;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:13px;border-radius:1mm}
+.izn .on{background:#0B1F4D;color:#fff}.izn .off{border:.3mm solid #CBD5E1;color:#CBD5E1;font-size:0}
+.ibt{margin:1.2mm 4mm 0;font-size:7.2px;font-weight:700;color:#64748B;letter-spacing:.6px}
+.ib .bds{padding:.8mm 4mm 0}.ib .bds.n-s{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.6mm 3mm}.ib .bds.n-s span{font-size:12.5px}.ib .bds.n-s svg{width:6mm;height:6mm}
+.ib .bds.n-m{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.4mm 2mm}.ib .bds.n-m span{font-size:10.5px}.ib .bds.n-m svg{width:5mm;height:5mm}
+.ib .bds.n-l{grid-template-columns:repeat(4,minmax(0,1fr));gap:1.1mm 1mm}.ib .bds.n-l span{font-size:8.5px;letter-spacing:-.1px;gap:.7mm}.ib .bds.n-l svg{width:4mm;height:4mm}.ib .bds.all b{font-size:17px}
+.ibf{display:flex;align-items:center;gap:3mm;padding:1mm 4mm 1.2mm}.ibq{padding:1mm;background:#fff;border:.3mm solid #E2E8F0;border-radius:1.2mm}.ibq svg{width:21mm;height:21mm;display:block}
+.ibn{display:flex;flex-direction:column;line-height:1.2;min-width:0}.ibn span{font-size:6.8px;letter-spacing:1px;font-weight:700;color:#64748B}.ibn b{font-size:17px;line-height:1.2;font-weight:800;letter-spacing:1.4px;font-variant-numeric:tabular-nums;color:#0B1F4D}.ibn small{font-size:7.6px;color:#64748B;margin-top:.8mm}
+.ibband{position:relative;height:11mm;background:var(--tc);color:#fff;display:flex;align-items:center;gap:2mm;padding:0 4mm;overflow:hidden}.ibband .g{position:relative;width:6.5mm;height:6.5mm;background:#fff;border-radius:50%;padding:.7mm;flex:none}
+.ibband b{position:relative;font-size:17px;text-shadow:0 .2mm .5mm rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ibband span{position:relative;margin-left:auto;font-size:13px;font-weight:800;letter-spacing:2.2px;opacity:.95}
+.ib.fit1 .ibph{width:25mm;height:33mm}.ib.fit1 .ibw{padding-top:15mm}.ib.fit1 .ibm{padding:2mm 4mm 1.5mm}
+.ib.fit2 .ibq svg{width:19mm;height:19mm}.ib.fit2 .ibz{padding:.6mm 0}.ib.fit2 .izn i{width:5.2mm;height:5.2mm;font-size:11px}.ib.fit2 .ibband{height:9mm}
+.ib.fit3 .ibph{width:22mm;height:29mm}.ib.fit3 .ibw{padding-top:12mm}.ib.fit3 .bds span{font-size:8px}.ib.fit3 .bds svg{width:3.6mm;height:3.6mm}.ib.fit3 .bds{gap:.6mm 1mm}
+.ibk{font-size:9.5px}.ibkh{position:relative;display:flex;align-items:flex-end;gap:2mm;padding:var(--ht) 3.5mm 2mm;background:linear-gradient(120deg,#081634,#1E3A8A);color:#fff}.ibkh>div{position:relative;flex:1;display:flex;flex-direction:column;min-width:0}.ibkh b{font-size:13px}.ibkh span{font-size:9px;opacity:.9}
+.ibkh .cat{position:relative;width:8mm;height:8mm;flex:none;border-radius:1.2mm;background:var(--tc);border:.4mm solid #fff;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:16px}
+.ibkh::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1mm;background:var(--tc)}
+.iks{padding:1.4mm 3.5mm 0}.ikt{display:flex;align-items:center;gap:1.4mm;font-size:9px;font-weight:700;color:#0B1F4D;border-bottom:.3mm solid #E2E8F0;padding-bottom:.5mm;margin-bottom:.8mm}.ikt b{width:3.6mm;height:3.6mm;border-radius:50%;background:#0B1F4D;color:#fff;font-size:7px;display:inline-flex;align-items:center;justify-content:center}.ikt em{margin-left:auto;font-style:normal;font-size:6.6px;letter-spacing:1px;color:#94A3B8}
+.ibk .bkr td{padding:.35mm .5mm;font-size:8.8px}.ibk .bvl{gap:.3mm;margin-top:.6mm}.ibk .bvl span{font-size:8.6px}
+.ikg{display:flex;flex-direction:column;gap:.9mm}.ikz,.ikc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5mm 1.2mm}.ikz span,.ikc span{display:flex;align-items:center;gap:1.2mm;font-size:7.8px;color:#475569;white-space:nowrap;overflow:hidden}
+.ikz i,.ikc i{width:3.8mm;height:3.8mm;flex:none;border-radius:.8mm;border:.3mm solid #CBD5E1;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:7.5px;color:#94A3B8}
+.ikz .on,.ikc .on{color:#0B1F4D;font-weight:700}.ikz .on i,.ikc .on i{background:#0B1F4D;border-color:#0B1F4D;color:#fff}
+.ikbot{margin-top:auto;display:flex;flex-direction:column}.ikf{margin-top:1.4mm;padding:1.2mm 3.5mm;font-size:7.6px;color:#64748B;border-top:.3mm dashed #CBD5E1;line-height:1.3}.ibbar{height:3mm;background:var(--tc)}
+.ikd{display:flex;flex-direction:column;gap:.6mm;font-size:9.5px}.ikd b{font-size:11px;color:#0B1F4D}.ikd .sp{display:flex;flex-wrap:wrap;gap:.8mm 1mm;margin-top:.4mm}.ikd .sp span{display:inline-flex;align-items:center;gap:.8mm;padding:.3mm 1.6mm .3mm 1mm;border-radius:2mm;background:#F1F5F9;font-size:8.6px}.ikd .sp svg{width:3.6mm;height:3.6mm;color:var(--tc)}.ikd .spl{font-style:normal;font-size:8.4px;line-height:1.35;color:#334155}
+.ibk.fit1 .bkr td{padding:.15mm .5mm;font-size:8px}.ibk.fit1 .bvl span{font-size:7.6px}.ibk.fit1 .iks{padding-top:.8mm}
+.ibk.fit2 .bvl.two{grid-template-columns:1fr 1fr;gap:.2mm 2mm}.ibk.fit2 .bvl span{font-size:7px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.ibk.fit2 .bvl .vn{width:3.2mm;height:3.2mm;font-size:6px;vertical-align:-.6mm}.ibk.fit2 .ikd{gap:.3mm;font-size:8.6px}.ibk.fit2 .ikz span,.ibk.fit2 .ikc span{font-size:7.2px}
+.ibk.fit3 .bmap{width:80%;margin:0 auto}.ibk.fit4 .bmap{width:66%}.ibk.fit4 .bvl.two,.ibk.fit4 .bvl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.2mm 1.5mm}.ibk.fit4 .bvl span{font-size:6.6px}.ibk.fit3 .ikf{margin-top:.6mm;padding:.8mm 3.5mm}
+.bd.blank{border:0}`;
+
 async function printBadges(list, style = 'badge') {
   list = list.filter(x => athleteIndex(x.c)[x.key]); if (!list.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; }
   if (style === 'qr') { printQRList(list); return; }
-  const both = style !== 'badgef'; toast('กำลังเตรียมบัตร…');
-  const ids = list.map(x => photoId(x.c, x.key)); const ph = await getPhotos(ids); const logo = logoSrc(); const icons = new Set();
+  toast('กำลังเตรียมบัตร…');
+  const ids = list.map(x => photoId(x.c, x.key)); const ph = await getPhotos(ids); const icons = new Set();
   const vIdx = name => venuesList().find(v => v.name === name);
-  const front = (x, i) => { const a = athleteIndex(x.c)[x.key]; const sid = athSid(x.c, x.key); const k = COLORS[x.c]; const img = ph[ids[i]]; const [fn, ln] = splitName(a.name);
+  const front = (x, i) => { const a = athleteIndex(x.c)[x.key]; const sid = athSid(x.c, x.key); const k = COLORS[x.c]; const [fn, ln] = splitName(a.name);
     const sps = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean))]; sps.forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); icons.add('gem-' + x.c); icons.add('gg' + x.c);
-    return `<div class="bd" style="--tc:${k.c}">
-      <div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
-      <div class="bdc"><svg class="g" viewBox="0 0 24 24"><use href="#gem-${x.c}"/></svg><b>คณะ${esc(k.n)}</b><span class="cat">A</span></div>
-      <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">นักกีฬา · ATHLETE</span><b class="nm">${esc(fn)}</b><b class="nm2">${esc(ln)}</b><span>ชั้น ม.${esc(a.cls)}</span>${sid ? `<span class="sid">เลขประจำตัว ${esc(sid)}</span>` : ''}</div></div>
-      <div class="bdt">ชนิดกีฬาที่ลงแข่ง</div>${sportsBlock(sps)}
-      <div class="bdf"><div class="qr">${sid ? qrSVG(sid, 90) : ''}</div><div><b>บัตรประจำตัวนักกีฬา</b><span>แสดงต่อกรรมการเมื่อรายงานตัว</span><span>หมายเลขบัตร ${esc(sid || '-')}</span>${both ? '<span>รายละเอียดการแข่งขันอยู่ด้านหลัง</span>' : ''}</div></div>
-      <div class="bdbar"></div></div>`; };
-  const back = x => { if (!x) return '<div class="bd blank"></div>'; const a = athleteIndex(x.c)[x.key]; const k = COLORS[x.c]; const [fn, ln] = splitName(a.name);
+    return ibFront({ code: 'A', c: x.c, tc: k.c, img: ph[ids[i]], fn, ln, line1: `นักกีฬา · ชั้น ม.${a.cls}`, line2: sid ? `เลขประจำตัว ${sid}` : '', cardNo: sid ? `A-${sid}` : 'A', qr: sid ? qrSVG(sid, 90) : '', sports: sportsBlock(sps), team: 'คณะ' + k.n, teamEn: COLOR_EN[x.c] || '' }); };
+  const back = x => { if (!x) return '<div class="bd blank"></div>'; const a = athleteIndex(x.c)[x.key]; const k = COLORS[x.c]; const [fn, ln] = splitName(a.name); const sid = athSid(x.c, x.key);
     const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)).sort((p, q) => (p.date || '').localeCompare(q.date || ''));
     const vs = []; const vNo = n => { if (!n) return 0; let i = vs.findIndex(v => v.name === n); if (i < 0) { vs.push({ name: n, sp: new Set() }); i = vs.length - 1; } return i + 1; };
     const rows = evs.map(ev => { const sl = evSlots(ev.id, ev, x.c, false).sort((p, q) => (p.date + p.time).localeCompare(q.date + q.time)); const own = (ev.matches || []).filter(m => { const t = teamsOf(ev, m); return t.a === x.c || t.b === x.c; });
@@ -2838,14 +2938,11 @@ async function printBadges(list, style = 'badge') {
       const when = sl.length ? sl.slice(0, 2).map(t => `${fmtDate(t.date)} ${t.time}`).join(', ') + (sl.length > 2 ? ` +${sl.length - 2}` : '') : (own.length || hasResults(ev) ? 'แข่งครบแล้ว' : 'รอกำหนดเวลา');
       return `<tr><td>${esc(sportName(ev.sport))} ${esc(ev.label)}</td><td class="nw">${esc(when)}</td><td class="c">${no ? `<i class="vn">${no}</i>` : ''}</td></tr>`; }).join('');
     const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(vIdx(v.name)) })).filter(x => x.p));
-    return `<div class="bd bk" style="--tc:${k.c}"><div class="bkh"><b>${esc(fn)} ${esc(ln)}</b><span>คณะ${esc(k.n)} · ม.${esc(a.cls)}</span></div>
-      <div class="bks"><div class="bkt">กำหนดการแข่งขัน</div><table class="bkr"><tbody>${rows || '<tr><td>ยังไม่มีรายการ</td></tr>'}</tbody></table></div>
-      <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)} <small>(${esc([...v.sp].join(', '))})</small>${pinOf(vIdx(v.name)) ? '' : ' <small>· ไม่มีหมุด</small>'}</span>`).join('') || '<span>-</span>'}</div></div>
-      <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t, e]) => `<span class="${c === 'A' ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">แถบสีบนบัตร = สีของคณะ · QR ด้านหน้า = เลขประจำตัวนักเรียน ใช้สแกนรายงานตัว</div></div>
-      <div class="bkf">บัตรนี้เป็นของ${esc(evSchool())} หากพบโปรดส่งคืนกองอำนวยการ · ห้ามให้ผู้อื่นใช้แทน</div><div class="bdbar"></div></div>`; };
-  const fronts = list.map(front);
+    return ibBack({ code: 'A', tc: k.c, fn, ln, sub: `คณะ${k.n} · ม.${a.cls}${sid ? ' · ' + sid : ''}`, sec1t: 'กำหนดการแข่งขัน', sec1e: 'SCHEDULE', sec1: `<table class="bkr"><tbody>${rows || '<tr><td>ยังไม่มีรายการ</td></tr>'}</tbody></table>`,
+      map: typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : '', venues: `<div class="bvl">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)} <small>(${esc([...v.sp].join(', '))})</small>${pinOf(vIdx(v.name)) ? '' : ' <small>· ไม่มีหมุด</small>'}</span>`).join('') || '<span>-</span>'}</div>` }); };
+  const fronts = list.map(front); const backsHtml = badgePages(list, fronts, back, style);
   const mapCss = typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '';
-  const pw = printDoc(`บัตรนักกีฬา ${list.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : both ? ' (หน้า-หลัง)' : ''}`, (style === 'sticker' ? STK_BAR : '') + spriteDefs([...icons]) + badgePages(list, fronts, back, style), BADGE_CSS + mapCss + (style === 'sticker' ? STK_CSS : ''), style === 'sticker'); if (style === 'sticker') setupStk(pw);
+  openBadgeDoc(`บัตรนักกีฬา ${list.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : style !== 'badgef' ? ' (หน้า-หลัง)' : ''}`, spriteDefs([...icons]) + backsHtml, mapCss, style);
 }
 const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-columns:repeat(2,100mm);grid-auto-rows:142mm;gap:3mm 5mm;justify-content:center}
 .bd{position:relative;border:.3mm solid #bbb;border-radius:3mm;overflow:hidden;display:flex;flex-direction:column;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -3215,7 +3312,7 @@ function vAdmin() {
   return `<section class="hero"><h1>จัดการการแข่งขัน</h1><p class="muted">เพิ่ม/ลบชนิดกีฬาและรายการ · จับคู่อัตโนมัติหรือกำหนดเอง · จัดวันเวลา · ทุกการเปลี่ยนแปลงขึ้นทุกเครื่องทันที</p></section>
   ${!Object.keys(S.events).length ? startCard() : ''}
   <section class="card"><h2>ข้อมูลงาน</h2><p class="muted sm">แสดงที่หัวเว็บ แท็บเบราว์เซอร์ จอประกาศผล และไฟล์ส่งออก</p>
-    <div class="g3"><label class="fld">ชื่องาน<input id="mtitle" maxlength="60" value="${esc(evName())}" placeholder="${DEF_TITLE}"></label><label class="fld">ปีการศึกษา<input id="myear" inputmode="numeric" maxlength="4" value="${esc(evYear())}" placeholder="เช่น 2569"></label><label class="fld">โรงเรียน<input id="mschool" maxlength="80" value="${esc(evSchool())}"></label></div>
+    <div class="g3"><label class="fld">ชื่องาน<input id="mtitle" maxlength="60" value="${esc(evName())}" placeholder="${DEF_TITLE}"></label><label class="fld">ปีการศึกษา<input id="myear" inputmode="numeric" maxlength="4" value="${esc(evYear())}" placeholder="เช่น 2569"></label><label class="fld">โรงเรียน<input id="mschool" maxlength="80" value="${esc(evSchool())}"></label><label class="fld" title="แสดงใต้ชื่องานบนบัตรห้อยคอ เว้นว่าง = ไม่แสดง">ชื่องาน (อังกฤษ)<input id="mtitleen" maxlength="60" value="${esc(badgeEnLine())}" placeholder="เว้นว่าง = ไม่แสดง"></label></div>
     <div class="actions"><button class="btn sm" data-act="saveinfo">บันทึกข้อมูลงาน</button></div>${updLine(S.meta.editBy, S.meta.editAt, 'ตั้งค่าระบบแก้ล่าสุดโดย')}</section>
   <section class="card"><h2>วันแข่งขันและกติกาทั่วไป</h2><div class="dayed">${days().map(d => `<span class="dchip">${fmtDate(d, true)}<button class="x" data-rmday="${d}" aria-label="ลบวัน ${fmtDate(d)}">×</button></span>`).join('')}
     <label class="fld inline"><span class="vh">เพิ่มวัน</span><input type="date" id="newday"></label><button class="btn sm" data-act="addday">เพิ่มวัน</button></div>
@@ -3459,22 +3556,21 @@ async function importStaffFile(file) {
 
 async function printStaffBadges(ids, style) {
   const L = staffList().filter(p => ids.includes(p.id) && p.code); if (!L.length) { toast('ยังไม่ได้เลือก'); return; }
-  const both = style !== 'badgef'; toast('กำลังเตรียมบัตร…'); const ph = await getPhotos(L.map(p => 'st' + p.id)); const logo = logoSrc(); const icons = new Set();
-  const colOf = p => p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code];
-  const front = p => { const [fn, ln] = splitName(p.name); if (p.code === 'C' && p.c >= 0) { icons.add('gem-' + p.c); icons.add('gg' + p.c); } (p.sports || []).forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); const img = ph['st' + p.id];
-    return `<div class="bd" style="--tc:${colOf(p)}"><div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
-      <div class="bdc">${p.code === 'C' && p.c >= 0 ? `<svg class="g" viewBox="0 0 24 24"><use href="#gem-${p.c}"/></svg><b>คณะ${esc(COLORS[p.c].n)}</b>` : `<b>${esc(codeName(p.code))}</b>`}<span class="cat">${p.code}</span></div>
-      <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">${esc(codeName(p.code))} · ${STAFF_EN[p.code]}</span><b class="nm">${esc(fn)}</b><b class="nm2">${esc(ln)}</b>${p.pos ? `<span>${esc(p.pos)}</span>` : ''}</div></div>
-      ${(p.sports || []).length ? `<div class="bdt">ชนิดกีฬาที่รับผิดชอบ</div>${sportsBlock(p.sports)}` : '<div class="bds"></div>'}
-      <div class="bdf"><div class="qr">${qrSVG(pubURL(), 90)}</div><div><b>บัตรประจำตัว${esc(codeName(p.code))}</b><span>สแกน QR เพื่อเปิดโปรแกรมและผลการแข่งขัน</span><span>หมายเลขบัตร ${p.code}-${esc(p.id.slice(-5).toUpperCase())}</span></div></div><div class="bdbar"></div></div>`; };
+  toast('กำลังเตรียมบัตร…'); const ph = await getPhotos(L.map(p => 'st' + p.id)); const icons = new Set();
+  const isC = p => p.code === 'C' && p.c >= 0; const colOf = p => isC(p) ? COLORS[p.c].c : STAFF_COL[p.code];
+  const allSp = sportsList().filter(sp => !sp.isActivity).map(sp => sp.id);
+  const spIcon = s => { const ic = S.sports[s]?.icon || s; const id = 'sp-' + (SPORT_ICONS[ic] ? ic : 'medal'); icons.add(id); return id; };
+  const front = p => { const [fn, ln] = splitName(p.name); if (isC(p)) { icons.add('gem-' + p.c); icons.add('gg' + p.c); } (p.sports || []).forEach(spIcon);
+    return ibFront({ code: p.code, c: isC(p) ? p.c : null, tc: colOf(p), img: ph['st' + p.id], fn, ln, line1: p.job || codeName(p.code), line2: p.pos || '', cardNo: `${p.code}-${p.id.slice(-5).toUpperCase()}`, qr: qrSVG(pubURL(), 90),
+      note: 'สแกน QR เพื่อดูโปรแกรมและผล · Non-transferable', sports: (p.sports || []).length ? sportsBlock(p.sports) : '', team: isC(p) ? 'คณะ' + COLORS[p.c].n : codeName(p.code), teamEn: isC(p) ? COLOR_EN[p.c] || '' : STAFF_EN[p.code] }); };
   const back = p => { if (!p) return '<div class="bd blank"></div>'; const [fn, ln] = splitName(p.name); const vs = venuesList().filter(v => !(p.sports || []).length || allMatches().some(x => (p.sports || []).includes(x.ev.sport) && venueOf(x.ev, x.m) === v.name) || Object.values(S.events).some(e => (p.sports || []).includes(e.sport) && e.venue === v.name));
-    const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(v) })).filter(x => x.p));
-    return `<div class="bd bk" style="--tc:${colOf(p)}"><div class="bkh"><b>${esc(fn)} ${esc(ln)}</b><span>${p.code} · ${esc(codeName(p.code))}</span></div>
-      <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน${(p.sports || []).length ? 'ที่รับผิดชอบ' : ''}</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl${vs.length > 6 ? ' two' : ''}">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)}</span>`).join('') || '<span>-</span>'}</div></div>
-      <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t]) => `<span class="${c === p.code ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">สีแถบบนบัตรบอกประเภทบัตร (ครูคณะสีใช้สีของคณะ)</div></div>
-      <div class="bkf">บัตรนี้เป็นของ${esc(evSchool())} หากพบโปรดส่งคืนกองอำนวยการ · ห้ามให้ผู้อื่นใช้แทน</div><div class="bdbar"></div></div>`; };
-  const fr = L.map(front);
-  const pw = printDoc(`บัตรบุคลากร ${L.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : ''}`, (style === 'sticker' ? STK_BAR : '') + spriteDefs([...icons]) + badgePages(L, fr, back, style), BADGE_CSS + (typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '') + (style === 'sticker' ? STK_CSS : ''), style === 'sticker'); if (style === 'sticker') setupStk(pw);
+    const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(v) })).filter(x => x.p)); const sp = p.sports || [];
+    const spList = !sp.length ? '<span>ทุกพื้นที่ / ไม่ระบุชนิดกีฬา</span>' : allSp.length >= 6 && allSp.every(id => sp.includes(id)) ? `<span>ทุกชนิดกีฬา (${sp.length})</span>` : sp.length > 6 ? `<em class="spl">${sp.map(s => esc(sportName(s))).join(' · ')}</em>` : sp.map(s => `<span><svg viewBox="0 0 24 24"><use href="#${spIcon(s)}"/></svg>${esc(sportName(s))}</span>`).join('');
+    const duty = `<div class="ikd"><b>${esc(p.job || codeName(p.code))}</b>${p.pos ? `<span>ตำแหน่ง: ${esc(p.pos)}</span>` : ''}${isC(p) ? `<span>ประจำคณะ${esc(COLORS[p.c].n)}</span>` : ''}<span>ชนิดกีฬาที่รับผิดชอบ</span><div class="sp">${spList}</div></div>`;
+    return ibBack({ code: p.code, tc: colOf(p), fn, ln, sub: `${p.code} · ${codeName(p.code)}`, sec1t: 'หน้าที่', sec1e: 'DUTY', sec1: duty,
+      map: typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : '', venues: `<div class="bvl${vs.length > 6 ? ' two' : ''}">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)}</span>`).join('') || '<span>-</span>'}</div>` }); };
+  const fr = L.map(front); const body = badgePages(L, fr, back, style);
+  openBadgeDoc(`บัตรบุคลากร ${L.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : ''}`, spriteDefs([...icons]) + body, typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '', style);
 }
 
 function rolesCard() {
@@ -3552,7 +3648,7 @@ async function resetData(what, students) {
     for (const [id, e] of Object.entries(S.events)) if (e.ci || (e.matches || []).some(m => m.ci)) { const c = clone(e); delete c.ci; delete c.ciDate; (c.matches || []).forEach(m => delete m.ci); await put('events', id, c); }
     return;
   }
-  const keep = { users: S.meta.users, roles: S.meta.roles, title: S.meta.title, year: S.meta.year, school: S.meta.school, colorNames: S.meta.colorNames, colorInfo: S.meta.colorInfo, ageGrades: S.meta.ageGrades, chk: S.meta.chk, classes: students ? {} : S.meta.classes };
+  const keep = { users: S.meta.users, roles: S.meta.roles, title: S.meta.title, year: S.meta.year, school: S.meta.school, titleEn: S.meta.titleEn, colorNames: S.meta.colorNames, colorInfo: S.meta.colorInfo, ageGrades: S.meta.ageGrades, chk: S.meta.chk, classes: students ? {} : S.meta.classes };
   for (const col of ['rosters', 'events', 'sports']) for (const id of Object.keys(S[col])) await put(col, id, null);
   await clearScores();
   if (students) for (const id of Object.keys(S.students || {})) await put('students', id, null);
@@ -4135,7 +4231,7 @@ const CI_METHODS = [['tick', '☑ ติ๊กรายชื่อ'], ['scan', 
 function ciMethod() { try { const v = localStorage.getItem('gem-cim'); return CI_METHODS.some(m => m[0] === v) ? v : 'tick'; } catch (e) { return 'tick'; } }
 function setCiMethod(v) { try { localStorage.setItem('gem-cim', v); } catch (e) { } }
 const clsKey = c => { const [g, r] = String(c || '').split('/').map(x => parseInt(x, 10) || 0); return g * 100 + r; };
-const normSid = v => String(v || '').trim().replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
+const normSid = v => String(v || '').trim().replace(/^[A-Za-z]\s*-\s*(?=\d)/, '').replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
 let SCAN = null; /* { stream, timer, video, det, onCode } */
 function stopScan() { if (!SCAN) return; try { clearTimeout(SCAN.timer); SCAN.stream?.getTracks().forEach(t => t.stop()); } catch (e) { } SCAN = null; }
 let JSQR_P = null;
@@ -5072,7 +5168,7 @@ document.addEventListener('click', e => {
   else if (d.act === 'saveinfo') {
     const t = $('#mtitle').value.trim(), y = $('#myear').value.trim(), sc = $('#mschool').value.trim();
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
-    const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
+    const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; if ($('#mtitleen')) m.titleEn = $('#mtitleen').value.trim(); put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
   else if (d.act === 'mypin') openMyPin();
   else if (d.act === 'clashes') openClashes();
   else if (d.act === 'staffadd') openStaffEdit(null);
