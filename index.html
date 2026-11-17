@@ -998,8 +998,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.3', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.4', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.4', 'ชื่อผู้บันทึก: ผู้ดูแลหลักบันทึกเป็น “owner” แทนอีเมล ทุกเครื่องเห็นเป็นชื่อในทะเบียนบุคลากร · ข้อมูลเก่าที่มีอีเมลผู้ดูแลหลักถูกแปลงอัตโนมัติเมื่อผู้ดูแลหลักเข้าสู่ระบบ (อีเมลไม่อยู่ในข้อมูลสาธารณะอีก)'],
   ['1.33.3', 'แอปสแกน: ผลรายงานตัว/กรรมการขึ้นเป็นการ์ดเต็มจอทันที (สำเร็จปิดเองใน 2 วินาที · ไม่ผ่านค้างจนแตะ) · ปุ่มยกเลิกอยู่ในรายการสแกนล่าสุด · ออกจากหน้าแล้วล้างทั้งสนามและนัดที่เลือก'],
   ['1.33.2', 'ตั้งค่า “ผู้ดูแลระบบรายงานตัวล่วงหน้าได้” (ปิดไว้เป็นค่าเริ่มต้น) · ผู้ใช้และสิทธิ์: แสดงผู้ดูแลหลัก (ซ่อนอีเมล) และผูกชื่อกับทะเบียนบุคลากร · เพิ่มผู้ใช้ด้วยอีเมลเชื่อมกับรายชื่อในทะเบียนได้ ชื่อผู้บันทึกใช้ชื่อจากทะเบียน ไม่ใช้ชื่อจากอีเมล'],
   ['1.33.1', 'รายงานตัว: ก่อนเปิดรับติ๊ก/บันทึกไม่ได้ทุกบทบาท (รวมผู้ดูแล) · แอปสแกน: ออกจากหน้าแล้วล้างนัดที่เลือก ไม่จำข้ามการเปิดแอป'],
@@ -1154,10 +1155,31 @@ const colorsVisible = () => { const m = myColor(); return m == null ? COLORS.map
 /* ชื่อของผู้ใช้ปัจจุบัน: ทะเบียนบุคลากร (อีเมลตรงกัน) → ชื่อในสิทธิ์ผู้ใช้ → ผู้ดูแลหลักที่ผูกกับทะเบียน → ชื่อจากบัญชีที่เข้าสู่ระบบ */
 function syncMyName() { if (!ME.id || mode === 'local') return; const st = staffOf(ME.id); const r = (S.meta.roles || {})[ME.id]; const ow = ME.owner && S.meta.ownerStaff ? (S.meta.staff || []).find(p => p.id === S.meta.ownerStaff) : null;
   const n = st?.name || r?.name || ow?.name; if (n && n !== ME.name) { ME.name = n; NAMES[ME.id] = n; } }
+/* ผู้ดูแลหลักบันทึกในชื่อ "owner" แทนอีเมล (อีเมลเจ้าของระบบไม่ถูกเก็บในข้อมูลสาธารณะ) · ทุกเครื่องแปลงเป็นชื่อในทะเบียนบุคลากรผ่าน meta.ownerStaff */
+const OWNER_ID = 'owner';
+const myStamp = () => ME.owner && mode !== 'local' ? OWNER_ID : (ME.id || '');
+const isMe = id => !!id && (id === ME.id || (id === OWNER_ID && ME.owner && mode !== 'local'));
+const ownerStaffRec = () => S.meta.ownerStaff ? (S.meta.staff || []).find(p => p.id === S.meta.ownerStaff) : null;
 function nameOf(id) {
   if (!id) return 'ไม่ทราบผู้บันทึก';
-  const st = staffOf(id) || (id === ME.id && ME.owner && S.meta.ownerStaff ? (S.meta.staff || []).find(p => p.id === S.meta.ownerStaff) : null); const u = localUsers()[id] || (S.meta.roles || {})[id]; const n = st?.name || u?.name || (id === ME.id && ME.name) || NAMES[id] || id;
-  return id === ME.id ? n + ' (คุณ)' : n;
+  const me = isMe(id); let n;
+  if (id === OWNER_ID) n = ownerStaffRec()?.name || (me && ME.name) || 'ผู้ดูแลหลัก';
+  else { const st = staffOf(id) || (me && ME.owner ? ownerStaffRec() : null); const u = localUsers()[id] || (S.meta.roles || {})[id]; n = st?.name || u?.name || (me && ME.name) || NAMES[id] || id; }
+  return me ? n + ' (คุณ)' : n;
+}
+/* ข้อมูลเก่าที่ผู้ดูแลหลักบันทึกด้วยอีเมล → เปลี่ยนเป็น "owner" ครั้งเดียว (ทำเมื่อผู้ดูแลหลักเข้าสู่ระบบ) */
+function ownerMigrate() {
+  if (!ME.owner || !ME.id || mode !== 'shared' || !canWrite || UI.owMig || !Object.keys(S.events).length) return; UI.owMig = 1; setTimeout(ownerMigrate2, 4000); }
+function ownerMigrate2() { if (!ME.owner || !ME.id || !canWrite) { UI.owMig = 0; return; }
+  const key = JSON.stringify(ME.id); const rep = v => { const j = JSON.stringify(v); return j && j.includes(key) ? JSON.parse(j.split(key).join(JSON.stringify(OWNER_ID))) : undefined; };
+  let n = 0;
+  Object.entries(S.events).forEach(([eid, ev]) => {
+    (ev.matches || []).forEach(m => { const set = {}; Object.keys(m).forEach(k => { const r = rep(m[k]); if (r !== undefined) set[k] = r; }); if (Object.keys(set).length) { patchEv({ eid, mid: m.id, set }); n++; } });
+    const set = {}; Object.keys(ev).forEach(k => { if (k === 'matches' || k === 'id') return; const r = rep(ev[k]); if (r !== undefined) set[k] = r; }); if (Object.keys(set).length) { patchEv({ eid, set }); n++; }
+  });
+  [['rosters', S.rosters], ['scores', S.scores], ['sports', S.sports]].forEach(([col, M]) => Object.entries(M || {}).forEach(([id, d]) => { const r = rep(d); if (r !== undefined) { put(col, id, r); n++; } }));
+  if (S.meta.editBy === ME.id) { put('meta', 'config', clone(S.meta)); n++; }
+  if (n) console.info('ownerMigrate', n);
 }
 /* ---------- ผู้ใช้ในโหมดทดลอง (ข้อมูลในเครื่อง): ชื่อ + PIN ---------- */
 const localUsers = () => S.meta.users || {};
@@ -1205,7 +1227,7 @@ function openUser(id) {
     put('meta', 'config', m); logIt(id ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้', `${n} · ${ROLE_N[role]}`); closeModal(); if (self) ME.name = n; toast('บันทึกผู้ใช้แล้ว'); };
 }
 function logIt(what, detail, extra) {
-  const e = { at: Date.now(), by: ME.id || '', byName: ME.name || '', what, detail: String(detail || '').slice(0, 300), id: uid('l'), ...(extra ? clone(extra) : {}) };
+  const e = { at: Date.now(), by: myStamp(), byName: ME.name || '', what, detail: String(detail || '').slice(0, 300), id: uid('l'), ...(extra ? clone(extra) : {}) };
   if (mode === 'shared' && sb) sb.from('log').insert({ at: e.at, data: e }).then(r => { if (r.error) console.warn(r.error); });
   else if (mode === 'shared') db.collection('log').add(fsEnc(e)).catch(() => { });
   else { S.log = [e, ...(S.log || [])].slice(0, 300); LOG = S.log; saveLocal(); }
@@ -1496,7 +1518,7 @@ const fsEnc = v => Array.isArray(v) ? v.map(x => Array.isArray(x) ? { _arr: fsEn
 const fsDec = v => Array.isArray(v) ? v.map(fsDec) : (v && typeof v === 'object') ? (Array.isArray(v._arr) && Object.keys(v).length === 1 ? fsDec(v._arr) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fsDec(x)]))) : v;
 async function put(col, id, data) {
   mDirty = false;
-  if (data && typeof data === 'object' && ['sports', 'meta', 'students'].includes(col) && !data._noStamp) { data.editBy = ME.id || ''; data.editAt = Date.now(); }
+  if (data && typeof data === 'object' && ['sports', 'meta', 'students'].includes(col) && !data._noStamp) { data.editBy = myStamp(); data.editAt = Date.now(); }
   if (col === 'meta') { S.meta = data || {}; } else if (data === null) delete S[col][id]; else S[col][id] = data;
   render();
   if (mode !== 'shared') { saveLocal(); return; }
@@ -1514,7 +1536,7 @@ async function put(col, id, data) {
   };
   pending[key] = (pending[key] || Promise.resolve()).then(run);
 }
-const putEvent = ev => { const { id, ...d } = ev; d.at = Date.now(); d.ub = ME.id || ''; return put('events', id, d); };
+const putEvent = ev => { const { id, ...d } = ev; d.at = Date.now(); d.ub = myStamp(); return put('events', id, d); };
 /* ===================== บันทึกเฉพาะส่วน: กันผลทับกันเมื่อหลายเครื่องบันทึกพร้อมกัน =====================
    ผลการแข่งขัน/เริ่มแข่ง/รายงานตัว เขียนเป็น "op" แก้เฉพาะคู่นั้น แล้วส่งผ่าน transaction ของ Firestore
    (อ่านเอกสารล่าสุดจากเซิร์ฟเวอร์ → แก้เฉพาะส่วน → เขียน) op ที่ยังส่งไม่ได้ (ออฟไลน์) เก็บในเครื่องและส่งต่อเมื่อออนไลน์ */
@@ -1575,7 +1597,7 @@ function whoName(by) { if (!by) return 'ไม่ทราบชื่อ'; cons
 function startLine(x) { if (!x || !x.startedAt) return ''; const t = new Date(x.startedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
   return `<p class="muted sm updline startl">▶ เริ่มแข่งโดย <b>${esc(whoName(x.startedBy))}</b> · ${t} น.${x.skipQ ? ' · <span class="warnt">เริ่มก่อนคู่ก่อนหน้า (ผู้ดูแลยืนยัน)</span>' : ''}${x.ciOk && Object.values(x.ciOk).some(Boolean) ? ' · <span class="warnt">ยืนยันเริ่มแม้รายงานตัวไม่ครบ</span>' : ''}${x.ciBy ? ` · รายงานตัวโดย ${esc(whoName(x.ciBy))}` : ''}</p>`; }
 function updLine(by, at, verb = 'อัปเดตล่าสุดโดย') { if (!by && !at) return ''; return `<p class="muted sm updline">${verb} ${esc(whoName(by))}${at ? ' · ' + new Date(at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) + ' น.' : ''}</p>`; }
-const stampMe = () => ({ by: ME.id || '', at: Date.now() });
+const stampMe = () => ({ by: myStamp(), at: Date.now() });
 function keepResults(d, fresh) {
   if (!fresh) return d;
   (d.matches || []).forEach(m => { const f = (fresh.matches || []).find(x => x.id === m.id); if (!f) return; RES_KEYS.forEach(k => { if (k in f) m[k] = clone(f[k]); else delete m[k]; }); });
@@ -1583,7 +1605,7 @@ function keepResults(d, fresh) {
   return d;
 }
 async function saveEventKeep(eid, d) {
-  keepResults(d, S.events[eid]); d.at = Date.now(); d.editBy = ME.id || ''; d.editAt = Date.now();
+  keepResults(d, S.events[eid]); d.at = Date.now(); d.editBy = myStamp(); d.editAt = Date.now();
   if (mode !== 'shared' || !navigator.onLine) { put('events', eid, d); return; }
   S.events[eid] = d; mDirty = false; render(); inflight++; renderStatus();
   if (sb) { try { const r = await withTimeout(sb.from('docs').select('data').eq('col', 'events').eq('id', eid).maybeSingle(), 15000); if (r.error) throw sbErr(r.error); const nd = keepResults(clone(d), r.data?.data || null); nd.at = Date.now(); S.events[eid] = nd; await sbWrite('events', eid, nd); }
@@ -2165,7 +2187,7 @@ function todayISO() { const t = new Date(); return `${t.getFullYear()}-${String(
 function defaultDay() { const ds = days(), s = todayISO(); if (!ds.length) return ''; if (ds.includes(s)) return s; return ds.find(d => d > s) || ds[ds.length - 1]; }
 
 function render() { DATA_TICK++;
-  hideTip(); applyColorNames(); syncMyName();
+  hideTip(); applyColorNames(); syncMyName(); ownerMigrate();
   if (mode === 'local' && ME.id && !localUsers()[ME.id]) { ME.id = null; ME.name = ''; editOn = false; }
   const ds = days(); ['day', 'ciDay', 'vDay'].forEach(k => { if (!UI[k] || !ds.includes(UI[k])) UI[k] = defaultDay(); });
   $('#apptitle').textContent = evName() + (evYear() ? ' ' + evYear() : ''); $('#appsub').textContent = `ระบบจัดการและรายงานผลการแข่งขัน · ${evSchool()}`; document.title = `${evName()}${evYear() ? ' ' + evYear() : ''} · ${evSchool()}`;
@@ -2897,7 +2919,7 @@ function openStudentEdit(sid, cls, name, back) {
     /* อัปเดตรายชื่อนักกีฬาที่ใช้รหัสเดิม */
     const oldSid = normSid(st.sid); const oldKeyPh = {}; let n = 0;
     for (const [rid, r] of Object.entries(S.rosters)) { if (!(r.players || []).some(p => oldSid && normSid(p.sid) === oldSid)) continue; const r2 = clone(r);
-      r2.players.forEach(p => { if (normSid(p.sid) !== oldSid) return; p.name = stName(nw); p.cls = ncls; p.sid = nw.sid; p.sex = nw.sex; n++; }); r2.at = Date.now(); r2.by = ME.id || ''; await put('rosters', rid, r2); }
+      r2.players.forEach(p => { if (normSid(p.sid) !== oldSid) return; p.name = stName(nw); p.cls = ncls; p.sid = nw.sid; p.sex = nw.sex; n++; }); r2.at = Date.now(); r2.by = myStamp(); await put('rosters', rid, r2); }
     if (oldSid && normSid(nw.sid) !== oldSid) { try { const img = await getPhoto('s' + oldSid); if (img) { await setPhoto('s' + normSid(nw.sid), img); await setPhoto('s' + oldSid, null); } } catch (x) { } }
     logIt('แก้ไขข้อมูลนักเรียน', `${stName(st)} ม.${st.cls} → ${stName(nw)} ม.${ncls}${n ? ` · แก้รายชื่อนักกีฬา ${n} รายการ` : ''}`);
     toast(`บันทึกแล้ว${n ? ` · แก้รายชื่อนักกีฬา ${n} รายการ` : ''}`);
@@ -2937,7 +2959,7 @@ async function getPhoto(id) {
 }
 async function getPhotos(ids) { const out = {}; const q = [...new Set(ids)]; for (let i = 0; i < q.length; i += 20) { const part = q.slice(i, i + 20); const r = await Promise.all(part.map(getPhoto)); part.forEach((id, j) => out[id] = r[j]); } return out; }
 async function setPhoto(id, img) {
-  if (mode === 'shared' && db && !sb) { const ref = db.collection('photos').doc(id); await withTimeout(img ? ref.set({ img, by: ME.id || '', at: Date.now() }) : ref.delete(), 20000); }
+  if (mode === 'shared' && db && !sb) { const ref = db.collection('photos').doc(id); await withTimeout(img ? ref.set({ img, by: myStamp(), at: Date.now() }) : ref.delete(), 20000); }
   else { const all = localPhotos(); if (img) all[id] = img; else delete all[id]; try { localStorage.setItem('gem-photos', JSON.stringify(all)); } catch (e) { throw new Error('พื้นที่เก็บรูปในเบราว์เซอร์เต็ม'); } }
   PHOTO_C[id] = img || null;
 }
@@ -3142,7 +3164,7 @@ function judgeLine(x) { const L = judgesOf(x); return L.length ? `<p class="mute
 function setJudge(eid, mid, p, on) {
   const ev = S.events[eid]; if (!ev) return null; const x = mid ? (ev.matches || []).find(m => m.id === mid) : ev; if (!x) return null;
   const jd = clone(x.jd || []); const i = jd.findIndex(j => j.id === p.id); if (on && i >= 0) return 'dup'; if (!on && i < 0) return null;
-  if (on) jd.push({ id: p.id, at: Date.now(), by: ME.id || '' }); else jd.splice(i, 1);
+  if (on) jd.push({ id: p.id, at: Date.now(), by: myStamp() }); else jd.splice(i, 1);
   const r = patchEv(mid ? { eid, mid, set: { jd } } : { eid, set: { jd } }); if (r) logIt(on ? 'ลงชื่อกรรมการ' : 'ยกเลิกกรรมการ', `${stripPre(p.name)} · ${evTitle(evById(eid))}${mid ? ' คู่ ' + x.no : ''}`); return r;
 }
 /* นัดที่บุคลากรรับผิดชอบในวัน d (ตามชนิดกีฬาในทะเบียน) */
@@ -3234,7 +3256,7 @@ function ciTargets(c, key, d) {
 /* นัดที่ควรรายงานตัวตอนนี้: นัดถัดไปที่ยังไม่รายงานตัว (นับนัดที่เริ่มไปแล้วไม่เกิน 60 นาที) */
 function ciPick(L) { const now = hm2min(nowHM()); const pend = L.filter(t => !t.done); return pend.find(t => hm2min(t.time) + 60 >= now) || pend[0] || null; }
 /* เขียนแบบเพิ่มทีละคน: รวมกับข้อมูลล่าสุดบนเซิร์ฟเวอร์ ไม่ทับการสแกนจากเครื่องอื่น */
-function ciWrite(t, add, flag) { const d = scDay(); const st = { ciBy: ME.id || '', ciAt: Date.now(), ...(t.mid ? {} : { ciDate: d }) };
+function ciWrite(t, add, flag) { const d = scDay(); const st = { ciBy: myStamp(), ciAt: Date.now(), ...(t.mid ? {} : { ciDate: d }) };
   if (sb) { const x = t.mid ? t.m : t.ev; const upd = (o, on) => { o = clone(o || {}); const l = new Set(o[t.k] || []); on ? l.add(t.pid) : l.delete(t.pid); o[t.k] = [...l]; return o; };
     const set = { ci: upd(t.mid ? t.m.ci : evCi(t.ev, d), add), ciLate: upd(x.ciLate, add && flag === 'ciLate'), ciPost: upd(x.ciPost, add && flag === 'ciPost'), ...st }; return patchEv(t.mid ? { eid: t.eid, mid: t.mid, set } : { eid: t.eid, set }); }
   const one = { [t.k]: [t.pid] }; return patchEv({ eid: t.eid, mid: t.mid || undefined, ...(add ? { push: { ci: one, ...(flag ? { [flag]: one } : {}) } } : { pull: { ci: one, ciLate: one, ciPost: one } }), set: st, ...(t.mid ? {} : { ciDay: d }) }); }
@@ -4314,8 +4336,8 @@ function openResult(eid, mid) {
     <p class="err" id="err"></p><div class="actions">${sideWin(m) ? '<button class="btn">บันทึกการแก้ไขผล</button>' : started(m) ? '<button class="btn" title="สรุปผู้ชนะและปิดเกม">จบเกม · ยืนยันผล</button><button type="button" class="btn ghost" id="savelive" title="บันทึกคะแนน/วินัยระหว่างแข่ง เกมยังไม่จบ">บันทึกคะแนนระหว่างแข่ง</button>' : ''}<button type="button" class="btn ghost" data-close>${sideWin(m) || started(m) ? 'ยกเลิก' : 'ปิด'}</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div>
     ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
-    const pc = mOf(evById(eid), mid).protest; if (pc?.outcome === 'edit' && pc.status === 'upheld' && !pc.editedAt && fields.w) fields = { ...fields, protest: { ...pc, editedAt: Date.now(), editedBy: ME.id || '' } };
-    const r = patchEv({ eid, mid, unset: ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], set: { ...fields, by: ME.id || '', at: Date.now() } });
+    const pc = mOf(evById(eid), mid).protest; if (pc?.outcome === 'edit' && pc.status === 'upheld' && !pc.editedAt && fields.w) fields = { ...fields, protest: { ...pc, editedAt: Date.now(), editedBy: myStamp() } };
+    const r = patchEv({ eid, mid, unset: ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], set: { ...fields, by: myStamp(), at: Date.now() } });
     closeModal(); recUndo(msg, `${evTitle(ev)} คู่ ${m.no}`, r);
   };
   $('#modal').onclick = e => {
@@ -4337,7 +4359,7 @@ function openResult(eid, mid) {
   const extras = f => { if (SET) f.sets = trimSets(readSets()); const note = $('#note').value.trim(); if (note) f.note = note; if (cards.length) f.cards = cards;
     if (m.ci) f.ci = m.ci; return f; };
   $('#unforf')?.addEventListener('click', () => askFinal(`<b>ยกเลิกการปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>คู่นี้จะกลับเป็นยังไม่มีผล แข่งต่อหรือปรับแพ้ใหม่ได้</div>`, () => { closeModal();
-    const r = patchEv({ eid, mid, unset: ['w', 'auto', 'sa', 'sb', 'note', 'forfeit', 'endedAt', 'sets'], set: { by: ME.id || '', at: Date.now() } }); recUndo('ยกเลิกการปรับแพ้', `${evTitle(ev)} คู่ ${m.no}`, r); }, 'ยกเลิกการปรับแพ้', { forcePin: true, word: 'ยกเลิก' }));
+    const r = patchEv({ eid, mid, unset: ['w', 'auto', 'sa', 'sb', 'note', 'forfeit', 'endedAt', 'sets'], set: { by: myStamp(), at: Date.now() } }); recUndo('ยกเลิกการปรับแพ้', `${evTitle(ev)} คู่ ${m.no}`, r); }, 'ยกเลิกการปรับแพ้', { forcePin: true, word: 'ยกเลิก' }));
   $('#savelive')?.addEventListener('click', () => { const cur = mOf(evById(eid), mid); if (!started(cur)) { $('#err').textContent = 'ยังไม่เริ่มการแข่งขัน'; return; }
     if (SET) { const se = readSets().map((x, i) => setErr(SET, i, x, false)).filter(Boolean); if (se.length) { $('#err').textContent = se.join(' · '); return; } }
     save(extras({ sa: $('#sa').value.trim(), sb: $('#sb').value.trim() }), 'อัปเดตระหว่างแข่ง'); });
@@ -4406,14 +4428,14 @@ function protestUI(eid, mid) {
     if (k === 'cancel') { mode = ''; draw(); return; }
     if (k === 'filego') { const side = $('#prs').value, text = $('#prt').value.trim(); if (!side) return err('เลือกฝ่ายที่ประท้วง'); if (!text) return err('ใส่เรื่องที่ประท้วง');
       const ended = m.endedAt ? (Date.now() - m.endedAt) / 60000 : 0;
-      const r = patchEv({ eid, mid, set: { protest: { side, text, evid: $('#pre').value.trim(), who: $('#prw').value.trim(), status: 'pending', at: Date.now(), by: ME.id || '', ...(ended > PROT_MIN ? { late: true } : {}) } } });
+      const r = patchEv({ eid, mid, set: { protest: { side, text, evid: $('#pre').value.trim(), who: $('#prw').value.trim(), status: 'pending', at: Date.now(), by: myStamp(), ...(ended > PROT_MIN ? { late: true } : {}) } } });
       recUndo('ยื่นประท้วง', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[t[side]]?.n || ''}`, r); mode = ''; mDirty = false; setTimeout(draw, 30); return; }
     if (k === 'withdraw') { ask('ถอนคำร้องนี้? (ลบการประท้วงออก)', () => { recUndo('ถอนคำร้องประท้วง', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, unset: ['protest'] })); }, 'ถอนคำร้อง'); return; }
     if (k === 'reopen') { const p = { ...m.protest, status: 'pending' }; ['decision', 'decidedAt', 'decidedBy', 'outcome'].forEach(x => delete p[x]); recUndo('เปิดพิจารณาคำร้องใหม่', `${evTitle(ev)} คู่ ${m.no}`, patchEv({ eid, mid, set: { protest: p } })); setTimeout(draw, 30); return; }
     if (k === 'decidego') { const d = document.querySelector('#protbox [name=prd]:checked')?.value; const note = $('#prdn').value.trim(); if (!d) return err('เลือกผลการพิจารณา'); if (!note) return err('ใส่เหตุผล/มติคณะกรรมการ');
       let rs = null; if (d === 'replay') { const dd = $('#prdd').value, tt = $('#prdt').value, vv = $('#prdv').value; if (!dd || !/^\d{2}:\d{2}$/.test(tt)) return err('กำหนดวันและเวลาแข่งใหม่');
         const c = replayClash(ev, m, dd, tt, vv); if (c) return err(c); rs = { date: dd, time: tt, venue: vv }; }
-      const status = d === 'rejected' ? 'rejected' : 'upheld'; const p = { ...m.protest, status, decision: note, decidedAt: Date.now(), decidedBy: ME.id || '', ...(status === 'upheld' ? { outcome: d } : {}), ...(rs ? { replay: { ...rs, from: { date: m.date, time: m.time, venue: venueOf(ev, m) } } } : {}) };
+      const status = d === 'rejected' ? 'rejected' : 'upheld'; const p = { ...m.protest, status, decision: note, decidedAt: Date.now(), decidedBy: myStamp(), ...(status === 'upheld' ? { outcome: d } : {}), ...(rs ? { replay: { ...rs, from: { date: m.date, time: m.time, venue: venueOf(ev, m) } } } : {}) };
       const html = `<b>ผลการพิจารณาคำร้อง: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${PROT_N[status]}${status === 'upheld' ? ' · ' + PROT_OUT[d] : ''}</div>${rs ? `<div>แข่งใหม่ ${fmtDate(rs.date, true)} ${rs.time} น. · ${esc(rs.venue)}</div>` : ''}<div class="muted sm">${esc(note)}</div>`;
       askFinal(html, () => {
         const set = { protest: p, ...(rs ? { date: rs.date, time: rs.time, venue: rs.venue } : {}) }; const unset = d === 'replay' ? ['w', 'auto', 'sa', 'sb', 'sets', 'note', 'endedAt', 'startedAt', 'live', 'forfeit', 'ci', 'ciOk'] : [];
@@ -4465,7 +4487,7 @@ function openStart(eid, mid) {
     if (e.target.id === 'toforf') { resetModalHandlers(); openForfeit(eid, mid); return; }
     if (e.target.id === 'dostart') {
       const mm = mOf(evById(eid), mid); const ciOk = Object.assign({}, mm.ciOk || {}, ...Object.keys(ok).filter(k => ok[k]).map(k => ({ [k]: true })));
-      closeModal(); resetModalHandlers(); const r = patchEv({ eid, mid, set: { startedAt: Date.now(), startedBy: ME.id || '', ciOk, ...(skipQ ? { skipQ: true } : {}) }, unset: ['live'] }); recUndo(skipQ ? 'เริ่มการแข่งขัน (ข้ามลำดับ)' : 'เริ่มการแข่งขัน', `${evTitle(ev)} คู่ ${m.no}`, r);
+      closeModal(); resetModalHandlers(); const r = patchEv({ eid, mid, set: { startedAt: Date.now(), startedBy: myStamp(), ciOk, ...(skipQ ? { skipQ: true } : {}) }, unset: ['live'] }); recUndo(skipQ ? 'เริ่มการแข่งขัน (ข้ามลำดับ)' : 'เริ่มการแข่งขัน', `${evTitle(ev)} คู่ ${m.no}`, r);
     }
   };
 }
@@ -4481,7 +4503,7 @@ function openForfeit(eid, mid) {
     e.preventDefault(); const ab = $('#fff').ab.value; if (!ab) { $('#err').textContent = 'เลือกทีมที่สละสิทธิ์'; return; }
     const note = $('#fnote').value.trim();
     askFinal(`<b>ปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${chip(t[ab])} สละสิทธิ์ · ${chip(t[ab === 'a' ? 'b' : 'a'])} ชนะ</div>`, () => { closeModal();
-    const r = patchEv({ eid, mid, set: { w: ab === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note, forfeit: ab, at: Date.now(), endedAt: Date.now(), by: ME.id || '' }, unset: ['live'] });
+    const r = patchEv({ eid, mid, set: { w: ab === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note, forfeit: ab, at: Date.now(), endedAt: Date.now(), by: myStamp() }, unset: ['live'] });
     recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[t[ab]]?.n || ''}`, r, 'ปรับแพ้แล้ว · ยกเลิกได้ที่ “แก้ผล” ของคู่นี้'); }, 'ยืนยันปรับแพ้', { forcePin: true, word: COLORS[t[ab]]?.n });
   };
 }
@@ -4492,7 +4514,7 @@ function needStart(eid, then) {
   modal(`<div class="dlg"><h3>ยังไม่เริ่มการแข่งขัน</h3><p><b>${esc(evTitle(ev))}</b></p><p class="muted sm">กำหนดการ ${ev.date ? fmtDate(ev.date, true) : '–'} ${ev.time ? ev.time + ' น.' : ''} · ${esc(ev.venue || '')}</p>
     <p class="muted sm">บันทึกผลได้หลังกดเริ่มการแข่งขัน ระบบจึงแสดงรายการนี้ว่ากำลังแข่ง และนับเวลาได้ถูกต้อง</p>
     <div class="actions">${canScore(ev.sport) ? '<button class="btn" id="evgo">เริ่มการแข่งขันตอนนี้</button>' : ''}<button class="btn ghost" data-close>ปิด</button></div></div>`);
-  $('#evgo')?.addEventListener('click', () => { closeModal(); const r = patchEv({ eid, set: { startedAt: Date.now(), startedBy: ME.id || '' } }); recUndo('เริ่มการแข่งขัน', evTitle(ev), r); then(); });
+  $('#evgo')?.addEventListener('click', () => { closeModal(); const r = patchEv({ eid, set: { startedAt: Date.now(), startedBy: myStamp() } }); recUndo('เริ่มการแข่งขัน', evTitle(ev), r); then(); });
   return true;
 }
 function openEvResult(eid) {
@@ -4506,7 +4528,7 @@ function openEvResult(eid) {
     $('#af').onsubmit = e => {
       e.preventDefault(); const pp = [0, 1, 2].map(i => $('#p' + i).value === '' ? -1 : +$('#p' + i).value); const s = pp.filter(x => x >= 0);
       if (new Set(s).size !== s.length) { $('#err').textContent = 'คณะสีเดียวกันได้อันดับเดียวต่อรายการ'; return; }
-      const res = { p: pp, perf: [0, 1, 2].map(i => $('#f' + i).value.trim()), at: Date.now(), by: ME.id || '' };
+      const res = { p: pp, perf: [0, 1, 2].map(i => $('#f' + i).value.trim()), at: Date.now(), by: myStamp() };
       askFinal(`<b>ยืนยันผล: ${esc(evTitle(ev))}</b><div>${pp.slice(0, 3).map((c, i) => c >= 0 ? `ที่ ${i + 1} ${chip(c)} ${esc(res.perf[i] || '')}` : '').join(' · ')}</div>`, () => { closeModal(); recUndo('บันทึกผล', evTitle(ev), patchEv({ eid, set: { res } })); });
     };
   } else if (ev.format === 'score') { openJudge(eid, mySlot(ev) || UI.judge || 1); return;
@@ -4535,7 +4557,7 @@ function openJudge(eid, j) {
       <div class="actions">${lock ? `<span class="pill done big">ส่งคะแนนแล้ว</span><button type="button" class="btn ghost" id="junlock">แก้ไขคะแนน</button>` : `<button type="button" class="btn ghost" id="jdraft">บันทึกร่าง</button><button class="btn">ส่งคะแนน</button>`}<button type="button" class="btn ghost" data-close>ปิด</button></div></form>`;
     $('#jf').onsubmit = submitJ;
   };
-  const save = (sub) => { d.submitted = !!sub; d.by = ME.id || ''; d.at = Date.now(); put('scores', `${eid}__${j}`, clone(d)); logIt(sub ? 'ส่งคะแนนกรรมการ' : 'บันทึกร่างคะแนน', `${evTitle(ev)} · ${judgeName(ev, j)}`); };
+  const save = (sub) => { d.submitted = !!sub; d.by = myStamp(); d.at = Date.now(); put('scores', `${eid}__${j}`, clone(d)); logIt(sub ? 'ส่งคะแนนกรรมการ' : 'บันทึกร่างคะแนน', `${evTitle(ev)} · ${judgeName(ev, j)}`); };
   $('#modal').hidden = false; draw();
   $('#modal').oninput = e => { const k = e.target.dataset.jv; if (!k) return; const [c, ci] = k.split('|').map(Number); d.v = d.v || {}; d.v[c] = d.v[c] || []; d.v[c][ci] = e.target.value.trim(); const t = $('#jt' + c); if (t) t.textContent = judgeTotal(d, c) ?? '–'; };
   $('#modal').onclick = e => {
@@ -4635,7 +4657,7 @@ function openRoster(eid, focusKey) {
   }
 
 
-  const save = (sub) => { r.players = r.players.filter(p => normName(p.name) || p.cls); r.submitted = !!sub; r.ev = eid; r.c = c; r.at = Date.now(); r.by = ME.id || ''; if (sub) r.submittedBy = ME.id || ''; if (sub) r.submittedAt = Date.now(); put('rosters', rosterId(eid, c), clone(r)); };
+  const save = (sub) => { r.players = r.players.filter(p => normName(p.name) || p.cls); r.submitted = !!sub; r.ev = eid; r.c = c; r.at = Date.now(); r.by = myStamp(); if (sub) r.submittedBy = myStamp(); if (sub) r.submittedAt = Date.now(); put('rosters', rosterId(eid, c), clone(r)); };
   $('#modal').hidden = false; draw(); if (focusKey) setTimeout(() => $('#modal .rline.focus')?.scrollIntoView({ block: 'center' }), 80);
   function clashSplit(p) { const cl = clashesOf((sched[pkey(p)] || []).concat(evItems(p))); return { mine: cl.filter(([x, y]) => x.eid === eid || y.eid === eid), other: cl.filter(([x, y]) => x.eid !== eid && y.eid !== eid) }; }
   function clLine([x, y]) { return `${fmtDate(x.date)} ${x.time} ${esc(x.label)} กับ ${y.time} ${esc(y.label)}`; }
@@ -4760,7 +4782,7 @@ function openCheckin(eid, mid) {
   /* สแกน/พิมพ์ครบทุกคนในรายชื่อ (ไม่นับคนถูกตัดสิทธิ์) ทุกฝั่งที่ทราบทีม → บันทึกอัตโนมัติ */
   const allIn = () => { const B = bannedSet(); const live = sides.filter(([, c]) => c >= 0); return live.length && live.every(([k, c]) => { const ps = (rosterOf(eid, c).players || []).filter(p => !isBanned(c, p, B)); const set = new Set(ci[k] || []); return ps.length && ps.every(p => set.has(p.id)); }); };
   let autoT = 0; const autoSave = () => { clearTimeout(autoT); fb = { ok: true, t: '✓ รายงานตัวครบทุกคนแล้ว กำลังบันทึกอัตโนมัติ…' }; drawFb(); stopScan();
-    autoT = setTimeout(() => { if (!$('#cifb')) return; closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''} (ครบทุกคน)`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: ME.id || '', ciAt: Date.now() } }), 'รายงานตัวครบทุกคน บันทึกอัตโนมัติแล้ว'); }, 1200); };
+    autoT = setTimeout(() => { if (!$('#cifb')) return; closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''} (ครบทุกคน)`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: myStamp(), ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: myStamp(), ciAt: Date.now() } }), 'รายงานตัวครบทุกคน บันทึกอัตโนมัติแล้ว'); }, 1200); };
   const drawFb = () => { const el = $('#cifb'); if (!el) return; el.className = 'cifb ' + (fb ? (fb.ok ? 'ok' : 'no') : ''); el.innerHTML = fb ? `${fb.c != null ? chip(fb.c) + ' ' : ''}${esc(fb.t)}` : ''; };
   const shell = () => {
     $('#modal').innerHTML = `<div class="dlg wide cidlg"><h3>รายงานตัว · ${esc(evTitle(ev))}${m ? ` · คู่ ${m.no} ${esc(m.time || '')}` : ''}</h3>
@@ -4791,10 +4813,10 @@ function openCheckin(eid, mid) {
     if (e.target.closest('[data-close]')) stopScan();
     if (e.target.id === 'saveci') { if (ro) { toast(ciWinText(W)); return; } stopScan(); const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
       if (!n && !ci0) { ciErr = sides.some(([k, c]) => c >= 0 && (rosterOf(eid, c).players || []).length) ? 'ยังไม่ได้เลือกนักกีฬา: ติ๊กชื่อนักกีฬาที่มารายงานตัว (หรือ “ทั้งทีม”) ก่อนกดบันทึก' : 'ยังบันทึกไม่ได้: ยังไม่มีคณะสีไหนส่งรายชื่อนักกีฬา'; draw(); $('#cierr')?.scrollIntoView({ block: 'nearest' }); return; }
-      if (!n && ci0) { ask('ไม่ได้เลือกนักกีฬาเลย ยืนยันล้างการรายงานตัวของคู่นี้ทั้งหมด?', () => { recUndo('ล้างรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: ME.id || '', ciAt: Date.now() } })); }, 'ล้างการรายงานตัว'); return; }
-      closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: ME.id || '', ciAt: Date.now() } })); return; }
+      if (!n && ci0) { ask('ไม่ได้เลือกนักกีฬาเลย ยืนยันล้างการรายงานตัวของคู่นี้ทั้งหมด?', () => { recUndo('ล้างรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: myStamp(), ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: myStamp(), ciAt: Date.now() } })); }, 'ล้างการรายงานตัว'); return; }
+      closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: myStamp(), ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: myStamp(), ciAt: Date.now() } })); return; }
     const f = e.target.closest('[data-forfeit]'); if (f) { const loser = f.dataset.forfeit; const lc = sides.find(s => s[0] === loser)[1], wc = sides.find(s => s[0] !== loser)[1];
-      askFinal(`<b>ปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${chip(lc)} สละสิทธิ์ · ${chip(wc)} ชนะ</div>`, () => { closeModal(); resetModalHandlers(); recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[lc]?.n || ''}`, patchEv({ eid, mid, set: { w: loser === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note: 'ชนะเพราะคู่แข่งสละสิทธิ์', at: Date.now(), by: ME.id || '', forfeit: loser, endedAt: Date.now(), ci }, unset: ['live'] }), 'ปรับแพ้แล้ว · ยกเลิกได้ที่ “แก้ผล” ของคู่นี้'); }, 'ยืนยันปรับแพ้', { forcePin: true, word: COLORS[lc]?.n }); }
+      askFinal(`<b>ปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${chip(lc)} สละสิทธิ์ · ${chip(wc)} ชนะ</div>`, () => { closeModal(); resetModalHandlers(); recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[lc]?.n || ''}`, patchEv({ eid, mid, set: { w: loser === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note: 'ชนะเพราะคู่แข่งสละสิทธิ์', at: Date.now(), by: myStamp(), forfeit: loser, endedAt: Date.now(), ci }, unset: ['live'] }), 'ปรับแพ้แล้ว · ยกเลิกได้ที่ “แก้ผล” ของคู่นี้'); }, 'ยืนยันปรับแพ้', { forcePin: true, word: COLORS[lc]?.n }); }
   };
 }
 
@@ -5194,7 +5216,7 @@ function bkHas(o, k) { const c = bkCount(o); return !!bkPartText(k, c); }
 function makeBackup() {
   const meta = clone(S.meta || {}); if (mode === 'shared') delete meta.users;
   const o = { sports: S.sports, events: S.events, meta, rosters: S.rosters, students: S.students, scores: S.scores };
-  o._backup = { app: 'gem2569', v: 2, version: APP_VERSION, at: Date.now(), by: ME.name || ME.id || '', mode, counts: bkCount(o) };
+  o._backup = { app: 'gem2569', v: 2, version: APP_VERSION, at: Date.now(), by: ME.name || myStamp(), mode, counts: bkCount(o) };
   return o;
 }
 function bkFileName() { const d = new Date(); const p = n => String(n).padStart(2, '0'); return `สำรองข้อมูล-${evName()}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`; }
@@ -5391,7 +5413,7 @@ function doUndo(l, quick) {
   const go = () => { const r = patchEv({ eid: op.eid, mid: op.mid, sub: op.sub, set: op.set, unset: op.unset }); if (r) recUndo('ย้อนกลับ: ' + l.what, l.detail, r, 'ย้อนกลับแล้ว'); };
   if (quick && !changed) go(); else ask(changed ? `มีการแก้ไข “${l.detail}” หลังจากนั้นแล้ว ยืนยันย้อนกลับไปเป็นค่าก่อน “${l.what}”?` : `ย้อนกลับ “${l.what}” ${l.detail}?`, go, 'ย้อนกลับ');
 }
-const canUndo = l => l.undo && Date.now() - l.at < UNDO_MIN * 60000 && (isAdmin() || !l.by || l.by === ME.id) && canScore(S.events[l.undo.eid]?.sport);
+const canUndo = l => l.undo && Date.now() - l.at < UNDO_MIN * 60000 && (isAdmin() || !l.by || isMe(l.by)) && canScore(S.events[l.undo.eid]?.sport);
 function summaryText() {
   const nm = c => c >= 0 ? COLORS[c].n : '-'; let s = `สรุปผล ${evName()} ${evYear()}\n\nตารางเหรียญ (ทอง/เงิน/ทองแดง)\n`;
   medalTable().forEach(x => s += `${x.rank}. คณะ${COLORS[x.c].n}  ${x.g}/${x.s}/${x.b}  รวม ${x.t}\n`);
