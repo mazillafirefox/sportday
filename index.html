@@ -756,7 +756,7 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .athtbl tr.fieldr td{background:#F4F8FF}
 .rdtbl select,.rdtbl input{min-width:0;width:100%}.rdlist{margin-top:8px;max-height:320px;overflow:auto}
 .rtop{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.rtop b{margin:0 4px 0 2px;font-size:13px}
-.clashbox{margin:0 0 10px;padding:8px 12px;border-radius:10px}.clashbox summary{cursor:pointer}
+.clashbox{margin:0 0 10px;padding:8px 12px;border-radius:10px}.clashbox summary{cursor:pointer;display:list-item}.clashbox summary b{margin-right:4px}.clashbox .clrow{padding:6px 4px 6px 8px;margin:0;box-shadow:none}
 .clrow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:6px 0;border-top:1px solid #F1D9A8}.clrow>small:last-child{flex-basis:100%;color:#7A4B00}
 .pfilt{margin:0 0 8px;display:inline-flex;width:auto}
 @media(max-width:600px){.mrow.g2.ci .ta,.mrow.g2.ci .tb{min-width:0;max-width:100%}.mrow.g2.ci .cis{gap:3px;padding-right:6px;max-width:100%}.mrow.g2.ci .cis b{font-size:12px}.mrow.g2.ci .cis .tm{padding-left:8px;padding-right:8px}.mrow.g2.ci .cis .tm svg,.mrow.g2.ci .cis .tm img,.mrow.g2.ci .cis .tm .gem{display:none}}
@@ -767,6 +767,21 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .ciscan #cistat{position:absolute;left:0;right:0;bottom:0;margin:0;padding:6px 10px;background:rgba(0,0,0,.55);color:#fff}.ciscan #cistat.err{color:#FFD2D2}
 .citype{display:flex;gap:8px;align-items:flex-end;margin:0 0 8px}.citype .fld{flex:1;margin:0}
 .cifb{min-height:0;border-radius:10px;font-weight:600;margin:0 0 8px}.cifb.ok{padding:10px 12px;background:#E6F6EC;color:#14532D}.cifb.no{padding:10px 12px;background:#FDE8E8;color:#991B1B}
+/* แผนที่สนาม: แผนที่เต็มความกว้าง ข้อมูลอยู่ใต้แผนที่ */
+.fmwrap{flex-direction:column;align-items:stretch}.fmmap{flex:none;width:100%}.fmside{flex:none;width:100%}
+.fmlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px}
+.fmside>.card{order:-1}
+.psearch{margin:0 0 6px}.psearch .qbox{width:100%}
+.pselbar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:6px 8px;background:#F4F7FD;border-radius:10px;margin:0 0 6px}.pselbar .pprint{margin-left:auto;display:flex;gap:6px;align-items:center}.pselbar select{font:inherit;font-size:13px;padding:4px 6px;border-radius:8px;border:1px solid var(--line)}
+.plist .prow{grid-template-columns:24px minmax(130px,1.3fr) 44px 52px minmax(0,1fr);align-items:center;padding:5px 4px}
+@media(max-width:600px){.plist .prow{grid-template-columns:24px 1fr 40px;}.plist .prow>span:nth-child(4),.plist .prow>span:nth-child(5){display:none}}
+.prow .psel{display:flex;align-items:center;padding:0 4px 0 0;cursor:pointer}.prow.on{background:#EEF3FF}
+.athprof .aphead{display:flex;gap:16px;align-items:flex-start;margin-bottom:8px}.aphoto{width:96px;height:128px;flex:none;border-radius:10px;overflow:hidden;background:#E6EBF3;border:2px solid var(--line)}.aphoto img,.aphoto svg{width:100%;height:100%;object-fit:cover;display:block}
+.apinfo{flex:1;min-width:0}.apinfo h3{margin:0}.apstat{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.apstat span{display:flex;flex-direction:column;align-items:center;background:#F4F7FD;border-radius:10px;padding:4px 12px;font-size:12px;color:var(--muted);min-width:58px}.apstat b{font-size:18px;color:var(--ink)}
+.athev2{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 0 8px}.athev2.clash{border-color:#F5B971;background:#FFF8EE}.athev2 .ah{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.athev2 .ah>b{flex:1 1 220px}
+.athm{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.athm td{padding:4px 6px;border-top:1px solid #EEF1F6;white-space:nowrap}.athm td:nth-child(3){white-space:normal}
+.okt{color:#15803D;font-weight:600}.badt{color:#B91C1C;font-weight:600}.medp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;color:#fff}.medp.g{background:#C79A0B}.medp.s{background:#8A94A6}.medp.b{background:#A0612F}
+@media(max-width:600px){.athprof .aphead{flex-direction:column;align-items:center;text-align:center}.athprof .maphead{justify-content:center}.apstat{justify-content:center}.athm td:first-child{display:none}.pselbar .pprint{margin-left:0;width:100%}.pselbar .pprint select{flex:1}}
 </style>
 </head>
 <body>
@@ -866,8 +881,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.23.0', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.24.0', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.24.0', 'หน้าประวัตินักกีฬา (ผลงาน ผลการแข่ง วินัย รูป) · บัตรนักกีฬาแบบห้อยคอ · เกียรติบัตร · ตารางนักกีฬาค้นหาและเลือกพิมพ์บัตร · แผนที่สนามเต็มความกว้าง · “ถัดไป” เฉพาะคู่ที่ใกล้เวลา'],
   ['1.23.0', 'เช็คชื่อด้วย QR: เลือกวิธีติ๊กรายชื่อ/สแกน QR/พิมพ์รหัส · พิมพ์บัตร QR นักกีฬาจากรหัสประจำตัวนักเรียน'],
   ['1.22.19', 'หน้าบันทึกผลแสดงผู้กดเริ่มแข่งและเวลา · แก้การตั้งค่ารายการล้างเวลาเริ่มของรายการที่ไม่มีคู่'],
   ['1.22.18', 'แสดง “อัปเดตล่าสุดโดย … เวลา …” ในรายงานตัว ส่งรายชื่อ คะแนนรอบ ผลอันดับ ตั้งค่ากีฬา/รายการ/ระบบ และนำเข้ารายชื่อนักเรียน'],
@@ -1804,7 +1820,9 @@ function nextSet(d) {
     if (!best[v] || m.time < best[v].time) best[v] = { time: m.time, keys: [ev.id + '|' + m.id] }; else if (m.time === best[v].time) best[v].keys.push(ev.id + '|' + m.id); });
   const s = new Set(Object.values(best).flatMap(b => b.keys)); NEXT_C = { k, s }; return s;
 }
-const isNext = (ev, m) => !!m.date && nextSet(m.date).has(ev.id + '|' + m.id);
+/* “ถัดไป” = คู่แรกที่ยังไม่เริ่มของแต่ละสนาม เฉพาะวันนี้และเหลือไม่เกิน 60 นาที (คู่ช่วงบ่ายที่ยังอีกนานไม่ถูกไฮไลท์) */
+const NEXT_WIN = 60;
+const isNext = (ev, m) => !!m.date && m.date === todayISO() && !!m.time && toMin(m.time) - nowMin() <= NEXT_WIN && nextSet(m.date).has(ev.id + '|' + m.id);
 const delayList = () => allMatches().filter(x => ['delay', 'hold', 'waiting', 'forfeit'].includes(mState(x.ev, x.m).k));
 const liveList = () => allMatches().filter(x => isLive(x.m));
 /* ===================== แผนที่สนาม ===================== */
@@ -2363,6 +2381,20 @@ function firstAt(ev, c) {
 }
 function regUrgent(ev, c) { const f = firstAt(ev, c); if (!f) return null; const d = f.slice(0, 10), t = todayStr();
   const days = Math.round((new Date(d) - new Date(t)) / 864e5); return days <= 1 ? { f, days } : null; }
+/* ตารางนักกีฬาของคณะ: ค้นหา + เลือก + พิมพ์บัตร */
+let REG_SHOWN = [];
+function regPlist(c, shown) {
+  if (shown) REG_SHOWN = shown; shown = REG_SHOWN;
+  const q = String(UI.regQ || '').trim().toLowerCase().replace(/\s+/g, ''); const sel = UI.regSel || (UI.regSel = new Set());
+  const sidOf = p => athSid(c, pkey(p));
+  const list = q ? shown.filter(p => normName(p.name).toLowerCase().replace(/\s+/g, '').includes(q) || String(p.cls).replace(/\s/g, '') === q || sidOf(p).includes(q)) : shown;
+  const nSel = shown.filter(p => sel.has(c + '~' + pkey(p))).length; const allOn = list.length && list.every(p => sel.has(c + '~' + pkey(p)));
+  return `<div class="pselbar"><label class="ck"><input type="checkbox" data-pselall ${allOn ? 'checked' : ''}> เลือกทั้งหมด${q ? 'ที่ค้นพบ' : ''} (${list.length})</label>
+    <span class="muted sm">เลือกแล้ว ${nSel} คน${nSel ? ' · <a href="#" data-pselclr>ล้าง</a>' : ''}</span>
+    <span class="pprint"><select id="cardstyle" aria-label="แบบบัตร"><option value="badge" ${UI.cardStyle !== 'qr' ? 'selected' : ''}>บัตรนักกีฬา (ห้อยคอ 4 ใบ/แผ่น)</option><option value="qr" ${UI.cardStyle === 'qr' ? 'selected' : ''}>บัตร QR เล็ก (24 ใบ/แผ่น)</option></select>
+    <button class="btn sm" data-act="printsel" ${nSel ? '' : 'disabled'}>พิมพ์ที่เลือก ${nSel || ''}</button></span></div>
+    <div class="plist">${list.map(p => { const bad = p.prob; const k = c + '~' + pkey(p); const sid = sidOf(p); return `<div class="prow click${bad ? ' bad' : ''}${sel.has(k) ? ' on' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูประวัตินักกีฬา"><label class="psel" data-psel><input type="checkbox" data-pk="${esc(k)}" ${sel.has(k) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></label><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="warnt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="num muted sm">${esc(sid)}</span><span class="muted sm">${[...p.sports].map(sportName).join(', ')}${p.ath.size ? (p.sports.size ? ', ' : '') + 'กรีฑา ' + p.ath.size : ''}</span></div>`; }).join('') || '<p class="muted sm">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>'}</div>`;
+}
 function vRegister() {
   const c = UI.regColor; const idx = athleteIndex(c); const SF = UI.regSt || null;
   const allEv = sportsList().flatMap(sp => eventsOf(sp.id).filter(e => rosterMax(e) > 0));
@@ -2377,7 +2409,7 @@ function vRegister() {
     <p class="sm"><b class="num">ส่งครบ ${nDone}/${need.length} รายการ (${pct}%)</b>${(cnt.na || 0) ? ` <span class="muted">· ไม่ได้ลงแข่ง ${cnt.na}</span>` : ''}</p>
     <div class="seg wrap mini"><button data-regst="" class="${!SF ? 'on' : ''}">ทั้งหมด<small class="num">${allEv.length}</small></button>${['none', 'draft', 'short', 'bad', 'done', 'na'].map(k => `<button data-regst="${k}" class="${SF === k ? 'on' : ''} rs-${k}" ${cnt[k] ? '' : 'disabled'}>${REG_ST[k][0]}<small class="num">${cnt[k] || 0}</small></button>`).join('')}</div></div>`;
   const urgBox = urg.length ? `<div class="regurg"><b>⚠ ใกล้แข่งแต่ยังส่งไม่ครบ ${urg.length} รายการ</b>${urg.slice(0, 6).map(e => { const u = regUrgent(e, c);
-    return `<div class="rrow click" data-roster="${e.id}" tabindex="0"><span>${sIcon(e.sport, 'sm')}${esc(evTitle(e))}</span><span class="muted sm num">${u.days < 0 ? 'เริ่มแข่งแล้ว' : u.days === 0 ? 'แข่งวันนี้ ' + u.f.slice(11) : 'แข่งพรุ่งนี้ ' + u.f.slice(11)} น.</span>${stPill(e)}</div>`; }).join('')}${urg.length > 6 ? `<p class="muted sm">และอีก ${urg.length - 6} รายการ · กด “ยังไม่กรอก” ด้านบนเพื่อดูทั้งหมด</p>` : ''}</div>` : '';
+    return `<div class="rrow click" data-roster="${e.id}" tabindex="0"><span>${sIcon(e.sport, 'sm')}${esc(evTitle(e))}</span><span class="muted sm num">${u.days < 0 ? 'เริ่มแข่งแล้ว' : (u.days === 0 ? 'แข่งวันนี้ ' : 'แข่งพรุ่งนี้ ') + u.f.slice(11) + ' น.'}</span>${stPill(e)}</div>`; }).join('')}${urg.length > 6 ? `<p class="muted sm">และอีก ${urg.length - 6} รายการ · กด “ยังไม่กรอก” ด้านบนเพื่อดูทั้งหมด</p>` : ''}</div>` : '';
   const sum = sportsList().map(sp => {
     const evAll = eventsOf(sp.id).filter(e => rosterMax(e) > 0); if (!evAll.length) return '';
     const F = mapFacets(evAll, sp.id); const evs = F.evs.filter(e => !SF || stOf[e.id].k === SF); if (SF && !evs.length) return '';
@@ -2406,8 +2438,9 @@ function vRegister() {
     ${flagged.length ? `<p class="warn">${flagged.length} คนลงเกินจำนวนที่กติกากำหนด</p>` : ''}${nClash ? `<details class="qwarn clashbox" open><summary><b>${nClash} คนมีนัดแข่งเวลาทับกัน</b> <span class="sm">(นัดถัดไปเริ่มก่อนนัดก่อนหน้าจบ หรือห่างไม่ถึง ${S.meta.clashMin ?? 30} นาที) แก้โดยเปลี่ยนตัวในรายการใดรายการหนึ่ง · กดชื่อเพื่อแก้</span></summary>
       ${people.filter(p => p.clash).map(p => `<div class="clrow click" data-ath="${c}~${esc(pkey(p))}" tabindex="0"><span class="plink">${esc(p.name)}</span> <small class="muted">${esc(p.cls)}</small><small>${p.cl.slice(0, 2).map(pr => { const [x, y] = Array.isArray(pr) ? pr : [pr.a || pr[0], pr.b || pr[1]]; return x && y ? `${esc(x.label)} ${fmtDate(x.date)} ${esc(x.time)} ↔ ${esc(y.label)} ${esc(y.time)}` : ''; }).join(' · ')}</small></div>`).join('')}</details>` : ''}
     ${nProb ? `<div class="seg mini pfilt"><button data-regpf="" class="${onlyProb ? '' : 'on'}">ทุกคน ${people.length}</button><button data-regpf="1" class="${onlyProb ? 'on' : ''}">มีปัญหา ${nProb}</button></div>` : ''}
-    <div class="plist">${shown.map(p => { const bad = p.prob; return `<div class="prow click${bad ? ' bad' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูข้อมูลนักกีฬาและแก้ไขการส่งรายชื่อ"><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="errt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="muted sm">${p.evs.map(id => esc(S.events[id] ? sportName(S.events[id].sport) : '')).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span></div>`; }).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
-    <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="qrcards">พิมพ์บัตร QR คณะนี้</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
+    <div class="psearch">${qbox('rq', UI.regQ, 'ค้นหาชื่อ ห้อง หรือรหัส เช่น สมชาย / 3/6 / 41294')}</div>
+    <div id="plistbox">${regPlist(c, shown)}</div>
+    <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
   <section class="card"><h2>ภาพรวมการส่งรายชื่อทุกคณะสี</h2><p class="muted sm">ส่งครบ / รายการที่คณะสีนั้นลงแข่ง (ไม่นับรายการที่ไม่ได้อยู่ในสาย)</p>${matrix}</section>`;
 }
 
@@ -2611,29 +2644,162 @@ function openAddStudent() {
 
 /* ---------- ค้นหานักกีฬา ---------- */
 /* ข้อมูลนักกีฬาหนึ่งคน: รายการที่ลง สถานะ เวลาชน นัดที่รอแข่ง · กดไปแก้รายชื่อของรายการนั้น */
+/* ===================== รูปนักกีฬา =====================
+   เก็บแยกเอกสารละคน (ไม่ใส่ในเอกสารรายชื่อ) · โหมดข้อมูลกลาง: photos/{id} อ่าน/เขียนได้เฉพาะครู/กรรมการที่มีสิทธิ์
+   โหมดทดลอง: เก็บในเบราว์เซอร์นี้ · รูปย่อเป็น 300×400 JPEG (~30 KB) */
+const PHOTO_C = {};
+function athSid(c, key) { for (const [rid, r] of Object.entries(S.rosters)) { if (!rid.endsWith('__' + c)) continue; const p = (r.players || []).find(x => pkey(x) === key && x.sid); if (p) return normSid(p.sid); } return ''; }
+function photoId(c, key) { const sid = athSid(c, key); return sid ? 's' + sid : 'k' + fnv(c + '|' + key); }
+function localPhotos() { try { return JSON.parse(localStorage.getItem('gem-photos') || '{}'); } catch (e) { return {}; } }
+async function getPhoto(id) {
+  if (id in PHOTO_C) return PHOTO_C[id];
+  let v = null;
+  if (mode === 'shared' && db && !sb) { if (!canWrite) return null; try { const d = await withTimeout(db.collection('photos').doc(id).get(), 15000); v = d.exists ? d.data().img || null : null; } catch (e) { return null; } }
+  else v = localPhotos()[id] || null;
+  PHOTO_C[id] = v; return v;
+}
+async function getPhotos(ids) { const out = {}; const q = [...new Set(ids)]; for (let i = 0; i < q.length; i += 20) { const part = q.slice(i, i + 20); const r = await Promise.all(part.map(getPhoto)); part.forEach((id, j) => out[id] = r[j]); } return out; }
+async function setPhoto(id, img) {
+  if (mode === 'shared' && db && !sb) { const ref = db.collection('photos').doc(id); await withTimeout(img ? ref.set({ img, by: ME.id || '', at: Date.now() }) : ref.delete(), 20000); }
+  else { const all = localPhotos(); if (img) all[id] = img; else delete all[id]; try { localStorage.setItem('gem-photos', JSON.stringify(all)); } catch (e) { throw new Error('พื้นที่เก็บรูปในเบราว์เซอร์เต็ม'); } }
+  PHOTO_C[id] = img || null;
+}
+function fileToPhoto(file) {
+  return new Promise((res, rej) => { if (!file || !/^image\//.test(file.type)) { rej(new Error('เลือกไฟล์รูปภาพ')); return; }
+    const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => { const W = 300, H = 400; const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, H);
+      const sc = Math.max(W / im.width, H / im.height); const w = im.width * sc, h = im.height * sc; cx.drawImage(im, (W - w) / 2, Math.min(0, (H - h) * 0.3), w, h); URL.revokeObjectURL(url); res(cv.toDataURL('image/jpeg', 0.82)); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('อ่านรูปไม่ได้')); }; im.src = url; });
+}
+const PH_SIL = `<svg viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="40" fill="#E6EBF3"/><circle cx="15" cy="14" r="7" fill="#B8C3D6"/><path d="M2 40c0-9 6-14 13-14s13 5 13 14z" fill="#B8C3D6"/></svg>`;
+
+/* ===================== ผลงานของนักกีฬา ===================== */
+const MED_N = { g: 'เหรียญทอง', s: 'เหรียญเงิน', b: 'เหรียญทองแดง' };
+function athMedal(ev, c) { if (!ev.medal) return ''; const md = medalsOf(ev); return md.g === c ? 'g' : md.s === c ? 's' : (md.b || []).includes(c) ? 'b' : ''; }
+function athEvResult(ev, c, key) {
+  const pl = (rosterOf(ev.id, c).players || []).find(p => pkey(p) === key) || {}; const out = { medal: athMedal(ev, c), rows: [], place: '' };
+  if ((ev.matches || []).length) ev.matches.forEach(m => { const t = teamsOf(ev, m); const side = t.a === c ? 'a' : t.b === c ? 'b' : ''; if (!side) return;
+    const opp = side === 'a' ? t.b : t.a; const w = sideWin(m); const my = side === 'a' ? m.sa : m.sb, ot = side === 'a' ? m.sb : m.sa;
+    const res = w ? (w === side ? 'ชนะ' : 'แพ้') : isLive(m) ? 'กำลังแข่ง' : 'รอแข่ง'; const ci = (m.ci?.[side] || []).includes(pl.id);
+    out.rows.push({ when: `${m.date ? fmtDate(m.date) : ''} ${m.time || ''}`, label: `คู่ ${m.no}${m.kind === 'final' ? ' ชิงชนะเลิศ' : m.kind === 'bronze' ? ' ชิงที่ 3' : ''}`, opp, score: (my !== '' && my != null && ot !== '' && ot != null) ? `${my}–${ot}` : '', res, ci, forf: m.forfeit === side }); });
+  else if (ev.format === 'points') { const st = pointsTable(ev); const i = st.rows.findIndex(r => r.c === c); if (i >= 0) out.place = `อันดับ ${i + 1} · ${st.rows[i].pts} คะแนน${st.complete ? '' : ' (ยังแข่งไม่ครบ)'}`; }
+  else if (ev.format === 'score') { const st = scoreTable(ev); const i = st.rows.findIndex(r => r.c === c); if (i >= 0 && st.complete) out.place = `อันดับ ${i + 1}`; }
+  else if (ev.format === 'rank') { const i = (ev.res?.p || []).indexOf(c); if (i >= 0) out.place = `ที่ ${i + 1}${ev.res?.perf?.[i] ? ' · ' + ev.res.perf[i] : ''}`; }
+  return out;
+}
+function athCards(c, key) { const out = []; Object.entries(S.events).forEach(([eid, e]) => (e.matches || []).forEach(m => (m.cards || []).forEach(cd => { if (cd.c === c && cardH(cd) === fnv(key)) out.push({ cd, label: `${evTitle({ id: eid, ...e })} คู่ ${m.no}`, date: m.date }); }))); return out; }
+const CARD_N = { Y: 'ใบเหลือง', R: 'ใบแดง', B: 'ตัดสิทธิ์' };
+
+/* ===================== เอกสารพิมพ์: บัตรนักกีฬา / เกียรติบัตร ===================== */
+function logoSrc() { return document.querySelector('.brand img')?.src || ''; }
+function spriteDefs(ids) { return `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${[...new Set(ids)].map(id => document.getElementById(id)?.outerHTML || '').join('')}</svg>`; }
+function dayRange() { const d = days(); if (!d.length) return ''; const a = new Date(d[0]), b = new Date(d[d.length - 1]); const mo = x => x.toLocaleDateString('th-TH', { month: 'short' }); const y = b.getFullYear() + 543;
+  return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${mo(b)} ${y}` : `${a.getDate()} ${mo(a)} – ${b.getDate()} ${mo(b)} ${y}`; }
+async function printBadges(list, style = 'badge') {
+  list = list.filter(x => athleteIndex(x.c)[x.key]); if (!list.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; }
+  if (style === 'qr') { printQRList(list); return; }
+  toast('กำลังเตรียมบัตร…');
+  const ids = list.map(x => photoId(x.c, x.key)); const ph = await getPhotos(ids); const logo = logoSrc(); const icons = new Set();
+  const card = (x, i) => { const a = athleteIndex(x.c)[x.key]; const sid = athSid(x.c, x.key); const k = COLORS[x.c]; const img = ph[ids[i]];
+    const sps = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean))]; sps.forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); icons.add('gem-' + x.c); icons.add('gg' + x.c);
+    const evL = [...new Set(a.evs.filter(id => S.events[id]).map(id => evTitle(evById(id))))];
+    return `<div class="bd" style="--tc:${k.c}">
+      <div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
+      <div class="bdc"><svg class="g" viewBox="0 0 24 24"><use href="#gem-${x.c}"/></svg><b>คณะ${esc(k.n)}</b><span class="cat">A</span></div>
+      <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">นักกีฬา · ATHLETE</span><b class="nm">${esc(a.name)}</b><span>ชั้น ม.${esc(a.cls)}</span>${sid ? `<span class="sid">เลขประจำตัว ${esc(sid)}</span>` : ''}</div></div>
+      <div class="bdt">ชนิดกีฬาที่ลงแข่ง</div><div class="bds">${sps.slice(0, 6).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>
+      <div class="bde">${esc(evL.slice(0, 4).join(' · '))}${evL.length > 4 ? ` และอีก ${evL.length - 4}` : ''}</div>
+      <div class="bdf"><div class="qr">${sid ? qrSVG(sid, 90) : ''}</div><div><b>บัตรประจำตัวนักกีฬา</b><span>ใช้แสดงต่อกรรมการเมื่อรายงานตัว</span><span>หมายเลขบัตร ${esc(sid || '-')}</span></div></div>
+      <div class="bdbar"></div></div>`; };
+  const cards = list.map(card); const pages = []; for (let i = 0; i < cards.length; i += 4) pages.push(cards.slice(i, i + 4));
+  printDoc(`บัตรนักกีฬา ${list.length} ใบ`, spriteDefs([...icons]) + pages.map(pg => `<section class="sheet bsheet"><div class="bgrid">${pg.join('')}</div></section>`).join(''), BADGE_CSS);
+}
+const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-columns:repeat(2,100mm);grid-auto-rows:142mm;gap:3mm 5mm;justify-content:center}
+.bd{position:relative;border:.3mm solid #bbb;border-radius:3mm;overflow:hidden;display:flex;flex-direction:column;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.bdh{display:flex;gap:2.5mm;align-items:center;padding:2.5mm 3mm;background:linear-gradient(135deg,#0B1F4D,#1E3A8A);color:#fff}.bdh img{width:12mm;height:13mm;object-fit:contain;background:#fff;border-radius:1.5mm;padding:.6mm}
+.bdh div{display:flex;flex-direction:column;line-height:1.2}.bdh b{font-size:15px}.bdh span{font-size:9.5px;opacity:.9}
+.bdc{display:flex;align-items:center;gap:2mm;padding:1.8mm 3mm;background:var(--tc);color:#fff}.bdc .g{width:6mm;height:6mm;background:#fff;border-radius:50%;padding:.6mm}.bdc b{font-size:16px;flex:1;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.bdc .cat{width:9mm;height:9mm;border-radius:1.5mm;background:#fff;color:#0B1F4D;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+.bdm{display:flex;gap:3.5mm;padding:4mm 4mm 3mm}.ph{width:36mm;height:48mm;flex:none;border:.4mm solid var(--tc);border-radius:1.5mm;overflow:hidden;background:#E6EBF3}.ph img,.ph svg{width:100%;height:100%;object-fit:cover;display:block}
+.who{display:flex;flex-direction:column;gap:1mm;min-width:0;justify-content:center}.who .role{font-size:9.5px;font-weight:700;letter-spacing:.3px;color:var(--tc)}.who .nm{font-size:19px;line-height:1.25}.who span{font-size:12.5px}.who .sid{font-size:10.5px;color:#444}
+.bdt{margin:0 4mm;padding:1mm 0;border-top:.3mm solid #e5e7eb;font-size:9px;font-weight:700;color:#666;letter-spacing:.3px}.bds{display:flex;flex-wrap:wrap;gap:1.5mm 3mm;padding:.5mm 4mm 0}.bds span{display:inline-flex;align-items:center;gap:1.2mm;font-size:12px;font-weight:600}.bds svg{width:6mm;height:6mm;color:var(--tc)}
+.bde{padding:1.5mm 4mm 0;font-size:9.5px;color:#555;line-height:1.3;flex:1}
+.bdf{display:flex;gap:2.5mm;align-items:center;padding:2mm 3mm;border-top:.3mm dashed #ccc}.bdf .qr svg{width:26mm;height:26mm;display:block}.bdf div:last-child{display:flex;flex-direction:column;font-size:9.5px;line-height:1.35}.bdf b{font-size:11px}
+.bdbar{height:4mm;background:var(--tc)}`;
+function printQRList(list) {
+  const cards = list.map(x => { const a = athleteIndex(x.c)[x.key]; const ev = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean).map(sportName))]; return { c: x.c, sid: athSid(x.c, x.key), name: a.name, cls: a.cls, evs: ev }; }).filter(x => x.sid);
+  if (!cards.length) { toast('นักกีฬาที่เลือกยังไม่มีรหัสประจำตัว'); return; }
+  const card = x => `<div class="qc" style="--tc:${COLORS[x.c].c}"><div class="qq">${qrSVG(x.sid, 86)}</div><div class="qi"><b class="qn">${esc(x.name)}</b><span>ม.${esc(x.cls)} · ${esc(x.sid)}</span><span class="qcol">คณะ${esc(COLORS[x.c].n)}</span><small>${esc(x.evs.slice(0, 4).join(', '))}</small></div></div>`;
+  const pages = []; for (let i = 0; i < cards.length; i += 24) pages.push(cards.slice(i, i + 24));
+  printDoc(`บัตร QR ${cards.length} ใบ`, pages.map((pg, i) => `<section class="sheet qs">${phead('บัตร QR รายงานตัวนักกีฬา', `แผ่น ${i + 1}/${pages.length} · ${cards.length} คน`)}<div class="qgrid">${pg.map(card).join('')}</div><p class="small">ตัดตามเส้น · QR เก็บรหัสประจำตัวนักเรียน</p></section>`).join(''),
+    `.qs{padding:8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
+}
+function certSigners() { try { return JSON.parse(localStorage.getItem('gem-cert') || 'null') || S.meta.certSigners || [{ n: '', p: 'ประธานคณะกรรมการจัดการแข่งขัน' }, { n: '', p: 'ผู้อำนวยการ' + evSchool() }]; } catch (e) { return [{ n: '', p: '' }, { n: '', p: '' }]; } }
+function printCert(c, key, eid) {
+  const a = athleteIndex(c)[key]; if (!a) return; const ev = eid ? evById(eid) : null; const md = ev ? athMedal(ev, c) : ''; const sg = certSigners(); const d = days(); const last = d[d.length - 1];
+  const dt = last ? new Date(last) : new Date(); const thd = `${dt.getDate()} ${dt.toLocaleDateString('th-TH', { month: 'long' })} พ.ศ. ${dt.getFullYear() + 543}`;
+  const what = ev ? (md ? `ได้รับรางวัล<b class="md ${md}">${MED_N[md]}</b><br>ประเภท ${esc(sportName(ev.sport))} ${esc(ev.label)}` : `ได้เข้าร่วมการแข่งขันประเภท ${esc(sportName(ev.sport))} ${esc(ev.label)}`) : `ได้เข้าร่วมการแข่งขันในฐานะนักกีฬาคณะ${esc(COLORS[c].n)}`;
+  const body = `<section class="sheet cert" style="--tc:${COLORS[c].c}"><div class="cf"><div class="ci">
+    ${logoSrc() ? `<img class="lg" src="${logoSrc()}" alt="">` : ''}<p class="org">${esc(evSchool())}</p><h1>เกียรติบัตร</h1><p>ให้ไว้เพื่อแสดงว่า</p>
+    <p class="nm">${esc(a.name)}</p><p class="sub">นักเรียนชั้นมัธยมศึกษาปีที่ ${esc(String(a.cls).replace('/', '/'))} · คณะ${esc(COLORS[c].n)}</p>
+    <p class="what">${what}</p><p>ในการแข่งขันกีฬาสี “${esc(evName())}” ประจำปีการศึกษา ${esc(evYear())}</p><p>ขอให้มีความสุข ความเจริญ และเป็นนักกีฬาที่ดีตลอดไป</p><p class="dt">ให้ไว้ ณ วันที่ ${thd}</p>
+    <div class="sg">${sg.map(s => `<div><span class="ln"></span><span>(${esc(s.n || '................................................')})</span><span>${esc(s.p || '')}</span></div>`).join('')}</div></div></div></section>`;
+  printDoc(`เกียรติบัตร ${a.name}`, body, `@page{size:A4 landscape;margin:0}.cert{padding:9mm;max-width:none}.cert .cf{border:2.5mm solid var(--tc);outline:.6mm solid #B08D2E;outline-offset:-4.5mm;height:190mm;box-sizing:border-box;padding:10mm 18mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .ci{text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.5mm;font-size:16px}.lg{width:22mm;height:24mm;object-fit:contain}.org{font-size:18px;font-weight:600;margin:0}.cert h1{font-size:40px;margin:1mm 0;color:#8A6D1D;letter-spacing:2px}.cert p{margin:0}
+    .nm{font-size:32px;font-weight:700;margin:2mm 0!important;color:#0B1F4D}.sub{font-size:15px;color:#333}.what{font-size:19px;line-height:1.6;margin:2mm 0!important}.md{font-size:24px;margin:0 2mm}.md.g{color:#B8860B}.md.s{color:#6B7280}.md.b{color:#9A5B2E}.dt{margin-top:2mm!important}
+    .sg{display:flex;justify-content:space-around;width:100%;margin-top:10mm}.sg div{display:flex;flex-direction:column;align-items:center;gap:1mm;font-size:14px;min-width:70mm}.sg .ln{width:60mm;border-bottom:.3mm dotted #333;height:10mm}
+    @media screen{.cert{max-width:281mm!important}}`);
+}
+function openCertDlg(c, key) {
+  const a = athleteIndex(c)[key]; const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)); const sg = certSigners();
+  modal(`<div class="dlg"><h3>พิมพ์เกียรติบัตร · ${esc(a.name)}</h3>
+    <label class="fld">ประเภทเกียรติบัตร<select id="cte"><option value="">เข้าร่วมการแข่งขัน (ไม่ระบุรายการ)</option>${evs.map(e => { const md = athMedal(e, c); return `<option value="${e.id}" ${md ? 'selected' : ''}>${md ? '🏅 ' + MED_N[md] + ' · ' : 'เข้าร่วม · '}${esc(evTitle(e))}</option>`; }).join('')}</select></label>
+    ${sg.map((s, i) => `<div class="g2"><label class="fld">ผู้ลงนาม ${i + 1}<input id="sn${i}" value="${esc(s.n)}" placeholder="ชื่อ-สกุล"></label><label class="fld">ตำแหน่ง<input id="sp${i}" value="${esc(s.p)}"></label></div>`).join('')}
+    <p class="muted sm">ชื่อผู้ลงนามจำไว้ในเครื่องนี้สำหรับครั้งต่อไป</p>
+    <div class="actions"><button class="btn" id="ctgo">พิมพ์</button><button class="btn ghost" data-back>กลับ</button></div></div>`);
+  $('#ctgo').onclick = () => { const s2 = sg.map((_, i) => ({ n: $('#sn' + i).value.trim(), p: $('#sp' + i).value.trim() })); try { localStorage.setItem('gem-cert', JSON.stringify(s2)); } catch (e) { } printCert(c, key, $('#cte').value || null); };
+  $('#modal [data-back]').onclick = () => openAthlete(c, key);
+}
+
+/* ===================== หน้าประวัตินักกีฬา ===================== */
 function openAthlete(c, key) {
   const a = athleteIndex(c)[key]; if (!a) { toast('ไม่พบนักกีฬาคนนี้แล้ว'); return; }
   const sched = athleteSchedule(c); const items = (sched[key] || []).slice().sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time)); const cl = clashesOf(items);
-  const clE = new Set(cl.flatMap(([x, y]) => [x.eid, y.eid])); const B = bannedSet(); const ban = isBanned(c, a, B); const can = canRoster(c);
+  const clE = new Set(cl.flatMap(([x, y]) => [x.eid, y.eid])); const B = bannedSet(); const ban = isBanned(c, a, B); const can = canRoster(c); const canPh = anyEdit() && (can || isAdmin() || canScore(null));
   const maxS = S.meta.maxSports ?? 2, maxA = S.meta.maxAthletics ?? 2; const overS = chkOn('max') && a.sports.size > maxS, overA = chkOn('max') && a.ath.size > maxA;
-  const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id));
-  const row = ev => { const r = rosterOf(ev.id, c); const p = (r.players || []).find(x => pkey(x) === key) || {}; const s = regState(ev, c); const [t, cls] = REG_ST[s.k];
-    const nx = items.find(i => i.eid === ev.id);
-    return `<div class="athev${clE.has(ev.id) ? ' clash' : ''}"><div><b>${sIcon(ev.sport, 'sm')}${esc(evTitle(ev))}</b>${p.num ? ` <small class="muted">เบอร์ ${esc(p.num)}</small>` : ''}
-      <div class="muted sm">${nx ? `แข่ง ${fmtDate(nx.date)} ${nx.time} น.${nx.venue ? ' · ' + esc(nx.venue) : ''}` : ev.date ? `${fmtDate(ev.date)} ${esc(ev.time || '')}` : 'ยังไม่มีนัดที่รอแข่ง'}${clE.has(ev.id) ? ' · <b class="warnt">เวลาชน</b>' : ''}</div></div>
-      <span class="pill ${cls}">${r.submitted ? 'ส่งแล้ว' : 'ร่าง'}${s.k === 'bad' ? ' · ต้องแก้' : ''}</span>
-      <button class="btn sm ${clE.has(ev.id) ? '' : 'ghost'}" data-athed="${ev.id}~${c}~${esc(key)}">${can ? 'แก้ไขรายชื่อ' : 'ดูรายชื่อ'}</button></div>`; };
-  modal(`<div class="dlg wide"><div class="maphead"><div><h3>${esc(a.name)}</h3><p class="muted sm">ชั้น ${esc(a.cls)} · ลง ${evs.length} รายการ · กีฬา ${a.sports.size}/${maxS} ชนิด · กรีฑา ${a.ath.size}/${maxA} ประเภท</p></div>${chip(c)}</div>
+  const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)); const sid = athSid(c, key); const pid = photoId(c, key);
+  const R = evs.map(ev => ({ ev, r: athEvResult(ev, c, key) })); const meds = { g: 0, s: 0, b: 0 }; R.forEach(x => { if (x.r.medal) meds[x.r.medal]++; });
+  const W = R.reduce((n, x) => n + x.r.rows.filter(r => r.res === 'ชนะ').length, 0), L = R.reduce((n, x) => n + x.r.rows.filter(r => r.res === 'แพ้').length, 0);
+  const cards = athCards(c, key);
+  const row = ({ ev, r: res }) => { const r = rosterOf(ev.id, c); const p = (r.players || []).find(x => pkey(x) === key) || {}; const s = regState(ev, c); const [, cls] = REG_ST[s.k]; const nx = items.find(i => i.eid === ev.id);
+    return `<div class="athev2${clE.has(ev.id) ? ' clash' : ''}"><div class="ah"><b>${sIcon(ev.sport, 'sm')}${esc(evTitle(ev))}</b>${p.num ? ` <small class="muted">เบอร์ ${esc(p.num)}</small>` : ''}
+      ${res.medal ? `<span class="medp ${res.medal}">${MED_N[res.medal]}</span>` : ''}${res.place ? `<span class="pill">${esc(res.place)}</span>` : ''}
+      <span class="pill ${cls}">${r.submitted ? 'ส่งแล้ว' : 'ร่าง'}${s.k === 'bad' ? ' · ต้องแก้' : ''}</span><button class="btn sm ${clE.has(ev.id) ? '' : 'ghost'}" data-athed="${ev.id}~${c}~${esc(key)}">${can ? 'แก้ไขรายชื่อ' : 'ดูรายชื่อ'}</button></div>
+      ${nx ? `<div class="muted sm">นัดถัดไป ${fmtDate(nx.date)} ${nx.time} น.${nx.venue ? ' · ' + esc(nx.venue) : ''}${clE.has(ev.id) ? ' · <b class="warnt">เวลาชน</b>' : ''}</div>` : ''}
+      ${res.rows.length ? `<table class="athm"><tbody>${res.rows.map(x => `<tr><td class="num">${esc(x.when)}</td><td>${esc(x.label)}</td><td>พบ ${chip(x.opp, { ph: 'รอผล' })}</td><td class="num">${esc(x.score)}</td><td class="${x.res === 'ชนะ' ? 'okt' : x.res === 'แพ้' ? 'badt' : 'muted'}">${x.res}${x.forf ? ' (สละสิทธิ์)' : ''}</td><td>${x.ci ? '<span class="okt" title="รายงานตัวแล้ว">✓ รายงานตัว</span>' : ''}</td></tr>`).join('')}</tbody></table>` : ''}</div>`; };
+  modal(`<div class="dlg xwide athprof"><div class="aphead"><div class="aphoto" id="aph">${PH_SIL}</div>
+      <div class="apinfo"><div class="maphead"><div><h3>${esc(a.name)}</h3><p class="muted sm">ชั้น ม.${esc(a.cls)}${sid ? ` · เลขประจำตัว ${esc(sid)}` : ''} · ลง ${evs.length} รายการ · กีฬา ${a.sports.size}/${maxS} ชนิด · กรีฑา ${a.ath.size}/${maxA} ประเภท</p></div>${chip(c)}</div>
+      <div class="apstat"><span><b class="num">${meds.g}</b>ทอง</span><span><b class="num">${meds.s}</b>เงิน</span><span><b class="num">${meds.b}</b>ทองแดง</span><span><b class="num">${W}–${L}</b>ชนะ–แพ้</span><span><b class="num">${cards.length}</b>วินัย</span></div>
+      <div class="actions m0">${canPh ? `<label class="btn sm ghost">📷 ${'เพิ่ม/เปลี่ยนรูป'}<input type="file" id="aphf" accept="image/*" hidden></label><button class="btn sm ghost" id="aphx" hidden>ลบรูป</button>` : ''}
+        <button class="btn sm ghost" id="apcard">🪪 พิมพ์บัตรนักกีฬา</button><button class="btn sm ghost" id="apcert">📜 พิมพ์เกียรติบัตร</button></div><p class="err" id="aperr"></p></div></div>
     ${ban ? '<p class="warn">ถูกตัดสิทธิ์ทุกรายการตามข้อ 6</p>' : ''}${overS ? `<p class="warn">ลงกีฬาเกิน ${maxS} ชนิด (${[...a.sports].map(sportName).join(', ')}) ต้องเอาออกจากบางรายการ</p>` : ''}${overA ? `<p class="warn">ลงกรีฑาเกิน ${maxA} ประเภท</p>` : ''}
     ${cl.map(([p, q]) => `<p class="warn">เวลาชน ${fmtDate(p.date)}: ${p.time} ${esc(p.label)} กับ ${q.time} ${esc(q.label)} — เปลี่ยนตัวในรายการใดรายการหนึ่ง</p>`).join('')}
-    <h4 class="subh">รายการที่ส่งชื่อ</h4><div class="athevs">${evs.map(row).join('')}</div>
+    <h4 class="subh">รายการที่ลงแข่งและผลการแข่งขัน</h4><div class="athevs">${R.map(row).join('')}</div>
+    <h4 class="subh">วินัย</h4>${cards.length ? cards.map(y => `<div class="cdrow"><span class="cdf ${y.cd.type === 'Y' ? 'y' : 'r'}"></span><small><b>${CARD_N[y.cd.type] || 'ใบแดง'}</b> · ${esc(y.label)}${y.date ? ' · ' + fmtDate(y.date) : ''}${y.cd.note ? ' · ' + esc(y.cd.note) : ''}</small></div>`).join('') : '<p class="muted sm">ไม่มีบันทึกวินัย</p>'}
     ${items.length ? `<h4 class="subh">นัดที่รอแข่ง</h4>${items.map(i => `<div class="feed sm"><span class="fl num">${fmtDate(i.date)} ${i.time}</span><span class="muted sm">${esc(i.label)}${i.venue ? ' · ' + esc(i.venue) : ''}</span></div>`).join('')}` : ''}
     <div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`);
+  getPhoto(pid).then(img => { const el = $('#aph'); if (!el) return; if (img) { el.innerHTML = `<img src="${img}" alt="รูป ${esc(a.name)}">`; $('#aphx') && ($('#aphx').hidden = false); } });
+  $('#aphf')?.addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; $('#aperr').textContent = 'กำลังบันทึกรูป…';
+    try { const img = await fileToPhoto(f); await setPhoto(pid, img); $('#aph').innerHTML = `<img src="${img}" alt="">`; $('#aphx').hidden = false; $('#aperr').textContent = ''; logIt('เพิ่มรูปนักกีฬา', `${a.name} · ${COLORS[c].n}`); toast('บันทึกรูปแล้ว'); }
+    catch (x) { $('#aperr').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); } });
+  $('#aphx')?.addEventListener('click', () => ask(`ลบรูปของ ${a.name}?`, async () => { try { await setPhoto(pid, null); logIt('ลบรูปนักกีฬา', a.name); toast('ลบรูปแล้ว'); } catch (x) { toast('ลบไม่ได้'); } openAthlete(c, key); }, 'ลบรูป'));
+  $('#apcard').onclick = () => printBadges([{ c, key }], 'badge');
+  $('#apcert').onclick = () => openCertDlg(c, key);
   $('#modal').onclick = e => { const b = e.target.closest('[data-athed]'); if (!b) return; e.stopPropagation(); const [eid, cc, ...k] = b.dataset.athed.split('~'); closeModal(); resetModalHandlers(); UI.regColor = +cc;
     if (location.hash !== '#register') { location.hash = '#register'; setTimeout(() => openRoster(eid, k.join('~')), 120); } else { render(); openRoster(eid, k.join('~')); } };
 }
 function vAthletes() {
-  return `<section class="hero"><h1>ค้นหานักกีฬา</h1><p class="muted">พิมพ์ชื่อหรือห้อง (เช่น 3/6) เพื่อดูรายการที่ลง นัดถัดไป ใบเหลือง/แดง และเวลาที่ชนกัน</p></section>
+  return `<section class="hero"><h1>ค้นหานักกีฬา</h1><p class="muted">พิมพ์ชื่อหรือห้อง (เช่น 3/6) แล้วกดชื่อเพื่อเปิดประวัตินักกีฬา: รายการที่ลง ผลการแข่ง วินัย รูป และพิมพ์บัตร/เกียรติบัตร</p></section>
   <div class="filters"><label class="fld grow"><span class="vh">ค้นหา</span>${qbox('aq', UI.q, 'ชื่อ หรือ ห้อง เช่น สมชาย / 3/6')}</label>
   <label class="ck"><input type="checkbox" id="aclash" ${UI.onlyClash ? 'checked' : ''}> แสดงเฉพาะคนที่เวลาชน/ถูกตัดสิทธิ์</label></div>
   <div id="athres">${athleteResults()}</div>`;
@@ -4421,7 +4587,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -4440,6 +4606,8 @@ document.addEventListener('click', e => {
     const st = (UI.mapF = UI.mapF || {})[key] = UI.mapF[key] || {};
     if (k === '*') UI.mapF[key] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; if (key === UI.mapSport) UI.mapEv = null; render(); }
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
+  else if (d.psel != null) { /* checkbox: handled by change */ }
+  else if (d.pselclr != null) { e.preventDefault(); UI.regSel = new Set(); $('#plistbox').innerHTML = regPlist(UI.regColor); }
   else if (d.regpf != null) { UI.regPF = !!d.regpf; render(); }
   else if (d.schv) { UI.schView = d.schv; render(); }
   else if (d.regc) { UI.regColor = +d.regc; render(); }
@@ -4519,6 +4687,7 @@ document.addEventListener('click', e => {
     const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
   else if (d.act === 'mypin') openMyPin();
   else if (d.act === 'qrcards') printQRCards(UI.regColor);
+  else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); printBadges(sel, $('#cardstyle')?.value || 'badge'); }
   else if (d.act === 'qrcardsall') printQRCards(null);
   else if (d.act === 'bknow') { takeSnap(true); downloadBackup(); }
   else if (d.act === 'bklater') { try { sessionStorage.setItem('gem-bklater', todayISO()); } catch (e) { } render(); }
@@ -4542,6 +4711,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.matches('[tabindex="0"]')) e.target.click();
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset.pk != null) { const sel = UI.regSel || (UI.regSel = new Set()); e.target.checked ? sel.add(e.target.dataset.pk) : sel.delete(e.target.dataset.pk); $('#plistbox').innerHTML = regPlist(UI.regColor); return; }
+  if (e.target.dataset.pselall != null) { const sel = UI.regSel || (UI.regSel = new Set()); const box = $('#plistbox'); box.querySelectorAll('[data-pk]').forEach(i => e.target.checked ? sel.add(i.dataset.pk) : sel.delete(i.dataset.pk)); box.innerHTML = regPlist(UI.regColor); return; }
+  if (e.target.id === 'cardstyle') { UI.cardStyle = e.target.value; return; }
   const tg = e.target;
   if (tg.dataset.room) { const r = tg.dataset.room; const m = clone(S.meta); m.classes = m.classes || {}; Object.keys(m.classes).forEach(k => m.classes[k] = (m.classes[k] || []).filter(x => x !== r)); for (let i = 0; i < 6; i++) m.classes[i] = m.classes[i] || []; if (tg.value !== '') m.classes[tg.value].push(r); put('meta', 'config', m); logIt('กำหนดห้องให้คณะสี', `ม.${r} → ${tg.value === '' ? 'ไม่กำหนด' : COLORS[+tg.value].n}`); }
   if (tg.dataset.agk) { const [a, g] = tg.dataset.agk.split('|'); const ag = clone(AGES()); const l = new Set(ag[a] || []); tg.checked ? l.add(+g) : l.delete(+g);
@@ -4559,6 +4731,7 @@ document.addEventListener('input', e => {
   if (e.target.matches?.('.qbox input')) { const b = e.target.parentNode.querySelector('.qx'); if (b) b.hidden = !e.target.value; }
   if (e.target.id === 'stq') { UI.stq = e.target.value; const q = UI.stq.trim(), room = UI.stRoom || ''; const used = usedMap(); const list = allStudents().filter(st => (!room || st.cls === room) && (!q || stName(st).includes(q) || String(st.sid).includes(q))).sort((a, b) => clsSort(a.cls, b.cls) || a.no - b.no); $('#stlist').innerHTML = studentTable(list, used); }
   if (e.target.id === 'aq') { UI.q = e.target.value; $('#athres').innerHTML = athleteResults(); }
+  if (e.target.id === 'rq') { UI.regQ = e.target.value; $('#plistbox').innerHTML = regPlist(UI.regColor); }
 });
 let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (UI.view === 'map') render(); }, 150); });
 document.addEventListener('fullscreenchange', () => { if (UI.view === 'map') render(); });
