@@ -859,8 +859,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.16', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.17', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.17', 'PIN ยืนยันในโหมดข้อมูลกลาง: ตั้ง/เปลี่ยน PIN ของตัวเอง · ผู้ดูแลล้าง PIN ได้ · ใส่ผิด 5 ครั้งรอ 1 นาที'],
   ['1.22.16', 'ตรวจสนามชนนับรอบของรายการสะสมคะแนน · หน้ารายงานตัวบนมือถือไม่ล้นจอ'],
   ['1.22.15', 'ตัวเลือกนักเรียนตรวจเวลาชนด้วยเงื่อนไขเดียวกับคำเตือน (รวมรอบของรายการสะสมคะแนน) คนที่ชนเลือกไม่ได้ตั้งแต่ในตาราง'],
   ['1.22.14', 'รายชื่อนักกีฬาคณะสี: คนที่มีปัญหาอยู่บนสุด · ปุ่มกรอง “มีปัญหา”'],
@@ -1416,7 +1417,7 @@ function loadScript(src) { return new Promise((ok, bad) => { const s = document.
 function updateWrite(force) {
   const before = canWrite;
   canWrite = mode !== 'shared' ? true : sb ? !!ME.id && !!SB_ACC?.role : !!ME.id && (ME.owner || !!(S.meta.roles || {})[ME.id]);
-  if (force || before !== canWrite || (mode === 'shared' && canWrite && !sb && !UNSUB.rosters)) subscribePrivate();
+  if (force || before !== canWrite || (mode === 'shared' && canWrite && !sb && !UNSUB.rosters)) { subscribePrivate(); pinWatch(); }
 }
 const PRIV_ERR = {}; let PRIV_T = 0;
 function subscribePrivate() {
@@ -1962,7 +1963,7 @@ function render() { DATA_TICK++;
   const nLive = mode === 'connecting' ? 0 : liveList().length;
   const nDel = mode === 'connecting' ? 0 : delayList().length;
   $('#livechip').innerHTML = (nLive ? `<a href="#venues" class="livechip" data-tip="livelist"><i></i>กำลังแข่ง ${nLive} นัด</a>` : '') + (nDel ? `<a href="#venues" class="delaychip" data-tip="delaylist">ล่าช้า/รอ ${nDel} นัด</a>` : '');
-  $('#authbox').innerHTML = mode === 'local' ? (ME.id ? `<span class="who">${esc(ME.name)}</span><button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm" data-act="login">เข้าสู่ระบบ</button>') : mode === 'shared' && (auth || sb) ? (ME.id ? `<span class="who" title="${esc(ME.id)}">${esc(ME.name || ME.id)}</span><button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm ghost" data-act="login">เข้าสู่ระบบ (ครู/กรรมการ)</button>') : '';
+  $('#authbox').innerHTML = mode === 'local' ? (ME.id ? `<span class="who">${esc(ME.name)}</span><button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm" data-act="login">เข้าสู่ระบบ</button>') : mode === 'shared' && (auth || sb) ? (ME.id ? `<span class="who" title="${esc(ME.id)}">${esc(ME.name || ME.id)}</span>${fbPinMode() ? `<button class="btn sm ghost" data-act="mypin">${MYPIN ? 'เปลี่ยน PIN' : 'ตั้ง PIN'}</button>` : ''}<button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm ghost" data-act="login">เข้าสู่ระบบ (ครู/กรรมการ)</button>') : '';
   if (!anyEdit()) editOn = false;
   $('#editbtn').hidden = !anyEdit(); $('#editbtn').textContent = editOn ? 'ปิดโหมดแก้ไข' : 'โหมดแก้ไข'; $('#editbtn').classList.toggle('on', editOn);
   const sx = window.scrollX, sy = window.scrollY;
@@ -2889,7 +2890,7 @@ function vAdmin() {
       <label class="fld" data-tip="text|ไม่ลงแข่งภายในกี่นาทีหลังคู่ก่อนหน้าจบ ถือว่าสละสิทธิ์ (ข้อ 4: 10 นาที)">ผ่อนผันก่อนปรับแพ้<span class="unit"><input id="fMin" type="number" min="1" value="${S.meta.forfeitMin ?? 10}"><i>นาที</i></span></label>
       <label class="fld" data-tip="text|นักกีฬาคนเดียวกันต้องมีเวลาระหว่างเวลาเริ่มของสองนัดอย่างน้อยเท่านี้ และนัดถัดไปต้องไม่เริ่มก่อนนัดก่อนหน้าจบ (คิดจากเวลาต่อนัดของกีฬา) ถ้าน้อยกว่าถือว่าเวลาชน ส่งรายชื่อไม่ได้">ระยะห่างขั้นต่ำระหว่างนัด<span class="unit"><input id="clMin" type="number" min="0" value="${S.meta.clashMin ?? 30}"><i>นาที</i></span></label>
       <label class="ck cbx"><input type="checkbox" id="reqCi" ${S.meta.requireCheckin === false ? '' : 'checked'}> ต้องรายงานตัวครบก่อนเริ่มแข่ง</label>
-      ${mode === 'local' ? `<label class="ck cbx"><input type="checkbox" id="pinCf" ${S.meta.pinConfirm === false ? '' : 'checked'}> ใส่ PIN ยืนยันเมื่อจบเกม/ยืนยันผล</label>` : ''}
+      ${mode === 'local' || (mode === 'shared' && !sb) ? `<label class="ck cbx"><input type="checkbox" id="pinCf" ${S.meta.pinConfirm === false ? '' : 'checked'}> ใส่ PIN ยืนยันเมื่อจบเกม/ยืนยันผล</label>` : ''}
     </div>
     <div class="actions"><button class="btn sm" data-act="savemeta">บันทึกกติกา</button><button class="btn sm ghost" data-act="gorules">กติกานักกีฬา (รุ่นอายุ · จำนวนรายการต่อคน)</button></div></section>
   <div class="adgrid"><section class="card"><h2>ชนิดกีฬา</h2><div class="splist">${sps.map(s => `<div class="sprow ${s.id === UI.adSport ? 'on' : ''}" data-adsport="${s.id}" tabindex="0"><span>${sIcon(s.id)}${esc(s.name)}</span><span class="muted num">${eventsOf(s.id).length}</span></div>`).join('')}</div>
@@ -2926,7 +2927,7 @@ function rolesCard() {
     ${sb ? '<p class="muted sm"><b>วิธีให้ครู/กรรมการเข้าใช้:</b> ให้แต่ละคนกด “เข้าสู่ระบบ › สมัครบัญชีใหม่” ด้วยอีเมลของตัวเอง (หรือผู้ดูแลสร้างบัญชีให้ที่ Supabase › Authentication › Users) แล้วเพิ่มอีเมลนั้นในรายการนี้พร้อมบทบาท</p>' : ''}
     <p class="muted sm">เฉพาะอีเมลในรายการนี้ (และผู้ดูแลหลักในไฟล์ตั้งค่า) ที่บันทึกข้อมูลได้ ผู้ชมทั่วไปดูผลได้โดยไม่ต้องเข้าสู่ระบบ ส่วนรายชื่อนักกีฬาเห็นได้เฉพาะผู้ที่มีสิทธิ์</p>
     <div class="rolelist">${ids.map(id => { const r = roles[id]; return `<div class="evrow"><span><b>${esc(r.name || id)}</b>${r.name ? ` <small class="muted">${esc(id)}</small>` : ''} <small class="muted">${ROLE_N[r.role]}${r.role === 'color' ? ' ' + COLORS[r.c]?.n : ''}${r.role === 'scorer' && r.sports?.length ? ' · ' + r.sports.map(sportName).join(', ') : r.role === 'scorer' ? ' · ทุกชนิดกีฬา' : ''}</small></span>
-      <span class="actions m0"><button class="btn sm ghost" data-role="${esc(id)}">แก้สิทธิ์</button><button class="btn sm danger" data-rmrole="${esc(id)}">ลบ</button></span></div>`; }).join('') || '<p class="muted sm">ยังไม่ได้เพิ่มผู้ใช้</p>'}</div>
+      <span class="actions m0"><button class="btn sm ghost" data-role="${esc(id)}">แก้สิทธิ์</button>${mode === 'shared' && !sb ? `<button class="btn sm ghost" data-rmpin="${esc(id)}">ล้าง PIN</button>` : ''}<button class="btn sm danger" data-rmrole="${esc(id)}">ลบ</button></span></div>`; }).join('') || '<p class="muted sm">ยังไม่ได้เพิ่มผู้ใช้</p>'}</div>
     <div class="ov"><label class="fld">${sb ? 'อีเมลที่ครู/กรรมการใช้สมัครเข้าระบบ' : 'อีเมล Google ของครู/กรรมการ'}<input id="uemail" type="email" autocomplete="off" placeholder="name@gmail.com"></label><button class="btn sm self-end" data-act="addrole">เพิ่มผู้ใช้</button></div></section>`;
 }
 function scoringCard() {
@@ -3127,19 +3128,56 @@ const colorOpts = (sel, blank = 'รอกำหนด') => `<option value="">${
 
 /* ยืนยันผลขั้นสุดท้าย: สรุปผล + PIN ของผู้ที่เข้าสู่ระบบ (โหมดทดลอง) */
 const needPin = () => mode === 'local' && S.meta.pinConfirm !== false && !!ME.id;
+/* PIN ในโหมดข้อมูลกลาง (Firebase): เก็บเฉพาะค่าแฮช PBKDF2 ไว้ที่ pins/{อีเมล} ซึ่งอ่าน/เขียนได้เฉพาะเจ้าของบัญชี */
+let MYPIN; let PIN_UNSUB = null; let PIN_FAIL = 0, PIN_LOCK = 0;
+const fbPinMode = () => mode === 'shared' && !sb && !!db && !!ME.id && canWrite;
+async function pinHashFb(pin, salt) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+  const b = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode(salt), iterations: 120000 }, k, 256);
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function pinWatch() {
+  if (PIN_UNSUB) { PIN_UNSUB(); PIN_UNSUB = null; } MYPIN = undefined;
+  if (!fbPinMode()) return;
+  PIN_UNSUB = db.collection('pins').doc(ME.id).onSnapshot(d => { MYPIN = d.exists ? d.data() : null; }, () => { MYPIN = undefined; });
+}
+async function pinSetFb(pin) { const salt = ME.id + ':' + Math.random().toString(36).slice(2) + Date.now().toString(36); const hash = await pinHashFb(pin, salt);
+  await withTimeout(db.collection('pins').doc(ME.id).set({ salt, hash, at: Date.now() }), 20000); MYPIN = { salt, hash }; }
+async function pinCheckFb(pin) { if (!MYPIN) return false; return (await pinHashFb(pin, MYPIN.salt)) === MYPIN.hash; }
+function openMyPin() {
+  modal(`<div class="dlg"><h3>${MYPIN ? 'เปลี่ยน PIN ของฉัน' : 'ตั้ง PIN ของฉัน'}</h3><p class="muted sm">PIN 4–6 หลัก ใช้ยืนยันทุกครั้งที่บันทึกผล สละสิทธิ์ ตัดสินประท้วง หรือกู้คืนข้อมูล เก็บแบบเข้ารหัส อ่านได้เฉพาะบัญชีนี้ ถ้าลืมให้ผู้ดูแลกด “ล้าง PIN” แล้วตั้งใหม่</p>
+    ${MYPIN ? '<label class="fld">PIN เดิม<input id="p0" class="pinf" inputmode="numeric" maxlength="6" autocomplete="off"></label>' : ''}
+    <label class="fld">PIN ใหม่<input id="p1" class="pinf" inputmode="numeric" maxlength="6" autocomplete="off"></label><label class="fld">ใส่ PIN ใหม่อีกครั้ง<input id="p2" class="pinf" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+    <p class="err" id="perr"></p><div class="actions"><button class="btn" id="psave">บันทึก PIN</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`);
+  $('#psave').onclick = async () => { const a = $('#p1').value.trim(), b = $('#p2').value.trim();
+    if (!/^\d{4,6}$/.test(a)) { $('#perr').textContent = 'PIN ต้องเป็นตัวเลข 4–6 หลัก'; return; } if (a !== b) { $('#perr').textContent = 'PIN สองช่องไม่ตรงกัน'; return; }
+    if (MYPIN && !(await pinCheckFb($('#p0').value.trim()))) { $('#perr').textContent = 'PIN เดิมไม่ถูกต้อง'; return; }
+    $('#psave').disabled = true; try { await pinSetFb(a); closeModal(); toast('บันทึก PIN แล้ว'); logIt('ตั้ง PIN', ''); } catch (e) { $('#psave').disabled = false; $('#perr').textContent = 'บันทึกไม่ได้ (' + (e?.code || e?.message || e) + ') ตรวจว่า Publish กฎ Firestore ล่าสุดแล้ว'; } };
+}
 /* o.forcePin: ต้องยืนยันทุกครั้งแม้ปิดตัวเลือก PIN — โหมดในเครื่องใช้ PIN, โหมดออนไลน์ (Google) ให้พิมพ์คำยืนยัน o.word */
 function askFinal(html, ok, btn = 'ยืนยันผล', o = {}) {
   const pwOn = !!sb && !!ME.id && (o.forcePin || S.meta.pinConfirm !== false);
-  const pinOn = () => mode === 'local' && !!ME.id && (o.forcePin ? !!localUsers()[ME.id]?.pin : needPin()); const word = o.forcePin && !pinOn() && !pwOn ? (o.word || 'ยืนยัน') : '';
+  const fbOn = fbPinMode() && (o.forcePin || S.meta.pinConfirm !== false); const fbNew = fbOn && MYPIN === null;
+  const pinOn = () => mode === 'local' && !!ME.id && (o.forcePin ? !!localUsers()[ME.id]?.pin : needPin()); const word = o.forcePin && !pinOn() && !pwOn && !fbOn ? (o.word || 'ยืนยัน') : '';
   const dlg = $('#modal .dlg'); if (!dlg) { ok(); return; } $('#cfbox')?.remove();
   dlg.insertAdjacentHTML('beforeend', `<div class="cfbox" id="cfbox" role="alertdialog" aria-label="ยืนยันผล"><div class="cfsum">${html}</div>
-    ${pwOn ? `<label class="fld cfpin">รหัสผ่านของ ${esc(ME.name || ME.id)} เพื่อยืนยัน<input id="cfpw" type="password" autocomplete="current-password" data-nodirty></label>` : pinOn() ? `<label class="fld cfpin">PIN ของ ${esc(ME.name)} เพื่อยืนยัน<input id="cfpin" class="pinf" type="text" inputmode="numeric" maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false" name="pin-${Date.now()}" data-nodirty></label>` : word ? `<label class="fld cfpin">พิมพ์ “${esc(word)}” เพื่อยืนยัน<input id="cfword" autocomplete="off" spellcheck="false" data-nodirty></label>` : `<p class="muted sm">ตรวจให้ถูกต้องก่อนยืนยัน ผลจะประกาศทันที และระบบบันทึกชื่อผู้ยืนยัน${ME.name ? ' (' + esc(ME.name) + ')' : ''}</p>`}
+    ${fbOn ? (fbNew ? `<p class="sm"><b>ตั้ง PIN ก่อนใช้งานครั้งแรก</b> (ตัวเลข 4–6 หลัก ใช้ยืนยันทุกครั้งต่อจากนี้)</p><div class="g2"><label class="fld cfpin">PIN ใหม่<input id="cfpin" class="pinf" type="text" inputmode="numeric" maxlength="6" autocomplete="off" data-nodirty></label><label class="fld cfpin">ใส่อีกครั้ง<input id="cfpin2" class="pinf" type="text" inputmode="numeric" maxlength="6" autocomplete="off" data-nodirty></label></div>` : `<label class="fld cfpin">PIN ของ ${esc(ME.name || ME.id)} เพื่อยืนยัน<input id="cfpin" class="pinf" type="text" inputmode="numeric" maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false" name="pin-${Date.now()}" data-nodirty></label>`) : pwOn ? `<label class="fld cfpin">รหัสผ่านของ ${esc(ME.name || ME.id)} เพื่อยืนยัน<input id="cfpw" type="password" autocomplete="current-password" data-nodirty></label>` : pinOn() ? `<label class="fld cfpin">PIN ของ ${esc(ME.name)} เพื่อยืนยัน<input id="cfpin" class="pinf" type="text" inputmode="numeric" maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false" name="pin-${Date.now()}" data-nodirty></label>` : word ? `<label class="fld cfpin">พิมพ์ “${esc(word)}” เพื่อยืนยัน<input id="cfword" autocomplete="off" spellcheck="false" data-nodirty></label>` : `<p class="muted sm">ตรวจให้ถูกต้องก่อนยืนยัน ผลจะประกาศทันที และระบบบันทึกชื่อผู้ยืนยัน${ME.name ? ' (' + esc(ME.name) + ')' : ''}</p>`}
     <p class="err" id="cferr"></p><div class="actions m0"><button type="button" class="btn" id="cfok">${btn}</button><button type="button" class="btn ghost" id="cfno">กลับไปแก้</button></div></div>`);
   $('#cfbox').scrollIntoView({ block: 'nearest' }); ($('#cfpw') || $('#cfpin') || $('#cfword') || $('#cfok')).focus();
-  const go = async () => { if (pwOn) { const pw = $('#cfpw').value; if (!pw) { $('#cferr').textContent = 'ใส่รหัสผ่าน'; return; } $('#cfok').disabled = true; $('#cferr').textContent = 'กำลังตรวจรหัสผ่าน…';
+  const go = async () => {
+    if (fbOn) { const pin = $('#cfpin').value.trim();
+      if (Date.now() < PIN_LOCK) { $('#cferr').textContent = `ใส่ PIN ผิดหลายครั้ง รอ ${Math.ceil((PIN_LOCK - Date.now()) / 1000)} วินาที`; return; }
+      if (fbNew) { if (!/^\d{4,6}$/.test(pin)) { $('#cferr').textContent = 'PIN ต้องเป็นตัวเลข 4–6 หลัก'; return; } if (pin !== $('#cfpin2').value.trim()) { $('#cferr').textContent = 'PIN สองช่องไม่ตรงกัน'; return; }
+        $('#cfok').disabled = true; $('#cferr').textContent = 'กำลังบันทึก PIN…'; try { await pinSetFb(pin); } catch (e) { $('#cfok').disabled = false; $('#cferr').textContent = 'บันทึก PIN ไม่ได้ (' + (e?.code || e?.message || e) + ')'; return; } if (!$('#cfbox')) return; $('#cferr').textContent = ''; ok(); return; }
+      if (MYPIN === undefined) { $('#cferr').textContent = 'กำลังโหลดข้อมูล PIN ลองกดอีกครั้ง'; pinWatch(); return; }
+      if (!pin) { $('#cferr').textContent = 'ใส่ PIN'; return; } $('#cfok').disabled = true;
+      const good = await pinCheckFb(pin); if (!$('#cfbox')) return; $('#cfok').disabled = false;
+      if (!good) { PIN_FAIL++; if (PIN_FAIL >= 5) { PIN_LOCK = Date.now() + 60000; PIN_FAIL = 0; } $('#cferr').textContent = 'PIN ไม่ถูกต้อง'; $('#cfpin').select(); return; }
+      PIN_FAIL = 0; $('#cferr').textContent = ''; ok(); return; }
+    if (pwOn) { const pw = $('#cfpw').value; if (!pw) { $('#cferr').textContent = 'ใส่รหัสผ่าน'; return; } $('#cfok').disabled = true; $('#cferr').textContent = 'กำลังตรวจรหัสผ่าน…';
       const ok2 = await sbVerifyPw(pw); if (!$('#cfbox')) return; $('#cfok').disabled = false; if (!ok2) { $('#cferr').textContent = 'รหัสผ่านไม่ถูกต้อง'; $('#cfpw').select(); return; } $('#cferr').textContent = ''; ok(); return; } if (word && $('#cfword').value.trim() !== word) { $('#cferr').textContent = `พิมพ์ “${word}” ให้ตรงเพื่อยืนยัน`; $('#cfword').select(); return; } if (pinOn()) { const u = localUsers()[ME.id]; if (!u || u.pin !== pinHash(ME.id, $('#cfpin').value)) { $('#cferr').textContent = 'PIN ไม่ถูกต้อง'; $('#cfpin').select(); return; } } ok(); };
   $('#cfok').onclick = e => { e.stopPropagation(); go(); }; $('#cfno').onclick = e => { e.stopPropagation(); $('#cfbox').remove(); };
-  [$('#cfpw'), $('#cfpin'), $('#cfword')].forEach(x => x?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } }));
+  [$('#cfpw'), $('#cfpin'), $('#cfpin2'), $('#cfword')].forEach(x => x?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } }));
 }
 function openResult(eid, mid) {
   const ev = evById(eid); const m = mOf(ev, mid); const t = teamsOf(ev, m); const unit = unitOf(ev);
@@ -4286,7 +4324,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -4326,6 +4364,7 @@ document.addEventListener('click', e => {
     if (n) { toast(`ลบวัน ${fmtDate(d.rmday)} ไม่ได้: มี ${n} คู่/รายการแข่งวันนี้ ย้ายไปวันอื่นก่อน`); return; }
     ask(`ลบวันแข่งขัน ${fmtDate(d.rmday, true)}?`, () => { const m = clone(S.meta); m.days = (m.days || []).filter(x => x !== d.rmday); put('meta', 'config', m); logIt('ลบวันแข่งขัน', d.rmday); closeModal(); }, 'ลบวัน'); }
   else if (d.role) openRole(d.role);
+  else if (d.rmpin) ask(`ล้าง PIN ของ ${nameOf(d.rmpin)}? ผู้ใช้จะต้องตั้ง PIN ใหม่เมื่อบันทึกผลครั้งถัดไป`, async () => { try { await db.collection('pins').doc(d.rmpin).delete(); toast('ล้าง PIN แล้ว'); logIt('ล้าง PIN', nameOf(d.rmpin)); } catch (e) { toast('ล้าง PIN ไม่ได้ (' + (e?.code || e) + ')'); } }, 'ล้าง PIN');
   else if (d.rmrole) ask(`ลบสิทธิ์ของ ${nameOf(d.rmrole)}?`, () => { const m = clone(S.meta); delete m.roles[d.rmrole]; put('meta', 'config', m); logIt('ลบสิทธิ์ผู้ใช้', nameOf(d.rmrole)); }, 'ลบ');
   else if (d.act === 'addrole') { const em = ($('#uemail').value || '').trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('กรอกอีเมลให้ถูกต้อง'); return; } const m = clone(S.meta); m.roles = m.roles || {}; if (!m.roles[em]) m.roles[em] = { role: 'scorer' }; put('meta', 'config', m); openRole(em); }
   else if (d.act === 'login') { if (mode === 'local') openLogin(); else signIn(); }
@@ -4381,6 +4420,7 @@ document.addEventListener('click', e => {
     const t = $('#mtitle').value.trim(), y = $('#myear').value.trim(), sc = $('#mschool').value.trim();
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
     const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
+  else if (d.act === 'mypin') openMyPin();
   else if (d.act === 'bknow') { takeSnap(true); downloadBackup(); }
   else if (d.act === 'bklater') { try { sessionStorage.setItem('gem-bklater', todayISO()); } catch (e) { } render(); }
   else if (d.act === 'gorules') { UI.teamTab = 'rules'; location.hash = 'teams'; }
