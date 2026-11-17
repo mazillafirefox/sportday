@@ -896,6 +896,7 @@ body.scovopen{overflow:hidden}
 .clrow2{padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:0 0 6px}.clrow2.new{border-color:#F5B971;background:#FFF8EE}.clrow2>div:first-child{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .sfdlg [hidden]{display:none!important}.sfdlg h4{margin:0 0 8px;font-size:14px;color:var(--muted)}.sfsec{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .sftop{display:flex;gap:16px;align-items:flex-start}.sfph{display:flex;flex-direction:column;gap:6px;align-items:stretch;width:110px;flex:none}.sfph .aphoto{width:110px;height:146px}.sfph .btn{justify-content:center}.sfbody{flex:1;min-width:0}
+.sfphh{font-size:11.5px;line-height:1.3;text-align:center}
 .sfname{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) minmax(0,1fr);gap:8px}.sfdlg .fld{min-width:0}.sfdlg .fld input,.sfdlg .fld select{width:100%;min-width:0;box-sizing:border-box}.sfrow{display:flex;flex-wrap:wrap;gap:8px 10px}.sfrow .fld{flex:1 1 180px;margin:0}.sfrow .fld.grow{flex:2 1 260px}
 .sfsp{margin-top:8px}.sfsp summary{cursor:pointer;font-weight:600}.sfrole{display:flex;flex-wrap:wrap;width:auto;margin:4px 0}.sfrole label{cursor:pointer;padding:6px 12px;border-radius:999px;font-size:13px}.sfrole label.on{background:var(--blue,#1E5BC6);color:#fff}.sfrole input{position:absolute;opacity:0;pointer-events:none}
 @media(max-width:600px){.sftop{flex-direction:column;align-items:stretch}.sfph{align-self:center}.sfbody{width:100%}.sfname{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sfname .fld:first-child{grid-column:1/-1}}
@@ -998,8 +999,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.4', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.5', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.5', 'ปิดหน้าต่าง: รูปนักกีฬาที่บันทึกทันทีไม่ถูกถามว่ายังไม่บันทึกอีก · หน้าต่างพิมพ์เอกสาร/สำรองข้อมูล/ล้างข้อมูล และตัวกรอง/ตัวเลือกในรายชื่อไม่ถือเป็นข้อมูลค้าง · ฟอร์มบุคลากรบอกว่ารูปจะบันทึกเมื่อกดบันทึก (ลบรูปก็ถามก่อนปิด) · สแกนรายงานตัวในหน้าต่างแล้วปิดโดยไม่บันทึก ระบบเตือนก่อน'],
   ['1.33.4', 'ชื่อผู้บันทึก: ผู้ดูแลหลักบันทึกเป็น “owner” แทนอีเมล ทุกเครื่องเห็นเป็นชื่อในทะเบียนบุคลากร · ข้อมูลเก่าที่มีอีเมลผู้ดูแลหลักถูกแปลงอัตโนมัติเมื่อผู้ดูแลหลักเข้าสู่ระบบ (อีเมลไม่อยู่ในข้อมูลสาธารณะอีก)'],
   ['1.33.3', 'แอปสแกน: ผลรายงานตัว/กรรมการขึ้นเป็นการ์ดเต็มจอทันที (สำเร็จปิดเองใน 2 วินาที · ไม่ผ่านค้างจนแตะ) · ปุ่มยกเลิกอยู่ในรายการสแกนล่าสุด · ออกจากหน้าแล้วล้างทั้งสนามและนัดที่เลือก'],
   ['1.33.2', 'ตั้งค่า “ผู้ดูแลระบบรายงานตัวล่วงหน้าได้” (ปิดไว้เป็นค่าเริ่มต้น) · ผู้ใช้และสิทธิ์: แสดงผู้ดูแลหลัก (ซ่อนอีเมล) และผูกชื่อกับทะเบียนบุคลากร · เพิ่มผู้ใช้ด้วยอีเมลเชื่อมกับรายชื่อในทะเบียนได้ ชื่อผู้บันทึกใช้ชื่อจากทะเบียน ไม่ใช้ชื่อจากอีเมล'],
@@ -3428,7 +3430,7 @@ function openCertDlg(c, key) {
   const a = athleteIndex(c)[key]; const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)); const sg = certSigners();
   const P = mergedStaff().filter(p => p.name).sort((x, y) => (+(y.sign || 0) > 0) - (+(x.sign || 0) > 0) || String(x.code || 'Z').localeCompare(String(y.code || 'Z')) || x.name.localeCompare(y.name, 'th'));
   const opt = (i) => `<option value="">— พิมพ์ชื่อเอง —</option>${P.map(p => `<option value="${esc(p.id)}" ${sg[i].id === p.id ? 'selected' : ''}>${esc(p.name)}${signPos(p) ? ' · ' + esc(signPos(p)) : ''}${p.email || p.uid ? ' (ผู้ใช้ในระบบ)' : ''}</option>`).join('')}`;
-  modal(`<div class="dlg"><h3>พิมพ์เกียรติบัตร · ${esc(a.name)}</h3>
+  modal(`<div class="dlg" data-nodirty><h3>พิมพ์เกียรติบัตร · ${esc(a.name)}</h3>
     <label class="fld">ประเภทเกียรติบัตร<select id="cte"><option value="">เข้าร่วมการแข่งขัน (ไม่ระบุรายการ)</option>${evs.map(e => { const md = athMedal(e, c); return `<option value="${e.id}" ${md ? 'selected' : ''}>${md ? '🏅 ' + MED_N[md] + ' · ' : 'เข้าร่วม · '}${esc(evTitle(e))}</option>`; }).join('')}</select></label>
     ${sg.map((s, i) => `<fieldset class="win sgset"><legend>ผู้ลงนาม ${i + 1}</legend><label class="fld">เลือกจากบุคลากร/ผู้ใช้ในระบบ<select id="ss${i}" data-sgi="${i}">${opt(i)}</select></label>
       <div class="g2"><label class="fld">ชื่อ-สกุล<input id="sn${i}" value="${esc(s.n)}" placeholder="ชื่อ-สกุล"></label><label class="fld">ตำแหน่งใต้ลายเซ็น<input id="sp${i}" value="${esc(s.p)}"></label></div></fieldset>`).join('')}
@@ -3461,7 +3463,7 @@ function openAthlete(c, key) {
       <span class="pill ${cls}">${r.submitted ? 'ส่งแล้ว' : 'ร่าง'}${s.k === 'bad' ? ' · ต้องแก้' : ''}</span><button class="btn sm ${clE.has(ev.id) ? '' : 'ghost'}" data-athed="${ev.id}~${c}~${esc(key)}">${can ? 'แก้ไขรายชื่อ' : 'ดูรายชื่อ'}</button></div>
       ${nx ? `<div class="muted sm">นัดถัดไป ${fmtDate(nx.date)} ${nx.time} น.${nx.venue ? ' · ' + esc(nx.venue) : ''}${clE.has(ev.id) ? ' · <b class="warnt">เวลาชน</b>' : ''}</div>` : ''}
       ${res.rows.length ? `<table class="athm"><tbody>${res.rows.map(x => `<tr><td class="num">${esc(x.when)}</td><td>${esc(x.label)}</td><td>พบ ${chip(x.opp, { ph: 'รอผล' })}</td><td class="num">${esc(x.score)}</td><td class="${x.res === 'ชนะ' ? 'okt' : x.res === 'แพ้' ? 'badt' : 'muted'}">${x.res}${x.forf ? ' (สละสิทธิ์)' : ''}</td><td>${x.ci ? '<span class="okt" title="รายงานตัวแล้ว">✓ รายงานตัว</span>' : ''}</td></tr>`).join('')}</tbody></table>` : ''}</div>`; };
-  modal(`<div class="dlg xwide athprof"><div class="aphead"><div class="aphoto" id="aph">${PH_SIL}</div>
+  modal(`<div class="dlg xwide athprof" data-nodirty><div class="aphead"><div class="aphoto" id="aph">${PH_SIL}</div>
       <div class="apinfo"><div class="maphead"><div><h3>${esc(a.name)}</h3><p class="muted sm">ชั้น ม.${esc(a.cls)}${sid ? ` · เลขประจำตัว ${esc(sid)}` : ''} · ลง ${evs.length} รายการ · กีฬา ${a.sports.size}/${maxS} ชนิด · กรีฑา ${a.ath.size}/${maxA} ประเภท</p></div>${chip(c)}</div>
       <div class="apstat"><span><b class="num">${meds.g}</b>ทอง</span><span><b class="num">${meds.s}</b>เงิน</span><span><b class="num">${meds.b}</b>ทองแดง</span><span><b class="num">${W}–${L}</b>ชนะ–แพ้</span><span><b class="num">${cards.length}</b>วินัย</span></div>
       <div class="actions m0">${canPh ? `<label class="btn sm ghost"><span id="aphl">📷 เพิ่มรูป</span><input type="file" id="aphf" accept="image/*" hidden></label><button class="btn sm ghost danger-t" id="aphx" hidden>🗑 ลบรูป</button>` : ''}
@@ -3609,7 +3611,7 @@ function dayItems(d, v) {
 function openPrint() {
   const ds = days(); if (!ds.length) { toast('ยังไม่มีวันแข่งขัน'); return; } UI.prDay = UI.prDay && ds.includes(UI.prDay) ? UI.prDay : (UI.day || defaultDay());
   const vopts = () => [...new Set(dayItems($('#prd').value).map(x => x.m ? venueOf(x.ev, x.m) : x.ev.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
-  modal(`<form class="dlg" id="prf"><h3>พิมพ์เอกสารสำหรับกรรมการ</h3>
+  modal(`<form class="dlg" id="prf" data-nodirty><h3>พิมพ์เอกสารสำหรับกรรมการ</h3>
     <div class="g3"><label class="fld">วัน<select id="prd">${ds.map(d => `<option value="${d}" ${d === UI.prDay ? 'selected' : ''}>${fmtDate(d, true)}</option>`).join('')}</select></label><label class="fld">สนาม<select id="prv"></select></label></div>
     <fieldset class="win col"><legend>เอกสาร</legend>
       <label><input type="checkbox" name="pk" value="match" checked> ใบบันทึกผลคู่แข่งขัน <small class="muted">ใบละคู่ มีรายชื่อและช่องเช็กตัว</small></label>
@@ -3658,7 +3660,7 @@ function reportEvent(ev, o) {
 }
 function openReport() {
   const ds = days(); const ed = anyEdit();
-  modal(`<form class="dlg" id="rpf"><h3>ใบรายงานผลการแข่งขัน</h3><p class="muted sm">พิมพ์หรือบันทึกเป็น PDF (เลือกเครื่องพิมพ์ “บันทึกเป็น PDF”) สำหรับประกาศและเก็บเป็นหลักฐาน</p>
+  modal(`<form class="dlg" id="rpf" data-nodirty><h3>ใบรายงานผลการแข่งขัน</h3><p class="muted sm">พิมพ์หรือบันทึกเป็น PDF (เลือกเครื่องพิมพ์ “บันทึกเป็น PDF”) สำหรับประกาศและเก็บเป็นหลักฐาน</p>
     <div class="g3"><label class="fld">ขอบเขต<select id="rps"><option value="">สรุปทั้งงาน</option>${ds.map(d => `<option value="${d}" ${d === todayISO() ? 'selected' : ''}>ประจำวัน ${fmtDate(d, true)}</option>`).join('')}</select></label>
       <label class="fld">ชนิดกีฬา<select id="rpsp"><option value="">ทุกชนิดกีฬา</option>${sportsList().map(sp => `<option value="${sp.id}">${esc(sp.name)}</option>`).join('')}</select></label></div>
     <fieldset class="win col"><legend>เนื้อหา</legend>
@@ -3692,7 +3694,7 @@ function qrSVG(text, px = 160) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 4} ${n + 4}" width="${px}" height="${px}" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="100%" height="100%" fill="#fff"/><path d="${p}" fill="#000"/></svg>`; } catch (e) { return ''; }
 }
 function openQR() {
-  modal(`<form class="dlg wide" id="qrf"><h3>โปสเตอร์ QR code สำหรับผู้ชม</h3><p class="muted sm">พิมพ์ติดสนามหรือจุดลงทะเบียน ผู้ชมสแกนแล้วเปิดหน้าโปรแกรม ผล และผังการแข่งขันได้ทันทีโดยไม่ต้องเข้าสู่ระบบ</p>
+  modal(`<form class="dlg wide" id="qrf" data-nodirty><h3>โปสเตอร์ QR code สำหรับผู้ชม</h3><p class="muted sm">พิมพ์ติดสนามหรือจุดลงทะเบียน ผู้ชมสแกนแล้วเปิดหน้าโปรแกรม ผล และผังการแข่งขันได้ทันทีโดยไม่ต้องเข้าสู่ระบบ</p>
     <label class="fld">ที่อยู่เว็บที่ผู้ชมเปิด<input id="qru" value="${esc(pubURL(''))}" placeholder="https://ชื่อผู้ใช้.github.io/sportday/"></label>
     ${location.protocol.startsWith('http') ? '' : '<p class="warn">ตอนนี้เปิดจากไฟล์ในเครื่อง ใส่ที่อยู่เว็บบน GitHub Pages ก่อน มิฉะนั้นสแกนแล้วเปิดไม่ได้</p>'}
     <fieldset class="win col"><legend>โปสเตอร์</legend><label><input type="checkbox" name="qk" value="main" checked> โปสเตอร์หลัก (โปรแกรม & ผล + ตารางเหรียญ + ผังการแข่งขัน)</label><label><input type="checkbox" name="qk" value="venue" checked> แยกรายสนาม ${venuesList().length} สนาม (เปิดหน้าสนามนั้นโดยตรง)</label></fieldset>
@@ -3919,7 +3921,7 @@ function openStaffEdit(id) {
   const isNew = !p0; const lu = Object.entries(localUsers()); const nm = p.pre != null ? { pre: p.pre, fn: p.fn, ln: p.ln } : splitPre(p.name);
   if (isNew && !p.pos) p.pos = (DUTY_BY_CODE[p.code] || [])[0] || '';
   modal(`<form class="dlg wide sfdlg" id="stff"><h3>${isNew ? 'เพิ่มบุคลากร' : 'แก้ไขบุคลากร'}</h3>
-    <section class="sfsec sftop"><div class="sfph"><div class="aphoto" id="sfph">${PH_SIL}</div><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button></div>
+    <section class="sfsec sftop"><div class="sfph"><div class="aphoto" id="sfph">${PH_SIL}</div><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button><small class="warnt sfphh" id="sf_h" hidden>รูปจะบันทึกเมื่อกด “บันทึก”</small></div>
       <div class="sfbody"><h4>ข้อมูลบุคคล</h4>
         <div class="sfname"><label class="fld">คำนำหน้า<select id="sf_pre">${optList(PRE_LIST, nm.pre, '— ไม่มี —')}</select></label><label class="fld">ชื่อ<input id="sf_fn" value="${esc(nm.fn)}" required autocomplete="off"></label><label class="fld">นามสกุล<input id="sf_ln" value="${esc(nm.ln)}" autocomplete="off"></label></div>
         <label class="fld">ตำแหน่ง<select id="sf_j">${jobOpts(p.job || '')}</select></label></div></section>
@@ -3947,8 +3949,8 @@ function openStaffEdit(id) {
   $('.spck').addEventListener('change', () => { const l = [...document.querySelectorAll('.spck input:checked')].map(i => sportName(i.value)); $('#sf_spn').textContent = l.length ? l.join(', ') : 'ไม่ระบุ'; });
   const pid = 'st' + p.id; let newImg; const showPh = img => { $('#sfph').innerHTML = img ? `<img src="${img}" alt="">` : PH_SIL; $('#sf_x').hidden = !img; $('#sfpl').textContent = img ? '📷 เปลี่ยนรูป' : '📷 เพิ่มรูป'; };
   if (!isNew) getPhoto(pid).then(img => { if ($('#sfph') && newImg === undefined) showPh(img); });
-  $('#sf_f').onchange = async e => { try { newImg = await fileToPhoto(e.target.files[0]); showPh(newImg); } catch (x) { $('#err').textContent = x.message; } };
-  $('#sf_x').onclick = () => { newImg = null; showPh(null); };
+  $('#sf_f').onchange = async e => { try { newImg = await fileToPhoto(e.target.files[0]); showPh(newImg); $('#sf_h').hidden = false; } catch (x) { $('#err').textContent = x.message; } };
+  $('#sf_x').onclick = () => { newImg = null; showPh(null); mDirty = true; $('#sf_h').hidden = false; };
   $('#stff').onsubmit = async e => { e.preventDefault(); const pre = $('#sf_pre').value, fn = $('#sf_fn').value.trim(), ln = $('#sf_ln').value.trim(); if (!fn) { $('#err').textContent = 'ใส่ชื่อ'; return; }
     const name = joinName(pre, fn, ln); const role = ($('#stff').sfr.value || ''); const email = ($('#sf_e')?.value || '').trim().toLowerCase(); const uidv = $('#sf_u')?.value || '';
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('#err').textContent = 'อีเมลไม่ถูกต้อง'; return; }
@@ -4080,7 +4082,7 @@ function openRole(id) {
   };
 }
 function openReset() {
-  modal(`<form class="dlg wide" id="rsf"><h3>ล้างข้อมูลเพื่อเริ่มใหม่</h3>
+  modal(`<form class="dlg wide" id="rsf" data-nodirty><h3>ล้างข้อมูลเพื่อเริ่มใหม่</h3>
     <p class="warn">การล้างข้อมูลย้อนกลับไม่ได้ ควรดาวน์โหลดไฟล์สำรองไว้ก่อน <button type="button" class="btn sm ghost" id="rsbk">ดาวน์โหลดไฟล์สำรอง</button></p>
     <fieldset class="win col"><legend>เลือกสิ่งที่ต้องการล้าง</legend>
       <label><input type="radio" name="rs" value="results" checked> <b>ล้างผลการแข่งขันทั้งหมด</b> <small class="muted">คงโปรแกรม คู่ วันเวลา และรายชื่อไว้ เหมาะกับหลังซ้อมกรอกผล</small></label>
@@ -4236,8 +4238,9 @@ function tryClose() {
       $('#dbx').onclick = ev => { ev.stopPropagation(); closeModal(); resetModalHandlers(); }; $('#dbk').onclick = ev => { ev.stopPropagation(); $('#dirtybar').remove(); }; $('#dirtybar').scrollIntoView({ block: 'nearest' }); return; } }
   closeModal(); resetModalHandlers();
 }
-const NODIRTY = '#stpick,[type=search],#rsc,[data-nodirty]';
-['input', 'change'].forEach(t => $('#modal').addEventListener(t, e => { if (!e.target.matches(NODIRTY)) { mDirty = true; $('#dirtybar')?.remove(); } }, true));
+/* ช่องที่ไม่ถือเป็น “ข้อมูลค้าง”: ช่องค้นหา ตัวกรอง ตัวเลือกก่อนเพิ่ม ช่องสแกน และหน้าต่างที่บันทึกทันที/พิมพ์อย่างเดียว (ติด data-nodirty ที่ตัวหน้าต่าง) */
+const NODIRTY = '#stpick,[type=search],#rsc,#cit,[data-pkf],[data-pksel],[data-pkall],[data-nodirty]';
+['input', 'change'].forEach(t => $('#modal').addEventListener(t, e => { if (!e.target.closest(NODIRTY)) { mDirty = true; $('#dirtybar')?.remove(); } }, true));
 /* กันกดซ้ำ: ฟอร์มส่งได้ครั้งเดียวในช่วงสั้น ๆ และปุ่มหลักกดซ้ำเร็ว ๆ ไม่ได้ */
 $('#modal').addEventListener('submit', e => { const f = e.target; if (f.dataset.nobusy != null) return; if (f.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } f.dataset.busy = '1'; setTimeout(() => { if (f.querySelector('.err')?.textContent) delete f.dataset.busy; }, 0); setTimeout(() => { delete f.dataset.busy; }, 900); }, true);
 $('#modal').addEventListener('click', e => { const b = e.target.closest('button.btn:not(.ghost):not([type=submit])'); if (!b || b.closest('form') && b.type !== 'button') return; if (b.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } b.dataset.busy = '1'; setTimeout(() => { if ([...(b.closest('.protf, .cfbox, .dlg')?.querySelectorAll('.err') || [])].some(x => x.textContent.trim())) delete b.dataset.busy; }, 0); setTimeout(() => { delete b.dataset.busy; }, 900); }, true);
@@ -4776,7 +4779,7 @@ function openCheckin(eid, mid) {
     const f = findSid(sid); if (!f) return;
     if (!f.p) { const st = allStudents().find(x => normSid(x.sid) === sid); fb = { ok: false, t: st ? `${st.name || ((st.pre || '') + (st.fn || '') + ' ' + (st.ln || '')).trim()} (ม.${st.cls}) ไม่อยู่ในรายชื่อ${m ? 'คู่นี้' : 'รายการนี้'}` : `ไม่พบรหัส ${sid} ในรายชื่อ` }; beep(false); drawFb(); return; }
     if (isBanned(f.c, f.p, bannedSet())) { fb = { ok: false, t: `${f.p.name} ถูกตัดสิทธิ์ รายงานตัวไม่ได้` }; beep(false); drawFb(); return; }
-    const set = new Set(ci[f.k] || []); const was = set.has(f.p.id); set.add(f.p.id); ci[f.k] = [...set]; if (!was) dirty++;
+    const set = new Set(ci[f.k] || []); const was = set.has(f.p.id); set.add(f.p.id); ci[f.k] = [...set]; if (!was) { dirty++; mDirty = true; }
     fb = { ok: true, t: `${was ? 'รายงานตัวแล้ว: ' : '✓ '}${f.p.name} · ${COLORS[f.c].n}${f.p.num ? ' · เบอร์ ' + f.p.num : ''}`, c: f.c }; beep(true); ciErr = ''; draw(); drawFb();
     if (!was && allIn()) autoSave(); };
   /* สแกน/พิมพ์ครบทุกคนในรายชื่อ (ไม่นับคนถูกตัดสิทธิ์) ทุกฝั่งที่ทราบทีม → บันทึกอัตโนมัติ */
@@ -5228,7 +5231,7 @@ function bkWhen(t) { return new Date(t).toLocaleString('th-TH', { dateStyle: 'me
 function openBackup() {
   const cur = bkCount(S); const adm = isAdmin(); const sn = snaps(); const trial = adm ? bkTrial() : null;
   const privMissing = mode === 'shared' && !canWrite;
-  modal(`<div class="dlg wide bkdlg"><h3>สำรองและกู้คืนข้อมูล</h3>
+  modal(`<div class="dlg wide bkdlg" data-nodirty><h3>สำรองและกู้คืนข้อมูล</h3>
     <h4 class="bkh">1. สำรองข้อมูลตอนนี้</h4>
     <table class="bktbl"><tbody>${BK_PARTS.map(p => `<tr><td>${p.n}</td><td>${bkPartText(p.k, cur) || '<span class="muted">ไม่มี</span>'}</td></tr>`).join('')}</tbody></table>
     ${privMissing ? '<p class="qwarn sm">ยังไม่ได้เข้าสู่ระบบ ไฟล์สำรองจะไม่มีรายชื่อนักกีฬาและรายชื่อนักเรียน</p>' : ''}
