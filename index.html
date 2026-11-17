@@ -820,6 +820,7 @@ html,body{overflow-x:clip}
   .athprof .aphead{flex-wrap:wrap}.athprof .apinfo{min-width:0;flex:1 1 200px}.athprof .apstat{flex-wrap:wrap}
 }
 fieldset.win.sgset{flex-direction:column;gap:8px;padding:8px 12px 12px}fieldset.win.sgset .g2{margin:0}
+.rprint{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 8px;padding:6px 8px;border:1px dashed var(--line);border-radius:10px}.rprint .muted{margin-right:auto}.rprint select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
 /* หน้าตรวจบัตร */
 .bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
@@ -945,8 +946,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.29.3', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.30.0', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.30.0', 'ส่งรายชื่อนักกีฬา: พิมพ์ใบรายชื่อและบัตรคล้องคอได้ทั้งรายประเภท (ในหน้าต่างส่งรายชื่อ) รายชนิดกีฬา และทั้งคณะ · ผู้ดูแลพิมพ์ทุกคณะของรายการได้'],
   ['1.29.3', 'เอกสารพิมพ์: ระยะขอบ 12 มม. ทุกหน้า (รวมหน้าที่ต่อจากหน้าแรก) · ตารางขึ้นหน้าใหม่พิมพ์หัวตารางซ้ำ · ไม่ตัดแถวกลางหน้า · ตารางสั้นไม่ขาดกลางตาราง · หัวข้อไม่ค้างท้ายหน้า'],
   ['1.29.2', 'เกียรติบัตร: เลือกผู้ลงนามจากบุคลากร/ผู้ใช้ในระบบ ตำแหน่งเติมให้อัตโนมัติ · ค่าที่แก้ในหน้าต่างใช้พิมพ์จริง · ผู้ดูแลตั้งเป็นผู้ลงนามประจำ (ทุกเครื่อง) ได้จากหน้าต่างพิมพ์'],
   ['1.29.1', 'ช่องเลือกนักเรียน: ชั้น/ห้องเริ่มที่ “ทุกชั้น” ทุกครั้งที่เปิดรายการ · เปลี่ยนหน้าแล้วล้างคำค้น ตัวกรองชั้น/ห้อง/สถานะ และการเลือกที่ค้าง'],
@@ -2492,6 +2494,34 @@ function regPlist(c, shown) {
     <button class="btn sm" data-act="printsel" ${nSel ? '' : 'disabled'}>พิมพ์ที่เลือก ${nSel || ''}</button></span></div>
     <div class="plist">${list.map(p => { const bad = p.prob; const k = c + '~' + pkey(p); const sid = sidOf(p); return `<div class="prow click${bad ? ' bad' : ''}${sel.has(k) ? ' on' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูประวัตินักกีฬา"><label class="psel" data-psel><input type="checkbox" data-pk="${esc(k)}" ${sel.has(k) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></label><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="warnt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="num muted sm">${esc(sid)}</span><span class="muted sm">${[...p.sports].map(sportName).join(', ')}${p.ath.size ? (p.sports.size ? ', ' : '') + 'กรีฑา ' + p.ath.size : ''}</span></div>`; }).join('') || '<p class="muted sm">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>'}</div>`;
 }
+/* ===================== ใบรายชื่อนักกีฬา + บัตรคล้องคอ จากการส่งรายชื่อ ===================== */
+/* ขอบเขต: ev:<eid> · evall:<eid> (ทุกคณะ) · sp:<sport> · all (ทุกประเภทของคณะ) — ครูคณะสีพิมพ์ได้เฉพาะคณะตัวเอง */
+function rosterScope(sc) { const [k, id] = String(sc).split(':'); const mc = myColor(); const one = mc != null ? mc : UI.regColor;
+  const evs = k === 'ev' || k === 'evall' ? [evById(id)].filter(Boolean) : sportsList().filter(sp => k !== 'sp' || sp.id === id).flatMap(sp => eventsOf(sp.id).filter(e => rosterMax(e) > 0)).map(e => evById(e.id));
+  const cols = k === 'evall' && mc == null ? COLORS.map((_, i) => i) : [one];
+  return { evs, cols, all: k === 'evall' || k === 'all' }; }
+function rosterBadgeList(sc) { const { evs, cols } = rosterScope(sc); const seen = new Set(), L = [];
+  evs.forEach(ev => cols.forEach(c => { const idx = athleteIndex(c); (rosterOf(ev.id, c).players || []).forEach(p => { const key = pkey(p); const k2 = c + '~' + key; if (idx[key] && !seen.has(k2)) { seen.add(k2); L.push({ c, key }); } }); }));
+  return L; }
+function printRosterReport(sc) {
+  const { evs, cols } = rosterScope(sc); const B = bannedSet(); let n = 0, nEv = 0;
+  const when = (ev, c) => { const sl = evSlots(ev.id, ev, c, false).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)); return sl.length ? sl.slice(0, 3).map(t => `${fmtDate(t.date)} ${t.time} น.${t.venue ? ' · ' + esc(t.venue) : ''}`).join(' / ') + (sl.length > 3 ? ` +${sl.length - 3}` : '') : (ev.venue ? esc(ev.venue) : ''); };
+  const blocks = evs.map(ev => { const parts = cols.map(c => { const r = rosterOf(ev.id, c); const ps = r.players || []; if (!ps.length) return '';
+      n += ps.length; const st = r.submitted ? 'ส่งแล้ว' : 'ร่าง (ยังไม่ส่ง)';
+      return `<h3>คณะ${esc(COLORS[c].n)} <small>· ${ps.length}/${rosterMax(ev)} คน · ${st}${r.by ? ` · ${esc(whoName(r.by))} ${new Date(r.at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}</small></h3>${when(ev, c) ? `<p class="small">แข่ง: ${when(ev, c)}</p>` : ''}
+        <table><tr><th class="num" style="width:9mm">ที่</th><th>ชื่อ-สกุล</th><th class="num" style="width:16mm">ชั้น</th><th class="num" style="width:22mm">เลขประจำตัว</th><th class="num" style="width:14mm">เบอร์</th><th style="width:30mm">หมายเหตุ</th></tr>
+        ${ps.map((p, i) => `<tr><td class="num">${i + 1}</td><td>${esc(p.name)}</td><td class="num">${esc(p.cls ? 'ม.' + p.cls : '')}</td><td class="num">${esc(p.sid || athSid(c, pkey(p)) || '')}</td><td class="num">${esc(p.num || '')}</td><td>${isBanned(c, p, B) ? 'ถูกตัดสิทธิ์' : ''}</td></tr>`).join('')}</table>`; }).join('');
+    if (!parts) return ''; nEv++; return `<div class="rr"><h2>${esc(evTitle(ev))}</h2>${parts}</div>`; }).join('');
+  if (!nEv) { toast('ยังไม่มีรายชื่อนักกีฬาในรายการที่เลือก'); return; }
+  const one = cols.length === 1 ? cols[0] : null;
+  const title = `ใบรายชื่อนักกีฬา${one != null ? ' คณะ' + COLORS[one].n : ' ทุกคณะ'}${evs.length === 1 ? ' · ' + evTitle(evs[0]) : ''}`;
+  const body = `<section class="sheet">${phead('ใบรายชื่อนักกีฬา', new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' }))}<h1>${esc(title)}</h1><p class="small">${nEv} รายการ · ${n} รายชื่อ · ข้อมูล ณ ${new Date().toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })} น.</p>
+    ${blocks}
+    <div class="sign"><span>ลงชื่อ ____________________<br>ครูผู้ควบคุมทีม</span><span>ลงชื่อ ____________________<br>${one != null ? 'หัวหน้าคณะ' + esc(COLORS[one].n) : 'ฝ่ายทะเบียนนักกีฬา'}</span></div></section>`;
+  printDoc(title, body, `.rr{margin-top:5mm}.rr h2{border-bottom:1.5px solid #333;padding-bottom:2px}.rr h3 small{font-weight:400;color:#555;font-size:12px}`); logIt('พิมพ์ใบรายชื่อนักกีฬา', title);
+}
+function printRosterBadges(sc) { const L = rosterBadgeList(sc); if (!L.length) { toast('ยังไม่มีนักกีฬาที่พิมพ์บัตรได้ในรายการนี้'); return; } printBadges(L, UI.cardStyle || 'badge'); }
+const rosterPrintBar = (sc, label) => `<div class="rprint"><span class="muted sm">${label}</span><button type="button" class="btn sm ghost" data-rprint="${sc}">🖨 ใบรายชื่อ</button><button type="button" class="btn sm ghost" data-rbadge="${sc}">🪪 บัตรคล้องคอ</button></div>`;
 function vRegister() {
   if (myColor() != null) UI.regColor = myColor();
   const c = UI.regColor; const idx = athleteIndex(c); const SF = UI.regSt || null;
@@ -2513,7 +2543,7 @@ function vRegister() {
     const F = mapFacets(evAll, sp.id); const evs = F.evs.filter(e => !SF || stOf[e.id].k === SF); if (SF && !evs.length) return '';
     const nd = evAll.filter(e => stOf[e.id].k !== 'na'), dn = nd.filter(e => stOf[e.id].k === 'done').length, bad = nd.filter(e => ['bad', 'none'].includes(stOf[e.id].k)).length, mid = nd.filter(e => ['draft', 'short'].includes(stOf[e.id].k)).length;
     return `<details ${sp.id === UI.regOpen || SF ? 'open' : ''} data-regsp="${sp.id}"><summary><span class="sumi">${sIcon(sp.id)}${esc(sp.name)}</span><span class="regsum">${bad ? `<span class="pill bad">ยังไม่ส่ง ${bad}</span>` : ''}${mid ? `<span class="pill live">ค้าง ${mid}</span>` : ''}<span class="num ${dn === nd.length ? 'okt' : 'muted'}">${dn === nd.length && nd.length ? '✓ ' : ''}${dn}/${nd.length}</span></span></summary>
-    ${F.html}${evs.map(e => { const s = stOf[e.id]; return `<div class="rrow click${s.k === 'na' ? ' na' : ''}" data-roster="${e.id}" tabindex="0"><span>${esc(e.label)}${(() => { const r = rosterOf(e.id, c); return r.by ? `<small class="muted rby">${esc(whoName(r.by))} · ${new Date(r.at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>` : ''; })()}</span><span class="num muted">${s.k === 'na' ? '' : `${s.n}/${rosterMax(e)} คน`}</span>${stPill(e)}</div>`; }).join('') || '<p class="muted sm">ไม่มีรายการตามตัวกรอง</p>'}</details>`;
+    ${F.html}${rosterPrintBar('sp:' + sp.id, 'พิมพ์' + esc(sp.name) + 'ทุกรุ่น')}${evs.map(e => { const s = stOf[e.id]; return `<div class="rrow click${s.k === 'na' ? ' na' : ''}" data-roster="${e.id}" tabindex="0"><span>${esc(e.label)}${(() => { const r = rosterOf(e.id, c); return r.by ? `<small class="muted rby">${esc(whoName(r.by))} · ${new Date(r.at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>` : ''; })()}</span><span class="num muted">${s.k === 'na' ? '' : `${s.n}/${rosterMax(e)} คน`}</span>${stPill(e)}</div>`; }).join('') || '<p class="muted sm">ไม่มีรายการตามตัวกรอง</p>'}</details>`;
   }).join('') || '<p class="muted">ไม่มีรายการในสถานะนี้</p>';
   const people = Object.values(idx).sort((a, b) => String(a.cls).localeCompare(String(b.cls), 'th', { numeric: true }));
   const sched = athleteSchedule(c); const B = bannedSet();
@@ -2531,7 +2561,7 @@ function vRegister() {
   }).join('')}</tbody></table></div>`;
   return `<section class="hero"><h1>ส่งรายชื่อนักกีฬา</h1><p class="muted">เลือกคณะสี แล้วกรอกรายชื่อในแต่ละรายการ ระบบตรวจกติกาให้: ห้องต้องอยู่ในคณะสี · ระดับชั้นต้องตรงรุ่นอายุ (ม.1–2 รุ่น 14, ม.3–4 รุ่น 16, ม.5–6 รุ่น 18, ม.1–3 รุ่น 15, ม.4–6 รุ่น 17) · 1 คนลงกีฬาไม่เกิน ${S.meta.maxSports ?? 2} ชนิด และกรีฑาไม่เกิน ${S.meta.maxAthletics ?? 2} ประเภท</p></section>
  <div class="filters"><div class="seg">${COLORS.map((k, i) => myColor() != null && i !== myColor() ? '' : `<button data-regc="${i}" class="${i === c ? 'on' : ''}" style="--tc:${k.c}">${gem(i)}${k.n}</button>`).join('')}</div></div>
-  <div class="two"><section class="card"><h2>สถานะการส่งรายชื่อคณะ${COLORS[c].n}</h2>${statusBar}${urgBox}<div class="reglist">${sum}</div></section>
+  <div class="two"><section class="card"><h2>สถานะการส่งรายชื่อคณะ${COLORS[c].n}</h2>${statusBar}<div class="rprint top"><span class="muted sm">พิมพ์ทุกประเภทของคณะ${COLORS[c].n}</span><button type="button" class="btn sm ghost" data-rprint="all">🖨 ใบรายชื่อทั้งหมด</button><button type="button" class="btn sm ghost" data-rbadge="all">🪪 บัตรคล้องคอทั้งคณะ</button><select id="rgstyle" aria-label="แบบบัตร">${[['badge', 'หน้า-หลัง 4 ใบ/แผ่น'], ['badgef', 'ด้านหน้าอย่างเดียว'], ['sticker', 'สติ๊กเกอร์ CARD014']].map(([v, t]) => `<option value="${v}" ${(UI.cardStyle || 'badge') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>${urgBox}<div class="reglist">${sum}</div></section>
   <section class="card"><h2>นักกีฬาคณะ${COLORS[c].n} <small class="muted">${people.length} คน</small></h2>
     ${flagged.length ? `<p class="warn">${flagged.length} คนลงเกินจำนวนที่กติกากำหนด</p>` : ''}${nClash ? `<details class="qwarn clashbox" open><summary><b>${nClash} คนมีนัดแข่งเวลาทับกัน</b> <span class="sm">(นัดถัดไปเริ่มก่อนนัดก่อนหน้าจบ หรือห่างไม่ถึง ${S.meta.clashMin ?? 30} นาที) แก้โดยเปลี่ยนตัวในรายการใดรายการหนึ่ง · กดชื่อเพื่อแก้</span></summary>
       ${people.filter(p => p.clash).map(p => `<div class="clrow click" data-ath="${c}~${esc(pkey(p))}" tabindex="0"><span class="plink">${esc(p.name)}</span> <small class="muted">${esc(p.cls)}</small><small>${p.cl.slice(0, 2).map(pr => { const [x, y] = Array.isArray(pr) ? pr : [pr.a || pr[0], pr.b || pr[1]]; return x && y ? `${esc(x.label)} ${fmtDate(x.date)} ${esc(x.time)} ↔ ${esc(y.label)} ${esc(y.time)}` : ''; }).join(' · ')}</small></div>`).join('')}</details>` : ''}
@@ -4320,6 +4350,7 @@ function openRoster(eid, focusKey) {
       <details class="mt"><summary>วางรายชื่อจาก Excel</summary><p class="muted sm">คอลัมน์: ชื่อ-สกุล · ชั้น · เบอร์เสื้อ · เพศ (คั่นด้วยแท็บหรือจุลภาค) หนึ่งคนต่อบรรทัด ถ้าชื่อมีคำนำหน้า (ด.ช./ด.ญ./นาย/นางสาว) ระบบเติมเพศให้</p><textarea id="paste" rows="5"></textarea><button class="btn sm" id="dopaste">เพิ่มจากข้อความ</button></details>`}
       <p class="err" id="err"></p>
       ${updLine(rosterOf(eid, c).by, rosterOf(eid, c).at)}
+      ${(rosterOf(eid, c).players || []).length ? rosterPrintBar('ev:' + eid, 'พิมพ์รายการนี้ (ตามที่บันทึกไว้)') + (myColor() == null ? `<div class="rprint"><span class="muted sm">ทุกคณะในรายการนี้</span><button type="button" class="btn sm ghost" data-rprint="evall:${eid}">🖨 ใบรายชื่อทุกคณะ</button><button type="button" class="btn sm ghost" data-rbadge="evall:${eid}">🪪 บัตรทุกคณะ</button></div>` : '') : ''}
       <div class="actions">${ro ? '' : r.submitted ? `<button class="btn ghost" id="unsub">ยกเลิกการส่ง (แก้ไข)</button>` : `<button class="btn ghost" id="draft">บันทึกร่าง</button><button class="btn" id="submit" ${blockSend || !r.players.length ? 'disabled' : ''}>ส่งรายชื่อ</button>`}<button class="btn ghost" data-close>ปิด</button></div>
       ${!lock && nErr ? `<p class="muted sm">${blockSend ? 'แก้ข้อผิดพลาดให้ครบก่อนส่ง' : 'ยังมีคำเตือน ส่งได้แต่ควรตรวจอีกครั้ง'}</p>` : ''}</div>`;
     $('#addp')?.addEventListener('click', () => { r.players.push({ id: uid('p'), name: '', cls: '', num: '', sex: gendered ? ev.gender : '' }); draw(); $('#modal .rline:last-child input')?.focus(); });
@@ -5246,8 +5277,8 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-jd],[data-jdall],[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
-  if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
+  const el = e.target.closest('[data-rprint],[data-rbadge],[data-jd],[data-jdall],[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep],[data-rprint],[data-rbadge]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
   if (el.id === 'editbtn') { editOn = !editOn; render(); return; }
@@ -5276,6 +5307,8 @@ document.addEventListener('click', e => {
   else if (d.regc) { const nc = myColor() ?? +d.regc; if (nc !== UI.regColor) { UI.regSel = new Set(); UI.regQ = ''; } UI.regColor = nc; render(); }
   else if (d.roster) openRoster(d.roster);
   else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); if (UI.view === 'athletes') resetQ('aq'); else if (UI.view === 'register') resetQ('rq'); }
+  else if (d.rprint) printRosterReport(d.rprint);
+  else if (d.rbadge) printRosterBadges(d.rbadge);
   else if (d.act === 'bvscan') openBadgeScan();
   else if (d.jd) { const [eid, mid, pid, on] = d.jd.split('|'); const p = staffList().find(x => x.id === pid); if (p) { const r = setJudge(eid, mid || null, p, on === '1'); if (r && r !== 'dup') toast(on === '1' ? `ลงชื่อ ${stripPre(p.name)} เป็นกรรมการแล้ว` : 'ยกเลิกแล้ว'); render(); } }
   else if (d.jdall) { const p = staffList().find(x => x.id === d.jdall); if (p) { const dd = days().includes(todayISO()) ? todayISO() : defaultDay(); let n = 0; dutyItems(p, dd).filter(i => !i.done && editOn && canScore(i.ev.sport)).forEach(i => { const r = setJudge(i.eid, i.mid, p, true); if (r && r !== 'dup') n++; }); toast(`ลงชื่อ ${stripPre(p.name)} เป็นกรรมการ ${n} นัด`); render(); } }
@@ -5387,7 +5420,7 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stfstyle') { UI.stfStyle = e.target.value; return; }
   if (e.target.dataset.pk != null) { const sel = UI.regSel || (UI.regSel = new Set()); e.target.checked ? sel.add(e.target.dataset.pk) : sel.delete(e.target.dataset.pk); if (UI.regQ) resetQ('rq', true); else $('#plistbox').innerHTML = regPlist(UI.regColor); return; }
   if (e.target.dataset.pselall != null) { const sel = UI.regSel || (UI.regSel = new Set()); const box = $('#plistbox'); box.querySelectorAll('[data-pk]').forEach(i => e.target.checked ? sel.add(i.dataset.pk) : sel.delete(i.dataset.pk)); if (UI.regQ) resetQ('rq', true); else box.innerHTML = regPlist(UI.regColor); return; }
-  if (e.target.id === 'cardstyle') { UI.cardStyle = e.target.value; return; }
+  if (e.target.id === 'cardstyle' || e.target.id === 'rgstyle') { UI.cardStyle = e.target.value; return; }
   const tg = e.target;
   if (tg.dataset.room) { const r = tg.dataset.room; const m = clone(S.meta); m.classes = m.classes || {}; Object.keys(m.classes).forEach(k => m.classes[k] = (m.classes[k] || []).filter(x => x !== r)); for (let i = 0; i < 6; i++) m.classes[i] = m.classes[i] || []; if (tg.value !== '') m.classes[tg.value].push(r); put('meta', 'config', m); logIt('กำหนดห้องให้คณะสี', `ม.${r} → ${tg.value === '' ? 'ไม่กำหนด' : COLORS[+tg.value].n}`); }
   if (tg.dataset.agk) { const [a, g] = tg.dataset.agk.split('|'); const ag = clone(AGES()); const l = new Set(ag[a] || []); tg.checked ? l.add(+g) : l.delete(+g);
