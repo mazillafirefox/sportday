@@ -788,6 +788,11 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .clbtn{background:#FFF4E5;color:#9A3412;border:1px solid #F5B971}.clbtn.new{background:#C2410C;color:#fff;border-color:#C2410C;animation:clp 1.6s ease-in-out 3}.clbtn b{background:#fff;color:#C2410C;border-radius:999px;padding:0 6px;margin-left:4px;font-size:11px}
 @keyframes clp{50%{box-shadow:0 0 0 6px rgba(194,65,12,.25)}}
 .clrow2{padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:0 0 6px}.clrow2.new{border-color:#F5B971;background:#FFF8EE}.clrow2>div:first-child{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sfdlg [hidden]{display:none!important}.sfdlg h4{margin:0 0 8px;font-size:14px;color:var(--muted)}.sfsec{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+.sftop{display:flex;gap:16px;align-items:flex-start}.sfph{display:flex;flex-direction:column;gap:6px;align-items:stretch;width:110px;flex:none}.sfph .aphoto{width:110px;height:146px}.sfph .btn{justify-content:center}.sfbody{flex:1;min-width:0}
+.sfname{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) minmax(0,1fr);gap:8px}.sfdlg .fld{min-width:0}.sfdlg .fld input,.sfdlg .fld select{width:100%;min-width:0;box-sizing:border-box}.sfrow{display:flex;flex-wrap:wrap;gap:8px 10px}.sfrow .fld{flex:1 1 180px;margin:0}.sfrow .fld.grow{flex:2 1 260px}
+.sfsp{margin-top:8px}.sfsp summary{cursor:pointer;font-weight:600}.sfrole{display:flex;flex-wrap:wrap;width:auto;margin:4px 0}.sfrole label{cursor:pointer;padding:6px 12px;border-radius:999px;font-size:13px}.sfrole label.on{background:var(--blue,#1E5BC6);color:#fff}.sfrole input{position:absolute;opacity:0;pointer-events:none}
+@media(max-width:600px){.sftop{flex-direction:column;align-items:stretch}.sfph{align-self:center}.sfbody{width:100%}.sfname{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sfname .fld:first-child{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -887,8 +892,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.2', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.26.3', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.26.3', 'หน้าต่างบุคลากรจัดใหม่: คำนำหน้า/ชื่อ/สกุลแยกช่อง ตำแหน่งและหน้าที่เป็นตัวเลือก · นำเข้าบุคลากรจาก Excel/CSV พร้อมแม่แบบ'],
   ['1.26.2', 'พิมพ์บัตรห้อยคอบนสติ๊กเกอร์ CARD014 (หน้า+หลังแผ่นเดียว พับประกบ) พร้อมปรับเลื่อนตำแหน่งและเส้นตัดตัวอย่าง'],
   ['1.26.1', 'แจ้งเตือนนักกีฬาเวลาชน (ปุ่ม ⚠ ที่หัวเว็บ + แจ้งทันทีเมื่อเกิดใหม่หลังบันทึกผล) · ตัวเลือกตำแหน่ง/หน้าที่ตามประเภทบัตร · หมุดเลขบนแผนที่ในบัตรไม่ทับกัน'],
   ['1.26.0', 'ทะเบียนบุคลากร: รวมผู้ใช้/สิทธิ์ ครูประธานคณะสี บัตรบุคลากร ผู้ลงนามเกียรติบัตร และชื่อกรรมการในใบบันทึกผลไว้ที่เดียว'],
@@ -3248,10 +3254,27 @@ function pinsNoOverlap(list, Wmm = 93, Hmm = 93 * 604 / 1748, D = 5.2) {
   const lines = P.filter(p => Math.hypot(p.x - p.ox, p.y - p.oy) > 1.2).map(p => `<line x1="${p.ox.toFixed(2)}" y1="${p.oy.toFixed(2)}" x2="${p.x.toFixed(2)}" y2="${p.y.toFixed(2)}"/><circle cx="${p.ox.toFixed(2)}" cy="${p.oy.toFixed(2)}" r=".7"/>`).join('');
   return `<svg class="vpl" viewBox="0 0 ${Wmm} ${Hmm.toFixed(2)}" preserveAspectRatio="none">${lines}</svg>` + P.map(p => `<i class="vp" style="left:${(p.x / Wmm * 100).toFixed(2)}%;top:${(p.y / Hmm * 100).toFixed(2)}%">${p.n}</i>`).join('');
 }
-/* คำแนะนำตำแหน่ง/หน้าที่ตามประเภทบัตร */
-const DUTY_BY_CODE = { C: ['ครูประธานคณะสี', 'ครูคณะสี', 'ผู้ฝึกสอน', 'ผู้ช่วยผู้ฝึกสอน', 'ผู้จัดการทีม'], J: ['กรรมการตัดสิน', 'ผู้ตัดสินกลาง', 'ผู้กำกับเส้น', 'กรรมการจับเวลา', 'กรรมการวัดระยะ', 'กรรมการปล่อยตัว'], O: ['ผู้อำนวยการการแข่งขัน', 'กรรมการบันทึกผล', 'กรรมการรับรายงานตัว', 'กรรมการประจำสนาม', 'เจ้าหน้าที่สนาม', 'ฝ่ายพยาบาล', 'ฝ่ายสถานที่', 'ฝ่ายรางวัล'], M: ['ฝ่ายประชาสัมพันธ์', 'ผู้ประกาศ / พิธีกร', 'ช่างภาพ', 'ทีมไลฟ์สด / สื่อออนไลน์'], V: ['ประธานในพิธี', 'แขกผู้มีเกียรติ', 'ผู้แทนผู้ปกครอง', 'ผู้แทนเครือข่าย / ศิษย์เก่า'], '': [] };
-const JOB_LIST = ['ผู้อำนวยการโรงเรียน', 'รองผู้อำนวยการ', 'ครูชำนาญการพิเศษ', 'ครูชำนาญการ', 'ครู', 'ครูผู้ช่วย', 'พนักงานราชการ', 'ครูอัตราจ้าง', 'เจ้าหน้าที่', 'นักเรียน'];
+/* รายการตัวเลือก (เลือกได้อย่างเดียว ไม่ต้องพิมพ์) */
+const DUTY_BY_CODE = {
+  C: ['ครูประธานคณะสี', 'รองประธานคณะสี', 'ครูคณะสี', 'ผู้ฝึกสอน', 'ผู้ช่วยผู้ฝึกสอน', 'ผู้จัดการทีม', 'ผู้ควบคุมทีม', 'ครูดูแลกองเชียร์', 'ครูดูแลขบวนพาเหรด', 'ครูพี่เลี้ยงนักกีฬา'],
+  J: ['ประธานกรรมการตัดสิน', 'กรรมการตัดสิน', 'ผู้ตัดสินกลาง', 'ผู้ช่วยผู้ตัดสิน / ผู้กำกับเส้น', 'กรรมการจับเวลา', 'กรรมการวัดระยะ', 'กรรมการปล่อยตัว', 'กรรมการเส้นชัย', 'กรรมการนับคะแนน', 'กรรมการตัดสินกิจกรรม (เชียร์ / พาเหรด)'],
+  O: ['ประธานจัดการแข่งขัน', 'ผู้อำนวยการการแข่งขัน', 'เลขานุการการแข่งขัน', 'กรรมการบันทึกผล', 'กรรมการรับรายงานตัว', 'กรรมการประจำสนาม', 'กรรมการฝ่ายเทคนิค', 'ฝ่ายทะเบียนนักกีฬา', 'ฝ่ายสถานที่', 'ฝ่ายพยาบาล / ปฐมพยาบาล', 'ฝ่ายรางวัล', 'ฝ่ายพิธีการ', 'ฝ่ายโสตทัศนูปกรณ์', 'ฝ่ายอาหารและเครื่องดื่ม', 'ฝ่ายรักษาความปลอดภัย', 'ฝ่ายการเงิน', 'ฝ่ายประเมินผล', 'เจ้าหน้าที่สนาม', 'ผู้ดูแลระบบรายงานผล'],
+  M: ['ฝ่ายประชาสัมพันธ์', 'ผู้ประกาศ / พิธีกร', 'ช่างภาพ', 'ช่างวิดีโอ', 'ทีมไลฟ์สด / สื่อออนไลน์', 'สื่อมวลชนภายนอก'],
+  V: ['ประธานในพิธี', 'ผู้กล่าวรายงาน', 'แขกผู้มีเกียรติ', 'ผู้แทนผู้ปกครอง', 'คณะกรรมการสถานศึกษา', 'ผู้แทนเครือข่าย / ศิษย์เก่า', 'ผู้สนับสนุนการแข่งขัน'],
+  '': ['ผู้ช่วยงาน', 'กรรมการบันทึกผล', 'ผู้ดูแลระบบรายงานผล', 'ครูคณะสี']
+};
+const JOB_GROUPS = [['ผู้บริหาร', ['ผู้อำนวยการโรงเรียน', 'รองผู้อำนวยการโรงเรียน', 'ผู้ช่วยผู้อำนวยการ']],
+  ['ข้าราชการครู', ['ครูเชี่ยวชาญพิเศษ', 'ครูเชี่ยวชาญ', 'ครูชำนาญการพิเศษ', 'ครูชำนาญการ', 'ครู', 'ครูผู้ช่วย']],
+  ['บุคลากรอื่นในโรงเรียน', ['พนักงานราชการ', 'ครูอัตราจ้าง', 'ครูชาวต่างชาติ', 'ลูกจ้างประจำ', 'ลูกจ้างชั่วคราว', 'เจ้าหน้าที่ธุรการ', 'เจ้าหน้าที่การเงิน', 'เจ้าหน้าที่ห้องพยาบาล', 'นักการภารโรง', 'นักศึกษาฝึกประสบการณ์วิชาชีพครู']],
+  ['นักเรียน', ['นักเรียน', 'ประธานนักเรียน', 'กรรมการนักเรียน']],
+  ['บุคคลภายนอก', ['ผู้ปกครอง', 'คณะกรรมการสถานศึกษา', 'ศิษย์เก่า', 'วิทยากร / ผู้ตัดสินภายนอก', 'ผู้แทนหน่วยงานภายนอก', 'สื่อมวลชน']]];
+const JOB_LIST = JOB_GROUPS.flatMap(g => g[1]);
+const PRE_LIST = ['นาย', 'นาง', 'นางสาว', 'ว่าที่ร้อยตรี', 'ว่าที่ร้อยตรีหญิง', 'ดร.', 'ผศ.', 'รศ.', 'เด็กชาย', 'เด็กหญิง'];
 const ROLE_BY_CODE = { C: 'color', J: 'scorer', O: 'scorer', M: '', V: '' };
+function splitPre(name) { const n = String(name || '').trim(); const pre = PRE_LIST.slice().sort((a, b) => b.length - a.length).find(p => n.startsWith(p)) || ''; const rest = n.slice(pre.length).trim().split(/\s+/); return { pre, fn: rest[0] || '', ln: rest.slice(1).join(' ') }; }
+const joinName = (pre, fn, ln) => `${pre || ''}${fn || ''}${ln ? ' ' + ln : ''}`.trim();
+const optList = (list, v, ph) => `${ph != null ? `<option value="">${ph}</option>` : ''}${v && !list.includes(v) ? `<option value="${esc(v)}" selected>${esc(v)} (เดิม)</option>` : ''}${list.map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('')}`;
+const jobOpts = v => `<option value="">— ไม่ระบุ —</option>${v && !JOB_LIST.includes(v) ? `<option value="${esc(v)}" selected>${esc(v)} (เดิม)</option>` : ''}${JOB_GROUPS.map(([g, l]) => `<optgroup label="${g}">${l.map(x => `<option ${x === v ? 'selected' : ''}>${x}</option>`).join('')}</optgroup>`).join('')}`;
 
 /* ===================== ทะเบียนบุคลากร =====================
    meta.staff = [{ id, name, job(ตำแหน่ง), pos(หน้าที่ในงาน), code(C/J/O/M/V/''), c, sports[], email, uid, role(admin/scorer/color/''), sign(0/1/2) }]
@@ -3294,7 +3317,7 @@ function staffCard() {
   const n = k => L.filter(p => p.code === k).length; const nSel = shown.filter(p => sel.has(p.id)).length; const nAcc = L.filter(p => (p.email || p.uid) && p.role).length;
   const acc = p => p.email || p.uid ? `${p.role ? `<b>${ROLE_N[p.role]}</b>` : '<span class="muted">ไม่มีสิทธิ์</span>'}${p.role === 'color' ? ' ' + esc(COLORS[p.c]?.n || '') : ''}${p.role === 'scorer' ? ' · ' + ((p.sports || []).length ? p.sports.map(sportName).join(', ') : 'ทุกชนิด') : ''}<br><small class="muted">${esc(p.email || ('บัญชีในเครื่อง: ' + (localUsers()[p.uid]?.name || p.uid)))}</small>` : '<span class="muted sm">ไม่มีบัญชี</span>';
   return `<section class="card" id="staffcard"><div class="maphead"><div><h2>บุคลากร ผู้ใช้ และสิทธิ์</h2><p class="muted sm">ทะเบียนเดียวสำหรับบัญชีเข้าใช้ สิทธิ์ ครูประธานคณะสี บัตรบุคลากร และผู้ลงนามเกียรติบัตร · ${L.length} คน · มีบัญชีเข้าใช้ ${nAcc} คน${mode === 'shared' && !sb ? ' · ผู้ดูแลหลักในไฟล์ตั้งค่าเข้าได้เสมอ' : ''}</p></div>
-    <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button></div></div>
+    <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button><label class="btn sm ghost">นำเข้า Excel/CSV<input type="file" id="sfimpf" accept=".xlsx,.xls,.csv" hidden></label><button class="btn sm ghost" data-act="stafftpl">แม่แบบนำเข้า</button></div></div>
     <div class="seg mini stff"><button data-stff="" class="${F === '' ? 'on' : ''}">ทั้งหมด ${L.length}</button><button data-stff="acc" class="${F === 'acc' ? 'on' : ''}">มีบัญชีเข้าใช้ ${nAcc}</button>${['C', 'J', 'O', 'M', 'V'].map(k => `<button data-stff="${k}" class="${F === k ? 'on' : ''}"><b>${k}</b> ${esc(codeName(k))} ${n(k)}</button>`).join('')}</div>
     ${shown.length ? `<div class="pselbar"><label class="ck"><input type="checkbox" data-stfall ${shown.every(p => sel.has(p.id)) ? 'checked' : ''}> เลือกทั้งหมด (${shown.length})</label><span class="muted sm">เลือกแล้ว ${nSel} คน</span>
       <span class="pprint"><select id="stfstyle"><option value="badge">บัตรหน้า-หลัง</option><option value="badgef" ${UI.stfStyle === 'badgef' ? 'selected' : ''}>บัตรด้านหน้าอย่างเดียว</option><option value="sticker" ${UI.stfStyle === 'sticker' ? 'selected' : ''}>สติ๊กเกอร์ CARD014 (1 ใบ/แผ่น)</option></select><button class="btn sm" data-act="staffprint" ${nSel ? '' : 'disabled'}>พิมพ์บัตรที่เลือก ${nSel || ''}</button></span></div>
@@ -3305,46 +3328,100 @@ function staffCard() {
 }
 function openStaffEdit(id) {
   const all = staffList(); const p0 = all.find(x => x.id === id); const p = p0 || { id: uid('st'), name: '', job: '', pos: '', code: ['C', 'J', 'O', 'M', 'V'].includes(UI.stfF) ? UI.stfF : 'O', c: -1, sports: [], email: '', uid: '', role: '', sign: 0 };
-  const isNew = !p0; const lu = Object.entries(localUsers());
-  modal(`<form class="dlg wide" id="stff"><h3>${isNew ? 'เพิ่มบุคลากร' : 'แก้ไขบุคลากร'}</h3>
-    <div class="aphead"><div class="aphoto" id="sfph">${PH_SIL}</div><div class="apinfo">
-      <label class="fld">ชื่อ-สกุล (รวมคำนำหน้า)<input id="sf_n" value="${esc(p.name)}" required placeholder="เช่น นายสมชาย ใจดี"></label>
-      <div class="g2"><label class="fld">ตำแหน่ง<input id="sf_j" list="jobl" value="${esc(p.job || '')}" placeholder="เลือกหรือพิมพ์"></label><label class="fld">หน้าที่ในงาน <small class="muted">(ตัวเลือกตามประเภทบัตร)</small><input id="sf_p" list="dutyl" value="${esc(p.pos || '')}" placeholder="เลือกหรือพิมพ์"></label>
-      <datalist id="jobl">${JOB_LIST.map(x => `<option value="${x}">`).join('')}</datalist><datalist id="dutyl"></datalist></div>
-      <div class="actions m0"><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button></div></div></div>
-    <div class="g3"><label class="fld">ประเภทบัตร<select id="sf_k"><option value="">— ไม่พิมพ์บัตร —</option>${BADGE_CODES.filter(x => x[0] !== 'A').map(([k, t]) => `<option value="${k}" ${k === p.code ? 'selected' : ''}>${k} · ${esc(t)}</option>`).join('')}</select></label>
-      <label class="fld">คณะสี<select id="sf_c"><option value="-1">— ไม่ระบุ —</option>${COLORS.map((k, i) => `<option value="${i}" ${i === p.c ? 'selected' : ''}>${k.n}</option>`).join('')}</select></label>
-      <label class="fld">ลงนามในเกียรติบัตร<select id="sf_g"><option value="0">ไม่ลงนาม</option><option value="1" ${p.sign == 1 ? 'selected' : ''}>ผู้ลงนามลำดับ 1 (ซ้าย)</option><option value="2" ${p.sign == 2 ? 'selected' : ''}>ผู้ลงนามลำดับ 2 (ขวา)</option></select></label></div>
-    <fieldset class="bkmode"><legend>ชนิดกีฬาที่รับผิดชอบ <small class="muted">(กรรมการบันทึกผล: ไม่เลือก = บันทึกได้ทุกชนิด)</small></legend><div class="spck">${sportsList().map(sp => `<label class="ck"><input type="checkbox" value="${sp.id}" ${(p.sports || []).includes(sp.id) ? 'checked' : ''}> ${sIcon(sp.id, 'sm')}${esc(sp.name)}</label>`).join('')}</div></fieldset>
-    <fieldset class="bkmode"><legend>บัญชีเข้าใช้ระบบและสิทธิ์</legend>
-      ${mode === 'shared' ? `<label class="fld">${sb ? 'อีเมลที่ใช้สมัครเข้าระบบ' : 'อีเมล Google'}<input id="sf_e" type="email" value="${esc(p.email || '')}" placeholder="เว้นว่างถ้าไม่ต้องเข้าระบบ (แขก/สื่อ)" autocomplete="off"></label>`
-        : `<label class="fld">บัญชีในเครื่อง (โหมดทดลอง)<select id="sf_u"><option value="">— ไม่มีบัญชี —</option>${lu.map(([uid2, u]) => `<option value="${uid2}" ${uid2 === p.uid ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>`}
-      <div class="win" id="sf_rw">${[['', 'ไม่มีสิทธิ์แก้ไข'], ['admin', ROLE_N.admin], ['scorer', ROLE_N.scorer], ['color', ROLE_N.color + ' (แก้รายชื่อเฉพาะคณะที่เลือก)']].map(([k, t]) => `<label><input type="radio" name="sfr" value="${k}" ${String(p.role || '') === k ? 'checked' : ''}> ${t}</label>`).join('')}</div></fieldset>
+  const isNew = !p0; const lu = Object.entries(localUsers()); const nm = p.pre != null ? { pre: p.pre, fn: p.fn, ln: p.ln } : splitPre(p.name);
+  if (isNew && !p.pos) p.pos = (DUTY_BY_CODE[p.code] || [])[0] || '';
+  modal(`<form class="dlg wide sfdlg" id="stff"><h3>${isNew ? 'เพิ่มบุคลากร' : 'แก้ไขบุคลากร'}</h3>
+    <section class="sfsec sftop"><div class="sfph"><div class="aphoto" id="sfph">${PH_SIL}</div><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button></div>
+      <div class="sfbody"><h4>ข้อมูลบุคคล</h4>
+        <div class="sfname"><label class="fld">คำนำหน้า<select id="sf_pre">${optList(PRE_LIST, nm.pre, '— ไม่มี —')}</select></label><label class="fld">ชื่อ<input id="sf_fn" value="${esc(nm.fn)}" required autocomplete="off"></label><label class="fld">นามสกุล<input id="sf_ln" value="${esc(nm.ln)}" autocomplete="off"></label></div>
+        <label class="fld">ตำแหน่ง<select id="sf_j">${jobOpts(p.job || '')}</select></label></div></section>
+    <section class="sfsec"><h4>หน้าที่ในงานและบัตร</h4>
+      <div class="sfrow"><label class="fld">ประเภทบัตร<select id="sf_k"><option value="">— ไม่พิมพ์บัตร —</option>${BADGE_CODES.filter(x => x[0] !== 'A').map(([k, t]) => `<option value="${k}" ${k === p.code ? 'selected' : ''}>${k} · ${esc(t)}</option>`).join('')}</select></label>
+        <label class="fld grow">หน้าที่ในงาน<select id="sf_p"></select></label>
+        <label class="fld" id="sf_cw">คณะสี<select id="sf_c"><option value="-1">— เลือกคณะ —</option>${COLORS.map((k, i) => `<option value="${i}" ${i === p.c ? 'selected' : ''}>${k.n}</option>`).join('')}</select></label></div>
+      <details class="sfsp" ${(p.sports || []).length ? 'open' : ''}><summary>ชนิดกีฬาที่รับผิดชอบ <span class="muted sm" id="sf_spn">${(p.sports || []).length ? (p.sports || []).map(sportName).join(', ') : 'ไม่ระบุ'}</span></summary><p class="muted sm">กรรมการบันทึกผล: ไม่เลือก = บันทึกได้ทุกชนิด · บัตรด้านหลังแสดงเฉพาะสนามของกีฬาที่เลือก</p><div class="spck">${sportsList().map(sp => `<label class="ck"><input type="checkbox" value="${sp.id}" ${(p.sports || []).includes(sp.id) ? 'checked' : ''}> ${sIcon(sp.id, 'sm')}${esc(sp.name)}</label>`).join('')}</div></details></section>
+    <section class="sfsec"><h4>บัญชีเข้าใช้ระบบและเกียรติบัตร</h4>
+      <div class="sfrow">${mode === 'shared' ? `<label class="fld grow">${sb ? 'อีเมลที่ใช้สมัครเข้าระบบ' : 'อีเมล Google'}<input id="sf_e" type="email" value="${esc(p.email || '')}" placeholder="เว้นว่างถ้าไม่ต้องเข้าระบบ" autocomplete="off"></label>`
+        : `<label class="fld grow">บัญชีในเครื่อง (โหมดทดลอง)<select id="sf_u"><option value="">— ไม่มีบัญชี —</option>${lu.map(([uid2, u]) => `<option value="${uid2}" ${uid2 === p.uid ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>`}
+        <label class="fld">ลงนามในเกียรติบัตร<select id="sf_g"><option value="0">ไม่ลงนาม</option><option value="1" ${p.sign == 1 ? 'selected' : ''}>ผู้ลงนามลำดับ 1 (ซ้าย)</option><option value="2" ${p.sign == 2 ? 'selected' : ''}>ผู้ลงนามลำดับ 2 (ขวา)</option></select></label></div>
+      <div class="fld"><span>สิทธิ์ในระบบ</span><div class="seg sfrole">${[['', 'ไม่มีสิทธิ์แก้ไข'], ['admin', ROLE_N.admin], ['scorer', ROLE_N.scorer], ['color', ROLE_N.color]].map(([k, t]) => `<label class="${String(p.role || '') === k ? 'on' : ''}"><input type="radio" name="sfr" value="${k}" ${String(p.role || '') === k ? 'checked' : ''}>${t}</label>`).join('')}</div>
+        <small class="muted" id="sf_rh"></small></div></section>
     ${!isNew ? updLine(S.meta.editBy, S.meta.editAt) : ''}
     <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
-  const duty = () => { const k = $('#sf_k').value; $('#dutyl').innerHTML = (DUTY_BY_CODE[k] || []).map(x => `<option value="${x}">`).join(''); };
-  let lastK = p.code; duty();
-  $('#sf_k').addEventListener('change', () => { const k = $('#sf_k').value; duty(); const cur = $('#sf_p').value.trim();
-    if (!cur || (DUTY_BY_CODE[lastK] || []).includes(cur)) $('#sf_p').value = (DUTY_BY_CODE[k] || [])[0] || '';
-    const hasAcc = ($('#sf_e')?.value || $('#sf_u')?.value || '').trim(); const rr = document.querySelector('input[name=sfr]:checked'); if (hasAcc && (!rr || !rr.value) && ROLE_BY_CODE[k]) document.querySelector(`input[name=sfr][value="${ROLE_BY_CODE[k]}"]`).checked = true;
-    lastK = k; });
+  const RH = { '': 'ดูข้อมูลได้อย่างเดียว (หรือไม่ต้องเข้าระบบ)', admin: 'แก้ไขได้ทุกอย่าง รวมถึงสิทธิ์ผู้ใช้', scorer: 'เริ่มแข่ง บันทึกผล รายงานตัว ตามชนิดกีฬาที่เลือก (ไม่เลือก = ทุกชนิด)', color: 'ส่ง/แก้รายชื่อนักกีฬาได้เฉพาะคณะสีที่เลือก' };
+  const duty = (keep) => { const k = $('#sf_k').value; const L = DUTY_BY_CODE[k] || []; const cur = keep ?? $('#sf_p').value; $('#sf_p').innerHTML = optList(L, cur && (L.includes(cur) || keep != null) ? cur : L[0], L.length ? null : '— ไม่ระบุ —'); };
+  const sync = () => { const k = $('#sf_k').value, r = document.querySelector('input[name=sfr]:checked')?.value || ''; $('#sf_cw').hidden = !(k === 'C' || r === 'color');
+    document.querySelectorAll('.sfrole label').forEach(l => l.classList.toggle('on', l.querySelector('input').checked)); $('#sf_rh').textContent = RH[r]; };
+  duty(p.pos || ''); sync();
+  $('#sf_k').addEventListener('change', () => { duty(); const k = $('#sf_k').value; const hasAcc = ($('#sf_e')?.value || $('#sf_u')?.value || '').trim(); const rr = document.querySelector('input[name=sfr]:checked');
+    if (hasAcc && (!rr || !rr.value) && ROLE_BY_CODE[k]) document.querySelector(`input[name=sfr][value="${ROLE_BY_CODE[k]}"]`).checked = true; sync(); });
+  document.querySelectorAll('input[name=sfr]').forEach(i => i.addEventListener('change', sync));
+  $('.spck').addEventListener('change', () => { const l = [...document.querySelectorAll('.spck input:checked')].map(i => sportName(i.value)); $('#sf_spn').textContent = l.length ? l.join(', ') : 'ไม่ระบุ'; });
   const pid = 'st' + p.id; let newImg; const showPh = img => { $('#sfph').innerHTML = img ? `<img src="${img}" alt="">` : PH_SIL; $('#sf_x').hidden = !img; $('#sfpl').textContent = img ? '📷 เปลี่ยนรูป' : '📷 เพิ่มรูป'; };
   if (!isNew) getPhoto(pid).then(img => { if ($('#sfph') && newImg === undefined) showPh(img); });
   $('#sf_f').onchange = async e => { try { newImg = await fileToPhoto(e.target.files[0]); showPh(newImg); } catch (x) { $('#err').textContent = x.message; } };
   $('#sf_x').onclick = () => { newImg = null; showPh(null); };
-  $('#stff').onsubmit = async e => { e.preventDefault(); const name = $('#sf_n').value.trim(); if (!name) { $('#err').textContent = 'ใส่ชื่อ'; return; }
-    const role = ($('#stff').sfr.value || ''); const email = ($('#sf_e')?.value || '').trim().toLowerCase(); const uidv = $('#sf_u')?.value || '';
+  $('#stff').onsubmit = async e => { e.preventDefault(); const pre = $('#sf_pre').value, fn = $('#sf_fn').value.trim(), ln = $('#sf_ln').value.trim(); if (!fn) { $('#err').textContent = 'ใส่ชื่อ'; return; }
+    const name = joinName(pre, fn, ln); const role = ($('#stff').sfr.value || ''); const email = ($('#sf_e')?.value || '').trim().toLowerCase(); const uidv = $('#sf_u')?.value || '';
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('#err').textContent = 'อีเมลไม่ถูกต้อง'; return; }
     if (role && mode === 'shared' && !email) { $('#err').textContent = 'ใส่อีเมลก่อนกำหนดสิทธิ์'; return; }
-    if (role === 'color' && +$('#sf_c').value < 0) { $('#err').textContent = 'ครูคณะสีต้องเลือกคณะสี'; return; }
+    if (role && mode !== 'shared' && !uidv) { $('#err').textContent = 'เลือกบัญชีในเครื่องก่อนกำหนดสิทธิ์'; return; }
+    const cc = +$('#sf_c').value; if ((role === 'color' || $('#sf_k').value === 'C') && cc < 0) { $('#err').textContent = 'เลือกคณะสี'; return; }
     if (email && all.some(x => x.id !== p.id && x.email === email)) { $('#err').textContent = 'อีเมลนี้อยู่กับบุคลากรคนอื่นแล้ว'; return; }
     if (p.email === ME.id && ME.id && role !== 'admin' && !ME.owner) { if (!confirm('คุณกำลังเอาสิทธิ์ผู้ดูแลของตัวเองออก ต่อไปจะเข้าหน้านี้ไม่ได้ ยืนยัน?')) return; }
     const sign = +$('#sf_g').value;
-    const np = { id: p.id, name, job: $('#sf_j').value.trim(), pos: $('#sf_p').value.trim(), code: $('#sf_k').value, c: +$('#sf_c').value, sports: [...document.querySelectorAll('.spck input:checked')].map(i => i.value), email, uid: uidv, role: (mode === 'shared' ? email : uidv) ? role : '', sign };
+    const np = { id: p.id, pre, fn, ln, name, job: $('#sf_j').value, pos: $('#sf_p').value, code: $('#sf_k').value, c: cc, sports: [...document.querySelectorAll('.spck input:checked')].map(i => i.value), email, uid: uidv, role: (mode === 'shared' ? email : uidv) ? role : '', sign };
     let L = all.map(x => x.id === p.id ? np : x); if (isNew) L.push(np); if (sign) L = L.map(x => x.id !== np.id && x.sign === sign ? { ...x, sign: 0 } : x);
     try { if (newImg !== undefined) await setPhoto(pid, newImg); } catch (x) { $('#err').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); return; }
     saveStaff(L, (isNew ? 'เพิ่มบุคลากร ' : 'แก้ไขบุคลากร ') + `${np.name}${np.role ? ' · ' + ROLE_N[np.role] : ''}`); closeModal(); render(); };
 }
+/* ---------- นำเข้าบุคลากรจาก Excel / CSV ---------- */
+const STF_HEAD = ['คำนำหน้า', 'ชื่อ', 'นามสกุล', 'ตำแหน่ง', 'ประเภทบัตร', 'หน้าที่ในงาน', 'คณะสี', 'ชนิดกีฬา', 'อีเมล', 'สิทธิ์', 'ลงนาม'];
+function staffTemplate() {
+  download('แม่แบบนำเข้าบุคลากร.csv', csv([STF_HEAD, ['นาย', 'สมชาย', 'ใจดี', 'ครูชำนาญการพิเศษ', 'C', 'ครูประธานคณะสี', COLORS[0].n, '', 'somchai@gmail.com', 'ครูคณะสี', ''],
+    ['นางสาว', 'สมศรี', 'รักกีฬา', 'ครู', 'J', 'กรรมการตัดสิน', '', 'ฟุตบอล, ฟุตซอล', 'somsri@gmail.com', 'กรรมการบันทึกผล', ''],
+    ['นาย', 'ประเสริฐ', 'มั่นคง', 'ผู้อำนวยการโรงเรียน', 'V', 'ประธานในพิธี', '', '', '', '', '2'],
+    ['# ประเภทบัตร: C ครูคณะสี / J กรรมการตัดสิน / O กรรมการจัดการแข่งขัน / M สื่อ / V แขก · สิทธิ์: ผู้ดูแลระบบ / กรรมการบันทึกผล / ครูคณะสี · ลงนาม: 1 หรือ 2 · แถวที่ขึ้นต้นด้วย # จะถูกข้าม']]));
+}
+function parseStaffRows(rows) {
+  const norm = v => String(v ?? '').trim(); const hi = rows.findIndex(r => r.some(c => /ชื่อ/.test(norm(c)))); if (hi < 0) return { list: [], err: 'ไม่พบแถวหัวตาราง (ต้องมีคอลัมน์ “ชื่อ”)' };
+  const H = rows[hi].map(norm); const col = re => H.findIndex(h => re.test(h));
+  const ci = { pre: col(/คำนำหน้า/), full: col(/^ชื่อ\s*[-–]?\s*(สกุล|นามสกุล)$/), fn: H.findIndex(h => /^ชื่อ$/.test(h)), ln: col(/^(นาม)?สกุล$/), job: col(/ตำแหน่ง/), code: col(/ประเภทบัตร|^บัตร|รหัสบัตร/), pos: col(/หน้าที่/), c: col(/คณะ/), sp: col(/กีฬา/), em: col(/อีเมล|e-?mail/i), role: col(/สิทธิ์/), sign: col(/ลงนาม/) };
+  const g = (r, k) => ci[k] >= 0 ? norm(r[ci[k]]) : '';
+  const codeOf = v => { const t = v.toUpperCase(); if (/^[CJOMV]$/.test(t)) return t; const f = BADGE_CODES.find(([k, n]) => k !== 'A' && v && (n.includes(v) || v.includes(n.split(' ')[0]))); return f ? f[0] : ''; };
+  const roleOf = v => /admin|ผู้ดูแล/i.test(v) ? 'admin' : /scorer|บันทึกผล|กรรมการ/i.test(v) ? 'scorer' : /color|คณะสี/i.test(v) ? 'color' : '';
+  const colorOf = v => v ? COLORS.findIndex(k => v.includes(k.n)) : -1;
+  const sportsOf = v => v ? v.split(/[,，、/|]+/).map(x => x.trim()).filter(Boolean).map(x => sportsList().find(sp => sp.name === x || sp.name.includes(x) || x.includes(sp.name))?.id).filter(Boolean) : [];
+  const list = [];
+  rows.slice(hi + 1).forEach((r, i) => { if (!r.some(c => norm(c)) || /^#/.test(norm(r[0]))) return;
+    let pre = g(r, 'pre'), fn = g(r, 'fn'), ln = g(r, 'ln'); if (ci.full >= 0 && !fn) { const sp = splitPre(g(r, 'full')); pre = pre || sp.pre; fn = sp.fn; ln = sp.ln; } else if (fn && !pre && !ln) { const sp = splitPre(fn); pre = sp.pre; fn = sp.fn; ln = sp.ln; }
+    if (!fn) return; const code = codeOf(g(r, 'code')); const notes = [];
+    const job = g(r, 'job'), pos = g(r, 'pos'); if (job && !JOB_LIST.includes(job)) notes.push(`ตำแหน่ง “${job}” ไม่อยู่ในรายการ`); if (pos && !(DUTY_BY_CODE[code] || []).includes(pos)) notes.push(`หน้าที่ “${pos}” ไม่อยู่ในรายการของบัตร ${code || '-'}`);
+    const em = g(r, 'em').toLowerCase(); if (em && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) notes.push('อีเมลไม่ถูกต้อง (ไม่นำเข้าอีเมล)');
+    const c = colorOf(g(r, 'c')); const role = roleOf(g(r, 'role')); if (role === 'color' && c < 0) notes.push('ครูคณะสีต้องระบุคณะ'); if (role && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) notes.push('มีสิทธิ์แต่ไม่มีอีเมลที่ถูกต้อง (ไม่ให้สิทธิ์)');
+    list.push({ row: hi + i + 2, pre: PRE_LIST.includes(pre) ? pre : pre, fn, ln, name: joinName(pre, fn, ln), job, pos: pos || (DUTY_BY_CODE[code] || [])[0] || '', code, c, sports: sportsOf(g(r, 'sp')), email: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) ? em : '', role: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) && !(role === 'color' && c < 0) ? role : '', sign: [1, 2].includes(+g(r, 'sign')) ? +g(r, 'sign') : 0, notes }); });
+  return { list, err: '' };
+}
+async function importStaffFile(file) {
+  let rows = [];
+  try { if (/\.csv$/i.test(file.name)) { const t = (await file.text()).replace(/^﻿/, ''); rows = t.split(/\r?\n/).map(l => { const out = []; let cur = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if ((ch === ',' || ch === '\t') && !q) { out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out; }); }
+    else { toast('กำลังอ่านไฟล์…'); await loadXLSX(); const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' }); } }
+  catch (e) { toast('อ่านไฟล์ไม่ได้ ตรวจว่าเป็น .xlsx หรือ .csv'); return; }
+  const { list, err } = parseStaffRows(rows); if (err || !list.length) { toast(err || 'ไม่พบรายชื่อในไฟล์'); return; }
+  const cur = staffList(); const match = x => cur.find(p => (x.email && p.email === x.email) || normName(stripPre(p.name)) === normName(stripPre(x.name)));
+  const nNew = list.filter(x => !match(x)).length, nUpd = list.length - nNew, nNote = list.filter(x => x.notes.length).length;
+  modal(`<div class="dlg xwide"><h3>นำเข้าบุคลากร · ${esc(file.name)}</h3>
+    <div class="impsum"><div><b class="num">${list.length}</b><small>รายชื่อ</small></div><div><b class="num">${nNew}</b><small>เพิ่มใหม่</small></div><div><b class="num">${nUpd}</b><small>อัปเดตคนเดิม</small></div><div><b class="num">${nNote}</b><small>มีข้อสังเกต</small></div></div>
+    <p class="muted sm">จับคู่คนเดิมจากอีเมลหรือชื่อ-สกุล · คนเดิมจะถูกแทนที่เฉพาะช่องที่ไฟล์มีข้อมูล · รูปและบัญชีในเครื่องไม่เปลี่ยน</p>
+    <div class="scroll" style="max-height:48vh"><table class="std"><thead><tr><th>แถว</th><th></th><th>ชื่อ-สกุล</th><th>ตำแหน่ง</th><th>บัตร / หน้าที่</th><th>คณะ / กีฬา</th><th>บัญชีและสิทธิ์</th><th>ข้อสังเกต</th></tr></thead><tbody>
+      ${list.map(x => `<tr><td class="num">${x.row}</td><td>${match(x) ? '<span class="pill">อัปเดต</span>' : '<span class="pill ok">ใหม่</span>'}</td><td>${esc(x.name)}${x.sign ? ` <small class="muted">ลงนาม ${x.sign}</small>` : ''}</td><td class="sm">${esc(x.job)}</td><td class="sm">${x.code ? `<b>${x.code}</b> ` : ''}${esc(x.pos)}</td><td class="sm">${x.c >= 0 ? COLORS[x.c].n : ''} ${x.sports.map(sportName).join(', ')}</td><td class="sm">${esc(x.email)}${x.role ? '<br>' + ROLE_N[x.role] : ''}</td><td class="sm warnt">${x.notes.map(esc).join('<br>')}</td></tr>`).join('')}</tbody></table></div>
+    <div class="actions"><button class="btn" id="sfimp">นำเข้า ${list.length} รายชื่อ</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`);
+  $('#sfimp').onclick = () => { let L = staffList(); list.forEach(x => { const { row, notes, ...d } = x; const m = L.find(p => (d.email && p.email === d.email) || normName(stripPre(p.name)) === normName(stripPre(d.name)));
+      if (m) Object.keys(d).forEach(k => { const v = d[k]; if (v === '' || (k === 'c' && v < 0) || (k === 'sign' && !v) || (Array.isArray(v) && !v.length)) return; m[k] = v; }); else L.push({ id: uid('st'), uid: '', ...d });
+      if (d.sign) L = L.map(p => p.name !== d.name && p.sign === d.sign ? { ...p, sign: 0 } : p); });
+    saveStaff(L, `นำเข้าบุคลากร ${list.length} รายชื่อ (ใหม่ ${nNew} · อัปเดต ${nUpd})`); closeModal(); toast(`นำเข้าแล้ว: ใหม่ ${nNew} · อัปเดต ${nUpd}`); render(); };
+}
+
 async function printStaffBadges(ids, style) {
   const L = staffList().filter(p => ids.includes(p.id) && p.code); if (!L.length) { toast('ยังไม่ได้เลือก'); return; }
   const both = style !== 'badgef'; toast('กำลังเตรียมบัตร…'); const ph = await getPhotos(L.map(p => 'st' + p.id)); const logo = logoSrc(); const icons = new Set();
@@ -4958,6 +5035,7 @@ document.addEventListener('click', e => {
   else if (d.act === 'mypin') openMyPin();
   else if (d.act === 'clashes') openClashes();
   else if (d.act === 'staffadd') openStaffEdit(null);
+  else if (d.act === 'stafftpl') staffTemplate();
   else if (d.act === 'staffprint') printStaffBadges([...(UI.stfSel || [])], $('#stfstyle')?.value || 'badge');
   else if (d.act === 'qrcards') printQRCards(UI.regColor);
   else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); printBadges(sel, $('#cardstyle')?.value || 'badge'); }
@@ -4984,6 +5062,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.matches('[tabindex="0"]')) e.target.click();
 });
 document.addEventListener('change', e => {
+  if (e.target.id === 'sfimpf') { const f = e.target.files[0]; e.target.value = ''; if (f) importStaffFile(f); return; }
   if (e.target.dataset.stfk != null) { const sel = UI.stfSel || (UI.stfSel = new Set()); e.target.checked ? sel.add(e.target.dataset.stfk) : sel.delete(e.target.dataset.stfk); render(); return; }
   if (e.target.dataset.stfall != null) { const sel = UI.stfSel || (UI.stfSel = new Set()); document.querySelectorAll('[data-stfk]').forEach(i => e.target.checked ? sel.add(i.dataset.stfk) : sel.delete(i.dataset.stfk)); render(); return; }
   if (e.target.id === 'stfstyle') { UI.stfStyle = e.target.value; return; }
