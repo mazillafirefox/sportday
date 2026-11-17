@@ -892,8 +892,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.4', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.26.5', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.26.5', 'บัตรห้อยคอ: ช่องชนิดกีฬาปรับขนาดตามจำนวน (กรรมการหลายชนิดกีฬาไม่ล้นบัตร) · ครบทุกชนิดแสดง “ทุกชนิดกีฬา”'],
   ['1.26.4', 'ครูคณะสีเห็นเฉพาะคณะตัวเอง: ส่งรายชื่อ ค้นหานักกีฬา คณะสีและนักเรียน · พิมพ์บัตร QR เฉพาะคณะตัวเอง'],
   ['1.26.3', 'หน้าต่างบุคลากรจัดใหม่: คำนำหน้า/ชื่อ/สกุลแยกช่อง ตำแหน่งและหน้าที่เป็นตัวเลือก · นำเข้าบุคลากรจาก Excel/CSV พร้อมแม่แบบ'],
   ['1.26.2', 'พิมพ์บัตรห้อยคอบนสติ๊กเกอร์ CARD014 (หน้า+หลังแผ่นเดียว พับประกบ) พร้อมปรับเลื่อนตำแหน่งและเส้นตัดตัวอย่าง'],
@@ -2790,6 +2791,14 @@ const STK_CSS = `.sheet.stk{position:relative;width:210mm;height:297mm;padding:0
 .stkc .fold{position:absolute;left:97mm;top:0;bottom:0;border-left:.3mm dotted #E11D48;z-index:6}.noguide .stkp{outline:0}.noguide .stkp::before,.noguide .stkp::after,.noguide .fold{display:none}
 .stkbar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:#0B1F4D;color:#fff;padding:8px 14px;font-size:13px}.stkbar input[type=number]{width:60px}.stkbar button{margin-left:auto;padding:6px 16px;font:inherit;font-weight:700;border-radius:8px;border:0;cursor:pointer}}
 @media print{.stkbar,.fold{display:none}}`;
+/* ช่องชนิดกีฬาบนบัตร: ปรับขนาดตามจำนวน ไม่ล้นบัตร
+   ≤4 ชนิด = ไอคอนใหญ่ 2 คอลัมน์ · 5–8 = 3 คอลัมน์ · 9 ขึ้นไป = 4 คอลัมน์ตัวเล็ก · ครบทุกชนิด = “ทุกชนิดกีฬา” */
+function sportsBlock(list) {
+  const L = [...new Set(list || [])].filter(s => S.sports[s]); const all = sportsList().filter(sp => !sp.isActivity).map(sp => sp.id);
+  if (L.length >= 6 && all.every(id => L.includes(id))) return `<div class="bds all"><b>ทุกชนิดกีฬา</b><small>${L.length} ชนิด</small></div>`;
+  const sz = L.length <= 4 ? 's' : L.length <= 8 ? 'm' : 'l';
+  return `<div class="bds n-${sz}">${L.map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg><em>${esc(sportName(s))}</em></span>`; }).join('')}</div>`;
+}
 async function printBadges(list, style = 'badge') {
   list = list.filter(x => athleteIndex(x.c)[x.key]); if (!list.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; }
   if (style === 'qr') { printQRList(list); return; }
@@ -2802,7 +2811,7 @@ async function printBadges(list, style = 'badge') {
       <div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
       <div class="bdc"><svg class="g" viewBox="0 0 24 24"><use href="#gem-${x.c}"/></svg><b>คณะ${esc(k.n)}</b><span class="cat">A</span></div>
       <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">นักกีฬา · ATHLETE</span><b class="nm">${esc(fn)}</b><b class="nm2">${esc(ln)}</b><span>ชั้น ม.${esc(a.cls)}</span>${sid ? `<span class="sid">เลขประจำตัว ${esc(sid)}</span>` : ''}</div></div>
-      <div class="bdt">ชนิดกีฬาที่ลงแข่ง</div><div class="bds">${sps.slice(0, 8).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>
+      <div class="bdt">ชนิดกีฬาที่ลงแข่ง</div>${sportsBlock(sps)}
       <div class="bdf"><div class="qr">${sid ? qrSVG(sid, 90) : ''}</div><div><b>บัตรประจำตัวนักกีฬา</b><span>แสดงต่อกรรมการเมื่อรายงานตัว</span><span>หมายเลขบัตร ${esc(sid || '-')}</span>${both ? '<span>รายละเอียดการแข่งขันอยู่ด้านหลัง</span>' : ''}</div></div>
       <div class="bdbar"></div></div>`; };
   const back = x => { if (!x) return '<div class="bd blank"></div>'; const a = athleteIndex(x.c)[x.key]; const k = COLORS[x.c]; const [fn, ln] = splitName(a.name);
@@ -2834,6 +2843,9 @@ const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-c
 .bde{padding:1.5mm 4mm 0;font-size:9.5px;color:#555;line-height:1.3;flex:1}
 .bdf{display:flex;gap:2.5mm;align-items:center;padding:2mm 3mm;border-top:.3mm dashed #ccc}.bdf .qr svg{width:26mm;height:26mm;display:block}.bdf div:last-child{display:flex;flex-direction:column;font-size:9.5px;line-height:1.35}.bdf b{font-size:11px}
 .bdbar{height:4mm;background:var(--tc)}.bds{flex:1;align-content:flex-start}
+.bds.n-s,.bds.n-m,.bds.n-l{display:grid;align-content:start;padding-right:4mm}.bds.n-s{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.6mm 3mm}.bds.n-m{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.3mm 2mm}.bds.n-l{grid-template-columns:repeat(4,minmax(0,1fr));gap:1mm 1.5mm}
+.bds span{min-width:0}.bds em{font-style:normal;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bds.n-m span{font-size:10px}.bds.n-m svg{width:5mm;height:5mm;flex:none}.bds.n-l span{font-size:8.6px;gap:.8mm}.bds.n-l svg{width:4mm;height:4mm;flex:none}
+.bd:has(.bds.n-l) .ph{width:31mm;height:41mm}.bd:has(.bds.n-l) .bdm{padding-bottom:2mm}.bd:has(.bds.n-m) .bdm{padding-bottom:2mm}.bds.all{display:flex;align-items:baseline;gap:2mm;padding-top:1mm}.bds.all b{font-size:15px;color:var(--tc)}.bds.all small{font-size:10px;color:#555}
 .bd.blank{border:0}.bk{font-size:10px}.bkh{display:flex;justify-content:space-between;align-items:baseline;gap:2mm;padding:2.5mm 3.5mm;background:var(--tc);color:#fff}.bkh b{font-size:13px}.bkh span{font-size:10px}
 .bks{padding:1.6mm 3.5mm 0}.bkt{font-size:9px;font-weight:700;color:#555;letter-spacing:.3px;border-bottom:.3mm solid #e5e7eb;margin-bottom:1mm;padding-bottom:.5mm}
 .bkr{width:100%;border-collapse:collapse;margin:0}.bkr td{border:0;border-bottom:.2mm dotted #ddd;padding:.6mm .5mm;font-size:9.5px;vertical-align:top}.bkr .nw{white-space:nowrap;color:#333}.bkr .c{width:5mm;text-align:center}
@@ -3436,7 +3448,7 @@ async function printStaffBadges(ids, style) {
     return `<div class="bd" style="--tc:${colOf(p)}"><div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
       <div class="bdc">${p.code === 'C' && p.c >= 0 ? `<svg class="g" viewBox="0 0 24 24"><use href="#gem-${p.c}"/></svg><b>คณะ${esc(COLORS[p.c].n)}</b>` : `<b>${esc(codeName(p.code))}</b>`}<span class="cat">${p.code}</span></div>
       <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">${esc(codeName(p.code))} · ${STAFF_EN[p.code]}</span><b class="nm">${esc(fn)}</b><b class="nm2">${esc(ln)}</b>${p.pos ? `<span>${esc(p.pos)}</span>` : ''}</div></div>
-      ${(p.sports || []).length ? `<div class="bdt">ชนิดกีฬาที่รับผิดชอบ</div><div class="bds">${p.sports.slice(0, 8).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>` : '<div class="bds"></div>'}
+      ${(p.sports || []).length ? `<div class="bdt">ชนิดกีฬาที่รับผิดชอบ</div>${sportsBlock(p.sports)}` : '<div class="bds"></div>'}
       <div class="bdf"><div class="qr">${qrSVG(pubURL(), 90)}</div><div><b>บัตรประจำตัว${esc(codeName(p.code))}</b><span>สแกน QR เพื่อเปิดโปรแกรมและผลการแข่งขัน</span><span>หมายเลขบัตร ${p.code}-${esc(p.id.slice(-5).toUpperCase())}</span></div></div><div class="bdbar"></div></div>`; };
   const back = p => { if (!p) return '<div class="bd blank"></div>'; const [fn, ln] = splitName(p.name); const vs = venuesList().filter(v => !(p.sports || []).length || allMatches().some(x => (p.sports || []).includes(x.ev.sport) && venueOf(x.ev, x.m) === v.name) || Object.values(S.events).some(e => (p.sports || []).includes(e.sport) && e.venue === v.name));
     const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(v) })).filter(x => x.p));
