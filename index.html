@@ -819,6 +819,7 @@ html,body{overflow-x:clip}
   .pselbar{flex-wrap:wrap;row-gap:8px}.pselbar .pprint{flex-wrap:wrap}
   .athprof .aphead{flex-wrap:wrap}.athprof .apinfo{min-width:0;flex:1 1 200px}.athprof .apstat{flex-wrap:wrap}
 }
+fieldset.win.sgset{flex-direction:column;gap:8px;padding:8px 12px 12px}fieldset.win.sgset .g2{margin:0}
 /* หน้าตรวจบัตร */
 .bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
@@ -944,8 +945,10 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.29.1', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.29.3', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.29.3', 'เอกสารพิมพ์: ระยะขอบ 12 มม. ทุกหน้า (รวมหน้าที่ต่อจากหน้าแรก) · ตารางขึ้นหน้าใหม่พิมพ์หัวตารางซ้ำ · ไม่ตัดแถวกลางหน้า · ตารางสั้นไม่ขาดกลางตาราง · หัวข้อไม่ค้างท้ายหน้า'],
+  ['1.29.2', 'เกียรติบัตร: เลือกผู้ลงนามจากบุคลากร/ผู้ใช้ในระบบ ตำแหน่งเติมให้อัตโนมัติ · ค่าที่แก้ในหน้าต่างใช้พิมพ์จริง · ผู้ดูแลตั้งเป็นผู้ลงนามประจำ (ทุกเครื่อง) ได้จากหน้าต่างพิมพ์'],
   ['1.29.1', 'ช่องเลือกนักเรียน: ชั้น/ห้องเริ่มที่ “ทุกชั้น” ทุกครั้งที่เปิดรายการ · เปลี่ยนหน้าแล้วล้างคำค้น ตัวกรองชั้น/ห้อง/สถานะ และการเลือกที่ค้าง'],
   ['1.29.0', 'มือถือ: แถบบนกะทัดรัด (เมนูบัญชี ☰) · ไม่ซูม/เลื่อนซ้าย-ขวาเมื่อแตะช่องพิมพ์ · หน้าต่างแบบแผ่นจากด้านล่าง ปุ่มบันทึกอยู่ล่างจอเสมอและหดตามคีย์บอร์ด · ปุ่ม +/− คะแนน · ปุ่มใหญ่ขึ้น'],
   ['1.28.1', 'เมนู “ตรวจบัตร” (สำหรับครู/กรรมการ): สแกนด้วยกล้องหรือพิมพ์หมายเลขบัตร · สแกนบัตรถัดไปต่อเนื่องได้'],
@@ -3089,7 +3092,7 @@ async function printBadges(list, style = 'badge') {
   const mapCss = typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '';
   openBadgeDoc(`บัตรนักกีฬา ${list.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : style !== 'badgef' ? ' (หน้า-หลัง)' : ''}`, spriteDefs([...icons]) + backsHtml, mapCss, style);
 }
-const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-columns:repeat(2,100mm);grid-auto-rows:142mm;gap:3mm 5mm;justify-content:center}
+const BADGE_CSS = `@page{size:A4;margin:0}.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-columns:repeat(2,100mm);grid-auto-rows:142mm;gap:3mm 5mm;justify-content:center}
 .bd{position:relative;border:.3mm solid #bbb;border-radius:3mm;overflow:hidden;display:flex;flex-direction:column;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .bdh{display:flex;gap:2.5mm;align-items:center;padding:2.5mm 3mm;background:linear-gradient(135deg,#0B1F4D,#1E3A8A);color:#fff}.bdh img{width:12mm;height:13mm;object-fit:contain;background:#fff;border-radius:1.5mm;padding:.6mm}
 .bdh div{display:flex;flex-direction:column;line-height:1.2}.bdh b{font-size:15px}.bdh span{font-size:9.5px;opacity:.9}
@@ -3119,11 +3122,16 @@ function printQRList(list) {
   const card = x => `<div class="qc" style="--tc:${COLORS[x.c].c}"><div class="qq">${qrSVG(badgeLink('A-' + x.sid, x.c), 86)}</div><div class="qi"><b class="qn">${esc(x.name)}</b><span>ม.${esc(x.cls)} · ${esc(x.sid)}</span><span class="qcol">คณะ${esc(COLORS[x.c].n)}</span><small>${esc(x.evs.slice(0, 4).join(', '))}</small></div></div>`;
   const pages = []; for (let i = 0; i < cards.length; i += 24) pages.push(cards.slice(i, i + 24));
   printDoc(`บัตร QR ${cards.length} ใบ`, pages.map((pg, i) => `<section class="sheet qs">${phead('บัตร QR รายงานตัวนักกีฬา', `แผ่น ${i + 1}/${pages.length} · ${cards.length} คน`)}<div class="qgrid">${pg.map(card).join('')}</div><p class="small">ตัดตามเส้น · QR เก็บรหัสประจำตัวนักเรียน</p></section>`).join(''),
-    `.qs{padding:8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
+    `@page{size:A4;margin:0}.qs{padding:8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
 }
-function certSigners() { const L = S.meta.staff || []; const g = k => L.find(p => p.sign === k); if (g(1) || g(2)) return [1, 2].map(k => g(k) ? { n: g(k).name, p: g(k).job || g(k).pos || '' } : { n: '', p: '' }); try { return JSON.parse(localStorage.getItem('gem-cert') || 'null') || S.meta.certSigners || [{ n: '', p: 'ประธานคณะกรรมการจัดการแข่งขัน' }, { n: '', p: 'ผู้อำนวยการ' + evSchool() }]; } catch (e) { return [{ n: '', p: '' }, { n: '', p: '' }]; } }
-function printCert(c, key, eid) {
-  const a = athleteIndex(c)[key]; if (!a) return; const ev = eid ? evById(eid) : null; const md = ev ? athMedal(ev, c) : ''; const sg = certSigners(); const d = days(); const last = d[d.length - 1];
+/* ผู้ลงนามเกียรติบัตร: จากทะเบียนบุคลากร/ผู้ใช้ในระบบที่ตั้ง “ลงนามในเกียรติบัตร” ไว้ (ลำดับ 1–2) */
+const signPos = p => p.job || p.pos || '';
+function certSigners() { const L = mergedStaff(); const g = k => L.find(p => +p.sign === k);
+  const def = [{ n: '', p: 'ประธานคณะกรรมการจัดการแข่งขัน' }, { n: '', p: 'ผู้อำนวยการ' + evSchool() }];
+  const cs = k => (S.meta.certSigners || [])[k - 1];
+  return [1, 2].map(k => g(k) ? { n: g(k).name, p: cs(k)?.n === g(k).name && cs(k)?.p ? cs(k).p : signPos(g(k)), id: g(k).id } : (S.meta.certSigners || [])[k - 1] || def[k - 1]); }
+function printCert(c, key, eid, sgIn) {
+  const a = athleteIndex(c)[key]; if (!a) return; const ev = eid ? evById(eid) : null; const md = ev ? athMedal(ev, c) : ''; const sg = sgIn || certSigners(); const d = days(); const last = d[d.length - 1];
   const dt = last ? new Date(last) : new Date(); const thd = `${dt.getDate()} ${dt.toLocaleDateString('th-TH', { month: 'long' })} พ.ศ. ${dt.getFullYear() + 543}`;
   const what = ev ? (md ? `ได้รับรางวัล<b class="md ${md}">${MED_N[md]}</b><br>ประเภท ${esc(sportName(ev.sport))} ${esc(ev.label)}` : `ได้เข้าร่วมการแข่งขันประเภท ${esc(sportName(ev.sport))} ${esc(ev.label)}`) : `ได้เข้าร่วมการแข่งขันในฐานะนักกีฬาคณะ${esc(COLORS[c].n)}`;
   const body = `<section class="sheet cert" style="--tc:${COLORS[c].c}"><div class="cf"><div class="ci">
@@ -3139,14 +3147,24 @@ function printCert(c, key, eid) {
 }
 function openCertDlg(c, key) {
   const a = athleteIndex(c)[key]; const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)); const sg = certSigners();
+  const P = mergedStaff().filter(p => p.name).sort((x, y) => (+(y.sign || 0) > 0) - (+(x.sign || 0) > 0) || String(x.code || 'Z').localeCompare(String(y.code || 'Z')) || x.name.localeCompare(y.name, 'th'));
+  const opt = (i) => `<option value="">— พิมพ์ชื่อเอง —</option>${P.map(p => `<option value="${esc(p.id)}" ${sg[i].id === p.id ? 'selected' : ''}>${esc(p.name)}${signPos(p) ? ' · ' + esc(signPos(p)) : ''}${p.email || p.uid ? ' (ผู้ใช้ในระบบ)' : ''}</option>`).join('')}`;
   modal(`<div class="dlg"><h3>พิมพ์เกียรติบัตร · ${esc(a.name)}</h3>
     <label class="fld">ประเภทเกียรติบัตร<select id="cte"><option value="">เข้าร่วมการแข่งขัน (ไม่ระบุรายการ)</option>${evs.map(e => { const md = athMedal(e, c); return `<option value="${e.id}" ${md ? 'selected' : ''}>${md ? '🏅 ' + MED_N[md] + ' · ' : 'เข้าร่วม · '}${esc(evTitle(e))}</option>`; }).join('')}</select></label>
-    ${sg.map((s, i) => `<div class="g2"><label class="fld">ผู้ลงนาม ${i + 1}<input id="sn${i}" value="${esc(s.n)}" placeholder="ชื่อ-สกุล"></label><label class="fld">ตำแหน่ง<input id="sp${i}" value="${esc(s.p)}"></label></div>`).join('')}
-    <p class="muted sm">${(S.meta.staff || []).some(p => p.sign) ? 'ผู้ลงนามมาจากทะเบียนบุคลากร (แก้ไขที่หน้าจัดการการแข่งขัน › บุคลากร) แก้เฉพาะครั้งนี้ได้' : 'ตั้งผู้ลงนามประจำได้ที่ทะเบียนบุคลากร (จัดการการแข่งขัน › บุคลากร)'}</p>
+    ${sg.map((s, i) => `<fieldset class="win sgset"><legend>ผู้ลงนาม ${i + 1}</legend><label class="fld">เลือกจากบุคลากร/ผู้ใช้ในระบบ<select id="ss${i}" data-sgi="${i}">${opt(i)}</select></label>
+      <div class="g2"><label class="fld">ชื่อ-สกุล<input id="sn${i}" value="${esc(s.n)}" placeholder="ชื่อ-สกุล"></label><label class="fld">ตำแหน่งใต้ลายเซ็น<input id="sp${i}" value="${esc(s.p)}"></label></div></fieldset>`).join('')}
+    ${isAdmin() ? `<label class="ck cbx"><input type="checkbox" id="sgdef"> ตั้งเป็นผู้ลงนามประจำ (บันทึกในทะเบียนบุคลากร ใช้กับทุกเครื่อง)</label>` : ''}
+    <p class="muted sm">${sg.some(s => s.id) ? 'ดึงผู้ลงนามจากทะเบียนบุคลากรแล้ว เปลี่ยนเฉพาะครั้งนี้ได้' : 'ยังไม่ได้ตั้งผู้ลงนามประจำ เลือกจากรายชื่อด้านบน' + (isAdmin() ? ' แล้วติ๊ก “ตั้งเป็นผู้ลงนามประจำ”' : ' (ผู้ดูแลระบบตั้งผู้ลงนามประจำได้)')}</p>
     <div class="actions"><button class="btn" id="ctgo">พิมพ์</button><button class="btn ghost" data-back>กลับ</button></div></div>`);
-  $('#ctgo').onclick = () => { const s2 = sg.map((_, i) => ({ n: $('#sn' + i).value.trim(), p: $('#sp' + i).value.trim() })); try { localStorage.setItem('gem-cert', JSON.stringify(s2)); } catch (e) { } printCert(c, key, $('#cte').value || null); };
+  $('#modal').onchange = e => { const i = e.target.dataset.sgi; if (i == null) return; const p = P.find(x => x.id === e.target.value); if (p) { $('#sn' + i).value = p.name; $('#sp' + i).value = signPos(p); } };
+  $('#ctgo').onclick = () => { const s2 = sg.map((_, i) => ({ n: $('#sn' + i).value.trim(), p: $('#sp' + i).value.trim() }));
+    if ($('#sgdef')?.checked) { const ids = [0, 1].map(i => $('#ss' + i).value); const L = P.map(p => ({ ...p, sign: ids[0] === p.id ? 1 : ids[1] === p.id ? 2 : 0 }));
+      ids.forEach((id, i) => { if (!id) { const m = (L.find(p => p.sign === i + 1)); if (m) m.sign = 0; } });
+      const nm = clone(staffMeta(L)); nm.certSigners = s2; put('meta', 'config', nm); logIt('ตั้งผู้ลงนามเกียรติบัตร', s2.map(x => x.n).filter(Boolean).join(', ')); toast('บันทึกผู้ลงนามประจำแล้ว'); }
+    printCert(c, key, $('#cte').value || null, s2); };
   $('#modal [data-back]').onclick = () => openAthlete(c, key);
 }
+
 
 /* ===================== หน้าประวัตินักกีฬา ===================== */
 function openAthlete(c, key) {
@@ -3246,8 +3264,20 @@ const PRINT_CSS = `body{font-family:'Noto Sans Thai','Leelawadee UI',Tahoma,sans
 header.ph{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid #111;padding-bottom:4px}h1{font-size:22px;margin:8px 0}h2{font-size:18px;margin:8px 0 2px}.small{color:#555;margin:0 0 8px;font-size:12px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:8mm}h3{font-size:15px;margin:6px 0}table{width:100%;border-collapse:collapse;margin:4px 0}th,td{border:1px solid #888;padding:3px 5px;text-align:left;font-size:12px;vertical-align:top}th{background:#eef}
 .sign{display:flex;justify-content:space-between;gap:10mm;margin-top:10mm}.box{display:inline-block;width:11px;height:11px;border:1px solid #333;vertical-align:middle}.num{text-align:center}
-.mt{margin-top:6mm}@page{size:A4;margin:0}@media screen{body{background:#ddd}.sheet{background:#fff;max-width:186mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.2)}}`;
+.mt{margin-top:6mm}
+@page{size:A4;margin:12mm}@media print{.sheet{padding:0}}
+thead{display:table-header-group}tfoot{display:table-footer-group}tr,img,svg,.sign,.rev,.box{break-inside:avoid;page-break-inside:avoid}table.keep{break-inside:avoid;page-break-inside:avoid}
+h1,h2,h3,header.ph,.rhead{break-after:avoid;page-break-after:avoid}h2+p.small,h1+p.small{break-after:avoid;page-break-after:avoid}p,li{orphans:3;widows:3}
+@media screen{body{background:#ddd}.sheet{background:#fff;max-width:186mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.2)}}`;
+/* เอกสารเรียงต่อเนื่อง: แถวหัวตาราง (th) ย้ายเข้า <thead> เพื่อพิมพ์หัวตารางซ้ำเมื่อขึ้นหน้าใหม่ · ตารางสั้น (≤ 10 แถว) ไม่ให้ขาดกลางตาราง */
+function printFix(body) { try {
+  const d = new DOMParser().parseFromString(`<!DOCTYPE html><html><body>${body}</body></html>`, 'text/html');
+  d.querySelectorAll('table').forEach(t => { if (t.closest('.ib,.bd')) return; let hdr = []; if (!t.tHead) { for (const r of [...t.rows]) { if (hdr.length < 2 && r.cells.length && [...r.cells].every(c => c.tagName === 'TH')) hdr.push(r); else break; }
+      if (hdr.length && hdr.length < t.rows.length) { const th = t.createTHead(); hdr.forEach(r => th.appendChild(r)); } }
+    const body = t.rows.length - (t.tHead ? t.tHead.rows.length : 0); if (body <= 10) t.classList.add('keep'); });
+  return d.body.innerHTML; } catch (e) { return body; } }
 function printDoc(title, body, css = '', noAuto = false) {
+  if (!/class="(ib|bd)\b/.test(body)) body = printFix(body);
   const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>${esc(title)}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap"><style>${PRINT_CSS}${css}</style></head><body>${body}${noAuto ? '' : '<script>window.onload=function(){(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){setTimeout(function(){window.print()},300)})}<\/script>'}</body></html>`;
   const w = window.open('', '_blank');
   if (w && w.document) { w.document.open(); w.document.write(html); w.document.close(); return w; } else { download(title + '.html', html); toast('เบราว์เซอร์บล็อกหน้าต่างใหม่ จึงดาวน์โหลดเป็นไฟล์แทน เปิดไฟล์แล้วสั่งพิมพ์'); }
@@ -3399,7 +3429,7 @@ function openQR() {
       ${big('schedule', 'โปรแกรม & ผลการแข่งขัน', 300)}<div class="row3">${big('medals', 'ตารางเหรียญ', 150)}${big('map', 'ผังการแข่งขัน', 150)}${big('venues', 'สนามแข่งขัน', 150)}</div><p class="small">${esc(u)}</p></section>`;
     if (kinds.includes('venue')) body += venuesList().map(v => `<section class="sheet poster"><p class="sub">${esc(evName())} · สนามแข่งขัน</p><h1>${esc(v.name)}</h1>${v.note ? `<p class="sub">${esc(v.note)}</p>` : ''}<p class="cta">สแกนดูคู่ที่กำลังแข่ง คู่ถัดไป และผลของสนามนี้</p>${big('venues~' + encodeURIComponent(v.name), '', 320)}<p class="small">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${S.meta.checkinMin ?? 20} นาที</p></section>`).join('');
     if (!body) { $('#err').textContent = 'เลือกโปสเตอร์อย่างน้อย 1 แบบ'; return; }
-    closeModal(); printDoc('โปสเตอร์ QR', body, `.poster{text-align:center;padding:20mm 14mm}.poster h1{font-size:40px;margin:6mm 0 2mm;color:#1F2E78}.poster .sub{font-size:18px;color:#444;margin:0}.poster .cta{font-size:22px;margin:8mm 0 4mm}.poster .lg{width:34mm}.qq{display:inline-flex;flex-direction:column;align-items:center;gap:2mm;margin:3mm}.qq b{font-size:16px}.row3{display:flex;justify-content:center;gap:6mm;margin-top:6mm}`);
+    closeModal(); printDoc('โปสเตอร์ QR', body, `@page{size:A4;margin:0}.poster{text-align:center;padding:20mm 14mm}.poster h1{font-size:40px;margin:6mm 0 2mm;color:#1F2E78}.poster .sub{font-size:18px;color:#444;margin:0}.poster .cta{font-size:22px;margin:8mm 0 4mm}.poster .lg{width:34mm}.qq{display:inline-flex;flex-direction:column;align-items:center;gap:2mm;margin:3mm}.qq b{font-size:16px}.row3{display:flex;justify-content:center;gap:6mm;margin-top:6mm}`);
   };
 }
 /* ---------- รายชื่อผู้ได้รับเหรียญ ---------- */
@@ -4419,7 +4449,7 @@ function printQRCards(c) {
   const card = x => `<div class="qc" style="--tc:${COLORS[x.c].c}"><div class="qq">${qrSVG(x.sid, 86)}</div><div class="qi"><b class="qn">${esc(x.name)}</b><span>ม.${esc(x.cls)} · ${esc(x.sid)}</span><span class="qcol">คณะ${esc(COLORS[x.c].n)}</span><small>${esc([...new Set(x.evs)].slice(0, 4).join(', '))}</small></div></div>`;
   const per = 24; const pages = []; for (let i = 0; i < cards.length; i += per) pages.push(cards.slice(i, i + per));
   printDoc(`บัตร QR นักกีฬา ${c == null ? 'ทุกคณะ' : 'คณะ' + COLORS[c].n}`, pages.map((pg, i) => `<section class="sheet qs">${phead('บัตร QR รายงานตัวนักกีฬา' + (c == null ? '' : ' · คณะ' + COLORS[c].n), `แผ่น ${i + 1}/${pages.length} · ${cards.length} คน`)}<div class="qgrid">${pg.map(card).join('')}</div><p class="small">ตัดตามเส้น · ใช้สแกนที่จุดรายงานตัว · QR เก็บรหัสประจำตัวนักเรียน</p></section>`).join(''),
-    `.qs{padding:8mm 8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
+    `@page{size:A4;margin:0}.qs{padding:8mm 8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
 }
 
 function openCheckin(eid, mid) {
