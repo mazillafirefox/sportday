@@ -783,6 +783,8 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .okt{color:#15803D;font-weight:600}.badt{color:#B91C1C;font-weight:600}.medp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;color:#fff}.medp.g{background:#C79A0B}.medp.s{background:#8A94A6}.medp.b{background:#A0612F}
 @media(max-width:600px){.athprof .aphead{flex-direction:column;align-items:center;text-align:center}.athprof .maphead{justify-content:center}.apstat{justify-content:center}.athm td:first-child{display:none}.pselbar .pprint{margin-left:0;width:100%}.pselbar .pprint select{flex:1}}
 .btn.danger-t{color:#B91C1C}
+.bcode{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:var(--tc);color:#fff;font-weight:800}
+.stff{display:inline-flex;flex-wrap:wrap;width:auto;margin:6px 0 8px}.stff b{margin-right:2px}.spck{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px 8px}.stftab td{vertical-align:middle}
 </style>
 </head>
 <body>
@@ -882,8 +884,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.24.2', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.25.0', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.25.0', 'บัตรบุคลากร C J O M V: เพิ่ม/แก้/ลบ รูป ดึงจากผู้ใช้ เลือกพิมพ์หน้า-หลัง (หน้าจัดการการแข่งขัน)'],
   ['1.24.2', 'ค้นหานักกีฬาด้วยรหัสประจำตัว · ปุ่มเปลี่ยนรูป/ลบรูปในหน้าประวัตินักกีฬาชัดขึ้น'],
   ['1.24.1', 'บัตรห้อยคอ: ชื่อ/สกุลแยกบรรทัด ไม่มีคำนำหน้า · ด้านหลังมีกำหนดการ แผนที่สนาม และความหมายรหัสบัตร · แก้ไขข้อมูลนักเรียนได้จากหน้าประวัติและหน้านักเรียน'],
   ['1.24.0', 'หน้าประวัตินักกีฬา (ผลงาน ผลการแข่ง วินัย รูป) · บัตรนักกีฬาแบบห้อยคอ · เกียรติบัตร · ตารางนักกีฬาค้นหาและเลือกพิมพ์บัตร · แผนที่สนามเต็มความกว้าง · “ถัดไป” เฉพาะคู่ที่ใกล้เวลา'],
@@ -2736,7 +2739,7 @@ function logoSrc() { return document.querySelector('.brand img')?.src || ''; }
 function spriteDefs(ids) { return `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${[...new Set(ids)].map(id => document.getElementById(id)?.outerHTML || '').join('')}</svg>`; }
 function dayRange() { const d = days(); if (!d.length) return ''; const a = new Date(d[0]), b = new Date(d[d.length - 1]); const mo = x => x.toLocaleDateString('th-TH', { month: 'short' }); const y = b.getFullYear() + 543;
   return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${mo(b)} ${y}` : `${a.getDate()} ${mo(a)} – ${b.getDate()} ${mo(b)} ${y}`; }
-const stripPre = n => String(n || '').trim().replace(/^(เด็กชาย|เด็กหญิง|ด\.\s?ช\.|ด\.\s?ญ\.|นางสาว|น\.\s?ส\.|นาย|นาง)\s*/, '');
+const stripPre = n => String(n || '').trim().replace(/^(เด็กชาย|เด็กหญิง|ด\.\s?ช\.|ด\.\s?ญ\.|นางสาว|น\.\s?ส\.|นาย|นาง|ครู|อาจารย์|อ\.)\s*/, '');
 function splitName(n) { const t = stripPre(n).split(/\s+/); return [t[0] || '', t.slice(1).join(' ')]; }
 /* รหัสประเภทบัตร (แบบบัตรกีฬาระดับชาติ) */
 const BADGE_CODES = [['A', 'นักกีฬา', 'Athlete'], ['C', 'ครูคณะสี / ผู้ฝึกสอน', 'Coach'], ['J', 'กรรมการตัดสิน', 'Judge'], ['O', 'กรรมการจัดการแข่งขัน / บันทึกผล', 'Official'], ['M', 'ประชาสัมพันธ์ / สื่อ', 'Media'], ['V', 'แขกผู้มีเกียรติ', 'VIP']];
@@ -2792,7 +2795,7 @@ const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-c
 .bkr{width:100%;border-collapse:collapse;margin:0}.bkr td{border:0;border-bottom:.2mm dotted #ddd;padding:.6mm .5mm;font-size:9.5px;vertical-align:top}.bkr .nw{white-space:nowrap;color:#333}.bkr .c{width:5mm;text-align:center}
 .vn,.vp{display:inline-flex;align-items:center;justify-content:center;width:4mm;height:4mm;border-radius:50%;background:var(--tc);color:#fff;font-style:normal;font-size:7.5px;font-weight:700;margin-right:1mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .bmap{position:relative;width:100%;aspect-ratio:1748/604;background-size:100% 100%;border-radius:1.5mm;border:.2mm solid #ccc;-webkit-print-color-adjust:exact;print-color-adjust:exact}.bmap .vp{position:absolute;transform:translate(-50%,-50%);width:4.6mm;height:4.6mm;border:.4mm solid #fff;box-shadow:0 0 .6mm rgba(0,0,0,.6);margin:0;font-size:8px}
-.bvl{display:flex;flex-direction:column;gap:.6mm;margin-top:1.2mm}.bvl span{font-size:9.5px;display:flex;align-items:center}.bvl small{color:#666;margin-left:1mm}
+.bvl{display:flex;flex-direction:column;gap:.6mm;margin-top:1.2mm}.bvl.two{display:grid;grid-template-columns:1fr 1fr;gap:.5mm 2mm}.bvl.two span{font-size:7.6px;line-height:1.15;align-items:flex-start}.bvl.two .vn{width:3.4mm;height:3.4mm;font-size:6.5px;flex:none}.bvl span{font-size:9.5px;display:flex;align-items:center}.bvl small{color:#666;margin-left:1mm}
 .bcl{display:grid;grid-template-columns:1fr 1fr;gap:.8mm 2mm}.bcl span{display:flex;align-items:center;gap:1.2mm;font-size:9px}.bcl b{width:4.5mm;height:4.5mm;border:.3mm solid #999;border-radius:1mm;display:inline-flex;align-items:center;justify-content:center;font-size:9px}.bcl .on b{background:#0B1F4D;color:#fff;border-color:#0B1F4D}.bcl .on{font-weight:700}
 .bkn{font-size:8.5px;color:#555;margin-top:1mm}.bkf{margin-top:auto;padding:1.5mm 3.5mm;font-size:8.5px;color:#555;border-top:.3mm dashed #ccc}`;
 function printQRList(list) {
@@ -3162,13 +3165,85 @@ function vAdmin() {
     <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button>${sp.isAthletics && evsAll.length ? `<button class="btn sm ghost" data-athsched="${sp.id}">จัดเวลากรีฑาอัตโนมัติ</button>` : ''}</div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
   ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending' || x.m.protest?.status === 'upheld' && x.m.protest.outcome === 'edit' && !x.m.protest.editedAt); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงที่ต้องดำเนินการ <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง ${x.m.protest.status === 'pending' ? '<span class="protf-ic pending">รอพิจารณา</span>' : '<span class="protf-ic need">รอแก้ผลตามมติ</span>'}</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
   ${conflictCard(conflicts, true)}
-  ${rolesCard()}${scoringCard()}
+  ${rolesCard()}${staffCard()}${scoringCard()}
   <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button></div>
     <h3 class="sub">พิมพ์และประกาศ</h3><div class="actions m0"><button class="btn ghost" data-act="report">ใบรายงานผลการแข่งขัน</button><button class="btn ghost" data-act="sheets" data-tip="text|ใบบันทึกผล ใบเช็กชื่อนักกีฬา และตารางแข่งติดหน้าสนาม พิมพ์ได้ทีละวัน/สนาม">เอกสารกรรมการ</button><button class="btn ghost" data-act="qr">โปสเตอร์ QR code</button><button class="btn ghost" data-act="medrec">รายชื่อผู้ได้รับเหรียญ (พิมพ์)</button><button class="btn ghost" data-act="medrecc">รายชื่อผู้ได้รับเหรียญ (CSV)</button></div>
     <h3 class="sub">ล้างข้อมูล</h3><div class="actions m0"><button class="btn danger" data-act="reset">ล้างข้อมูล / เริ่มใหม่</button></div>
     <p class="muted sm" data-tip="version">เวอร์ชัน ${APP_VERSION} · ปรับปรุง ${fmtDate(APP_DATE, true)}</p></section>
   ${logCard()}`;
 }
+/* ===================== บัตรบุคลากร (C J O M V) =====================
+   เก็บใน meta.staff = [{ id, code, name, pos, c, sports:[] }] · รูปเก็บที่ photos/st{id} (เฉพาะผู้มีสิทธิ์) */
+const STAFF_COL = { C: '', J: '#B45309', O: '#0F766E', M: '#475569', V: '#A16207' };
+const STAFF_EN = { C: 'COACH', J: 'JUDGE', O: 'OFFICIAL', M: 'MEDIA', V: 'VIP' };
+const staffList = () => (S.meta.staff || []).slice();
+const codeName = k => (BADGE_CODES.find(x => x[0] === k) || [])[1] || k;
+function staffCard() {
+  const L = staffList(); const F = UI.stfF || ''; const sel = UI.stfSel || (UI.stfSel = new Set()); const shown = L.filter(p => !F || p.code === F).sort((a, b) => a.code.localeCompare(b.code) || (a.c ?? 9) - (b.c ?? 9) || a.name.localeCompare(b.name, 'th'));
+  const n = k => L.filter(p => p.code === k).length; const nSel = shown.filter(p => sel.has(p.id)).length;
+  return `<section class="card" id="staffcard"><div class="maphead"><div><h2>บัตรบุคลากร</h2><p class="muted sm">พิมพ์บัตรห้อยคอสำหรับครูคณะสี กรรมการ เจ้าหน้าที่ สื่อ และแขก (บัตรนักกีฬา A พิมพ์จากหน้าส่งรายชื่อนักกีฬา) · ${L.length} คน</p></div>
+    <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button><button class="btn sm ghost" data-act="staffimp">ดึงจากผู้ใช้และครูประธานคณะสี</button></div></div>
+    <div class="seg mini stff"><button data-stff="" class="${F ? '' : 'on'}">ทั้งหมด ${L.length}</button>${['C', 'J', 'O', 'M', 'V'].map(k => `<button data-stff="${k}" class="${F === k ? 'on' : ''}"><b>${k}</b> ${esc(codeName(k))} ${n(k)}</button>`).join('')}</div>
+    ${shown.length ? `<div class="pselbar"><label class="ck"><input type="checkbox" data-stfall ${shown.every(p => sel.has(p.id)) ? 'checked' : ''}> เลือกทั้งหมด (${shown.length})</label><span class="muted sm">เลือกแล้ว ${nSel} คน</span>
+      <span class="pprint"><select id="stfstyle"><option value="badge">หน้า-หลัง</option><option value="badgef" ${UI.stfStyle === 'badgef' ? 'selected' : ''}>ด้านหน้าอย่างเดียว</option></select><button class="btn sm" data-act="staffprint" ${nSel ? '' : 'disabled'}>พิมพ์บัตรที่เลือก ${nSel || ''}</button></span></div>
+    <div class="scroll"><table class="std stftab"><thead><tr><th></th><th>รหัส</th><th>ชื่อ-สกุล</th><th>ตำแหน่ง / หน้าที่</th><th>คณะ / ชนิดกีฬา</th><th></th></tr></thead><tbody>
+      ${shown.map(p => `<tr><td><input type="checkbox" data-stfk="${p.id}" ${sel.has(p.id) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></td><td><span class="bcode" style="--tc:${p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code]}">${p.code}</span></td><td>${esc(p.name)}</td><td class="muted">${esc(p.pos || '')}</td><td>${p.code === 'C' && p.c >= 0 ? chip(p.c) : ''}${(p.sports || []).map(s => `<span class="sumi sm">${sIcon(s, 'sm')}${esc(sportName(s))}</span>`).join(' ')}</td>
+        <td class="nowrap"><button class="btn sm ghost" data-stfed="${p.id}">แก้ไข</button> <button class="x" data-stfrm="${p.id}" aria-label="ลบ">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted sm">ยังไม่มีรายชื่อ กด “เพิ่มบุคลากร” หรือ “ดึงจากผู้ใช้และครูประธานคณะสี”</p>'}</section>`;
+}
+function saveStaff(L, what) { const m = clone(S.meta); m.staff = L; put('meta', 'config', m); if (what) logIt(what, ''); }
+function openStaffEdit(id) {
+  const p = staffList().find(x => x.id === id) || { id: uid('st'), code: UI.stfF || 'O', name: '', pos: '', c: -1, sports: [] }; const isNew = !staffList().some(x => x.id === p.id);
+  modal(`<form class="dlg" id="stff"><h3>${isNew ? 'เพิ่มบุคลากร' : 'แก้ไขบุคลากร'}</h3>
+    <div class="aphead"><div class="aphoto" id="sfph">${PH_SIL}</div><div class="apinfo">
+    <label class="fld">ประเภทบัตร<select id="sf_k">${BADGE_CODES.filter(x => x[0] !== 'A').map(([k, t]) => `<option value="${k}" ${k === p.code ? 'selected' : ''}>${k} · ${esc(t)}</option>`).join('')}</select></label>
+    <label class="fld">ชื่อ-สกุล<input id="sf_n" value="${esc(p.name)}" required placeholder="เช่น นายสมชาย ใจดี"></label>
+    <label class="fld">ตำแหน่ง / หน้าที่<input id="sf_p" value="${esc(p.pos || '')}" placeholder="เช่น ครูประธานคณะสี · กรรมการตัดสินฟุตบอล"></label></div></div>
+    <label class="fld" id="sf_cw">คณะสี<select id="sf_c"><option value="-1">— ไม่ระบุ —</option>${COLORS.map((k, i) => `<option value="${i}" ${i === p.c ? 'selected' : ''}>${k.n}</option>`).join('')}</select></label>
+    <fieldset class="bkmode"><legend>ชนิดกีฬาที่รับผิดชอบ (ไม่บังคับ)</legend><div class="spck">${sportsList().map(sp => `<label class="ck"><input type="checkbox" value="${sp.id}" ${(p.sports || []).includes(sp.id) ? 'checked' : ''}> ${sIcon(sp.id, 'sm')}${esc(sp.name)}</label>`).join('')}</div></fieldset>
+    <div class="actions m0"><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button></div>
+    <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+  const pid = 'st' + p.id; let newImg; const showPh = img => { $('#sfph').innerHTML = img ? `<img src="${img}" alt="">` : PH_SIL; $('#sf_x').hidden = !img; $('#sfpl').textContent = img ? '📷 เปลี่ยนรูป' : '📷 เพิ่มรูป'; };
+  if (!isNew) getPhoto(pid).then(img => { if ($('#sfph') && newImg === undefined) showPh(img); });
+  const sync = () => { $('#sf_cw').hidden = $('#sf_k').value !== 'C'; }; sync(); $('#sf_k').onchange = sync;
+  $('#sf_f').onchange = async e => { try { newImg = await fileToPhoto(e.target.files[0]); showPh(newImg); } catch (x) { $('#err').textContent = x.message; } };
+  $('#sf_x').onclick = () => { newImg = null; showPh(null); };
+  $('#stff').onsubmit = async e => { e.preventDefault(); const name = $('#sf_n').value.trim(); if (!name) { $('#err').textContent = 'ใส่ชื่อ'; return; }
+    const np = { id: p.id, code: $('#sf_k').value, name, pos: $('#sf_p').value.trim(), c: $('#sf_k').value === 'C' ? +$('#sf_c').value : -1, sports: [...document.querySelectorAll('.spck input:checked')].map(i => i.value) };
+    const L = staffList(); const i = L.findIndex(x => x.id === p.id); if (i >= 0) L[i] = np; else L.push(np);
+    try { if (newImg !== undefined) await setPhoto(pid, newImg); } catch (x) { $('#err').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); return; }
+    saveStaff(L, (isNew ? 'เพิ่มบุคลากร ' : 'แก้ไขบุคลากร ') + `${np.code} ${np.name}`); closeModal(); render(); };
+}
+function importStaff() {
+  const L = staffList(); const has = n => L.some(x => normName(x.name) === normName(n)); let add = 0;
+  const src = mode === 'shared' ? Object.entries(S.meta.roles || {}).map(([id, r]) => ({ ...r, id })) : Object.entries(localUsers()).map(([id, u]) => ({ ...u, id }));
+  src.forEach(r => { const n = r.name || ''; if (!n || n.includes('@') || has(n)) return; const code = r.role === 'color' ? 'C' : 'O';
+    L.push({ id: uid('st'), code, name: n, pos: r.role === 'color' ? 'ครูคณะสี' : ROLE_N[r.role] || '', c: r.role === 'color' ? (r.c ?? -1) : -1, sports: r.sports || [] }); add++; });
+  COLORS.forEach((k, c) => { const t = (S.meta.colorInfo?.[c] || {}).teacher; if (t && !has(t)) { L.push({ id: uid('st'), code: 'C', name: t, pos: 'ครูประธานคณะสี', c, sports: [] }); add++; } });
+  if (!add) { toast('ไม่มีรายชื่อใหม่ให้ดึง (ผู้ใช้ต้องตั้งชื่อไว้ในหน้าสิทธิ์ผู้ใช้)'); return; }
+  saveStaff(L, `ดึงรายชื่อบุคลากร ${add} คน`); toast(`เพิ่ม ${add} คน ตรวจประเภทบัตรและตำแหน่งก่อนพิมพ์`);
+}
+async function printStaffBadges(ids, style) {
+  const L = staffList().filter(p => ids.includes(p.id)); if (!L.length) { toast('ยังไม่ได้เลือก'); return; }
+  const both = style !== 'badgef'; toast('กำลังเตรียมบัตร…'); const ph = await getPhotos(L.map(p => 'st' + p.id)); const logo = logoSrc(); const icons = new Set();
+  const colOf = p => p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code];
+  const front = p => { const [fn, ln] = splitName(p.name); if (p.code === 'C' && p.c >= 0) { icons.add('gem-' + p.c); icons.add('gg' + p.c); } (p.sports || []).forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); const img = ph['st' + p.id];
+    return `<div class="bd" style="--tc:${colOf(p)}"><div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
+      <div class="bdc">${p.code === 'C' && p.c >= 0 ? `<svg class="g" viewBox="0 0 24 24"><use href="#gem-${p.c}"/></svg><b>คณะ${esc(COLORS[p.c].n)}</b>` : `<b>${esc(codeName(p.code))}</b>`}<span class="cat">${p.code}</span></div>
+      <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">${esc(codeName(p.code))} · ${STAFF_EN[p.code]}</span><b class="nm">${esc(fn)}</b><b class="nm2">${esc(ln)}</b>${p.pos ? `<span>${esc(p.pos)}</span>` : ''}</div></div>
+      ${(p.sports || []).length ? `<div class="bdt">ชนิดกีฬาที่รับผิดชอบ</div><div class="bds">${p.sports.slice(0, 8).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>` : '<div class="bds"></div>'}
+      <div class="bdf"><div class="qr">${qrSVG(pubURL(), 90)}</div><div><b>บัตรประจำตัว${esc(codeName(p.code))}</b><span>สแกน QR เพื่อเปิดโปรแกรมและผลการแข่งขัน</span><span>หมายเลขบัตร ${p.code}-${esc(p.id.slice(-5).toUpperCase())}</span></div></div><div class="bdbar"></div></div>`; };
+  const back = p => { if (!p) return '<div class="bd blank"></div>'; const [fn, ln] = splitName(p.name); const vs = venuesList().filter(v => !(p.sports || []).length || allMatches().some(x => (p.sports || []).includes(x.ev.sport) && venueOf(x.ev, x.m) === v.name) || Object.values(S.events).some(e => (p.sports || []).includes(e.sport) && e.venue === v.name));
+    const pins = vs.map((v, i) => { const q = pinOf(v); return q ? `<i class="vp" style="left:${q[0]}%;top:${q[1]}%">${i + 1}</i>` : ''; }).join('');
+    return `<div class="bd bk" style="--tc:${colOf(p)}"><div class="bkh"><b>${esc(fn)} ${esc(ln)}</b><span>${p.code} · ${esc(codeName(p.code))}</span></div>
+      <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน${(p.sports || []).length ? 'ที่รับผิดชอบ' : ''}</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl${vs.length > 6 ? ' two' : ''}">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)}</span>`).join('') || '<span>-</span>'}</div></div>
+      <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t]) => `<span class="${c === p.code ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">สีแถบบนบัตรบอกประเภทบัตร (ครูคณะสีใช้สีของคณะ)</div></div>
+      <div class="bkf">บัตรนี้เป็นของ${esc(evSchool())} หากพบโปรดส่งคืนกองอำนวยการ · ห้ามให้ผู้อื่นใช้แทน</div><div class="bdbar"></div></div>`; };
+  const fr = L.map(front); const sheets = [];
+  for (let i = 0; i < L.length; i += 4) { const pg = L.slice(i, i + 4); sheets.push(`<section class="sheet bsheet"><div class="bgrid">${fr.slice(i, i + 4).join('')}</div></section>`);
+    if (both) { const order = [1, 0, 3, 2].map(j => pg[j] || null); if (pg.length <= 2) order.length = 2; sheets.push(`<section class="sheet bsheet"><div class="bgrid">${order.map(back).join('')}</div></section>`); } }
+  printDoc(`บัตรบุคลากร ${L.length} ใบ`, spriteDefs([...icons]) + sheets.join(''), BADGE_CSS + (typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : ''));
+}
+
 function rolesCard() {
   if (mode !== 'shared') { const us = Object.entries(localUsers()).sort((a, b) => a[1].name.localeCompare(b[1].name, 'th'));
     return `<section class="card"><h2>ผู้ใช้และสิทธิ์</h2><p class="muted sm">โหมดทดลอง: ผู้ใช้เข้าสู่ระบบด้วยชื่อและ PIN บนเครื่องนี้ ทุกการบันทึกมีชื่อผู้ทำกำกับ · เมื่อเปิดใช้ Firebase ผู้ใช้จะเข้าสู่ระบบด้วยบัญชี Google แทน (ดู README.md)</p>
@@ -4657,7 +4732,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -4677,6 +4752,9 @@ document.addEventListener('click', e => {
     if (k === '*') UI.mapF[key] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; if (key === UI.mapSport) UI.mapEv = null; render(); }
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
   else if (d.stedit) { const [sid, cls, ...nm] = d.stedit.split('|'); openStudentEdit(sid, cls, nm.join('|')); }
+  else if (d.stff != null) { UI.stfF = d.stff; render(); }
+  else if (d.stfed) openStaffEdit(d.stfed);
+  else if (d.stfrm) { const p = staffList().find(x => x.id === d.stfrm); if (p) ask(`ลบ ${p.name} ออกจากรายชื่อบุคลากร?`, () => { saveStaff(staffList().filter(x => x.id !== p.id), 'ลบบุคลากร ' + p.name); setPhoto('st' + p.id, null).catch(() => { }); }, 'ลบ'); }
   else if (d.psel != null) { /* checkbox: handled by change */ }
   else if (d.pselclr != null) { e.preventDefault(); UI.regSel = new Set(); $('#plistbox').innerHTML = regPlist(UI.regColor); }
   else if (d.regpf != null) { UI.regPF = !!d.regpf; render(); }
@@ -4757,6 +4835,9 @@ document.addEventListener('click', e => {
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
     const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
   else if (d.act === 'mypin') openMyPin();
+  else if (d.act === 'staffadd') openStaffEdit(null);
+  else if (d.act === 'staffimp') importStaff();
+  else if (d.act === 'staffprint') printStaffBadges([...(UI.stfSel || [])], $('#stfstyle')?.value || 'badge');
   else if (d.act === 'qrcards') printQRCards(UI.regColor);
   else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); printBadges(sel, $('#cardstyle')?.value || 'badge'); }
   else if (d.act === 'qrcardsall') printQRCards(null);
@@ -4782,6 +4863,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.matches('[tabindex="0"]')) e.target.click();
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset.stfk != null) { const sel = UI.stfSel || (UI.stfSel = new Set()); e.target.checked ? sel.add(e.target.dataset.stfk) : sel.delete(e.target.dataset.stfk); render(); return; }
+  if (e.target.dataset.stfall != null) { const sel = UI.stfSel || (UI.stfSel = new Set()); document.querySelectorAll('[data-stfk]').forEach(i => e.target.checked ? sel.add(i.dataset.stfk) : sel.delete(i.dataset.stfk)); render(); return; }
+  if (e.target.id === 'stfstyle') { UI.stfStyle = e.target.value; return; }
   if (e.target.dataset.pk != null) { const sel = UI.regSel || (UI.regSel = new Set()); e.target.checked ? sel.add(e.target.dataset.pk) : sel.delete(e.target.dataset.pk); $('#plistbox').innerHTML = regPlist(UI.regColor); return; }
   if (e.target.dataset.pselall != null) { const sel = UI.regSel || (UI.regSel = new Set()); const box = $('#plistbox'); box.querySelectorAll('[data-pk]').forEach(i => e.target.checked ? sel.add(i.dataset.pk) : sel.delete(i.dataset.pk)); box.innerHTML = regPlist(UI.regColor); return; }
   if (e.target.id === 'cardstyle') { UI.cardStyle = e.target.value; return; }
