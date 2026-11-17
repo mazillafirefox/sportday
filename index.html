@@ -980,8 +980,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.31.1', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.31.2', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.31.2', 'แอปสแกน: แสดงรูปนักเรียน/บุคลากรในการ์ดตรวจบัตร ผลรายงานตัว และโหมดกรรมการ'],
   ['1.31.1', 'แอปสแกน: ตรวจบัตรแสดงผลเป็นการ์ดเต็มจอ แตะ 1 ครั้งเพื่อปิดแล้วสแกนต่อ (กล้องหยุดอ่านระหว่างเปิดการ์ด) · รองรับเครื่องสแกนแบบปุ่มกด (Sunmi ฯลฯ) ที่ส่งค่าแบบคีย์บอร์ด ไม่ต้องเปิดกล้อง'],
   ['1.31.0', 'แอปสแกน (PWA ติดตั้งลงมือถือได้): รายงานตัวที่จุดกลางหานัดให้อัตโนมัติ/ล็อกนัด · ตรวจบัตร · ลงชื่อกรรมการ · กล้องเปิดค้างสแกนต่อเนื่อง · บันทึกแบบรวมไม่ทับเครื่องอื่น · ค้างส่งเมื่อออฟไลน์แล้วส่งให้เอง'],
   ['1.30.0', 'ส่งรายชื่อนักกีฬา: พิมพ์ใบรายชื่อและบัตรคล้องคอได้ทั้งรายประเภท (ในหน้าต่างส่งรายชื่อ) รายชนิดกีฬา และทั้งคณะ · ผู้ดูแลพิมพ์ทุกคณะของรายการได้'],
@@ -3235,11 +3236,14 @@ function vScan() {
     <div id="scov" class="scov" hidden role="dialog" aria-label="ผลตรวจบัตร"></div></div>`;
 }
 function scLogHTML() { return SC.log.length ? `<h3 class="sub">สแกนล่าสุด (เครื่องนี้)</h3>${SC.log.map(x => `<div class="scli ${x.k}"><span class="num">${hhmm(x.at)}</span><b>${esc(x.t)}</b><span>${esc(x.s)}</span></div>`).join('')}` : ''; }
+/* ใส่รูปถ่ายในทุกช่อง data-pid ของแอปสแกน (การ์ดผลตรวจบัตร ผลรายงานตัว หน้าที่กรรมการ) */
+function scPhotos() { document.querySelectorAll('#scanapp [data-pid]').forEach(el => { const pid = el.dataset.pid; if (!pid || el.dataset.ph === pid) return; el.dataset.ph = pid;
+  getPhoto(pid).then(img => { if (img && el.isConnected && el.dataset.pid === pid) el.innerHTML = `<img src="${img}" alt="">`; }).catch(() => { }); }); }
 function scCard() { const ov = $('#scov'); if (!ov) return; const show = SC.ov && SC.res?.card; ov.hidden = !show; document.body.classList.toggle('scovopen', !!show);
-  if (show) { ov.className = 'scov ' + SC.res.k; ov.innerHTML = `${scResHTML(true)}<p class="scovtap">แตะที่ใดก็ได้เพื่อปิด แล้วสแกนใบถัดไป</p>`; ov.scrollTop = 0; } }
+  if (show) { ov.className = 'scov ' + SC.res.k; ov.innerHTML = `${scResHTML(true)}<p class="scovtap">แตะที่ใดก็ได้เพื่อปิด แล้วสแกนใบถัดไป</p>`; ov.scrollTop = 0; scPhotos(); } }
 function scCloseCard() { SC.ov = false; scCard(); SC.last.clear(); if (SC.input === 'hw') setTimeout(() => $('#schw')?.focus({ preventScroll: true }), 0); }
 function scRefresh() { if (!$('#scanapp')) return; scCard(); $('#scnet').innerHTML = scNetHTML(); const r = $('#scares'); if (r) r.innerHTML = scResHTML(); const l = $('#sclog'); if (l) l.innerHTML = scLogHTML();
-  const ph = $('#scph'); if (ph?.dataset.pid) getPhoto(ph.dataset.pid).then(img => { if (img && $('#scph')?.dataset.pid === ph.dataset.pid) $('#scph').innerHTML = `<img src="${img}" alt="">`; }).catch(() => { });
+  scPhotos();
   const ctx = $('#scctx'); if (ctx && !ctx.contains(document.activeElement)) ctx.innerHTML = anyEdit() || SC.mode === 'badge' ? scCtxHTML() : ''; }
 function scMount() { scCard();
   const hw = $('#schw'); if (hw) { stopScan(); hw.focus({ preventScroll: true }); scRefresh(); scInstallHint(); return; }
