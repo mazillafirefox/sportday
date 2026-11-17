@@ -870,6 +870,9 @@ body.scovopen{overflow:hidden}
 .ciflag{display:inline-block;padding:0 6px;border-radius:6px;background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700}.ciflag.post{background:#FEE2E2;color:#991B1B}
 .scr.warn{background:#FEF3C7;border-color:#D97706}.scr.warn .scrh b{color:#92400E}.scli.warn b{color:#92400E}
 .ownerrow{background:#EEF2FF;border-radius:10px;padding:8px 10px;flex-wrap:wrap;gap:8px}.ownerrow .owsel{min-width:240px;flex:1 1 240px;margin:0}
+.scov .scr:not(.html){padding:20px 18px;gap:14px}.scov .scrh b{font-size:30px}.scov .scrh span{font-size:17px}
+.scov .scw{gap:16px}.scov .scph{width:108px;height:144px;border-radius:12px}.scov .scw b{font-size:24px}
+.scovtap.auto{position:sticky;overflow:hidden}.scovtap.auto::after{content:'';position:absolute;left:0;bottom:0;height:3px;background:#4ADE80;animation:scbar 2s linear forwards}@keyframes scbar{from{width:100%}to{width:0}}
 /* หน้าตรวจบัตร */
 .bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
@@ -995,8 +998,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.2', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.3', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.3', 'แอปสแกน: ผลรายงานตัว/กรรมการขึ้นเป็นการ์ดเต็มจอทันที (สำเร็จปิดเองใน 2 วินาที · ไม่ผ่านค้างจนแตะ) · ปุ่มยกเลิกอยู่ในรายการสแกนล่าสุด · ออกจากหน้าแล้วล้างทั้งสนามและนัดที่เลือก'],
   ['1.33.2', 'ตั้งค่า “ผู้ดูแลระบบรายงานตัวล่วงหน้าได้” (ปิดไว้เป็นค่าเริ่มต้น) · ผู้ใช้และสิทธิ์: แสดงผู้ดูแลหลัก (ซ่อนอีเมล) และผูกชื่อกับทะเบียนบุคลากร · เพิ่มผู้ใช้ด้วยอีเมลเชื่อมกับรายชื่อในทะเบียนได้ ชื่อผู้บันทึกใช้ชื่อจากทะเบียน ไม่ใช้ชื่อจากอีเมล'],
   ['1.33.1', 'รายงานตัว: ก่อนเปิดรับติ๊ก/บันทึกไม่ได้ทุกบทบาท (รวมผู้ดูแล) · แอปสแกน: ออกจากหน้าแล้วล้างนัดที่เลือก ไม่จำข้ามการเปิดแอป'],
   ['1.33.0', 'ช่วงรับรายงานตัว: เปิดรับ 60 นาทีก่อนแข่ง (ตั้งได้) · ถึงกำหนด 20 นาทีก่อนแข่ง · เลยกำหนดรับได้จนกดเริ่มแข่งแต่บันทึกว่า “มาช้า” · หลังเริ่มแข่งสแกนไม่ได้ ติ๊กเองได้โดยบันทึกว่า “หลังเริ่มแข่ง” · ใช้ทั้งหน้ารายงานตัวและแอปสแกน'],
@@ -3204,8 +3208,8 @@ function fillBadgePhoto() { const el = $('#bvph'); const pid = el?.dataset.pid; 
 
 /* ===================== แอปสแกน (PWA) · #scan ===================== */
 const SCK = 'gem-scan';
-const SC = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem(SCK) || '{}'); } catch (e) { } return { mode: o.mode || 'ci', input: o.input === 'hw' ? 'hw' : 'cam', lock: '', jlock: '', venue: o.venue || '', auto: o.auto !== false, res: null, ov: false, log: [], last: new Map() }; })();
-const scSave = () => { try { localStorage.setItem(SCK, JSON.stringify({ mode: SC.mode, input: SC.input, venue: SC.venue, auto: SC.auto })); } catch (e) { } };
+const SC = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem(SCK) || '{}'); } catch (e) { } return { mode: o.mode || 'ci', input: o.input === 'hw' ? 'hw' : 'cam', lock: '', jlock: '', venue: '', auto: o.auto !== false, res: null, ov: false, log: [], last: new Map() }; })();
+const scSave = () => { try { localStorage.setItem(SCK, JSON.stringify({ mode: SC.mode, input: SC.input })); } catch (e) { } };
 const scDay = () => todayISO();
 const nowHM = () => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); };
 const hm2min = s => { const m = String(s || '').match(/(\d{1,2})[:.](\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };
@@ -3235,7 +3239,9 @@ function ciWrite(t, add, flag) { const d = scDay(); const st = { ciBy: ME.id || 
     const set = { ci: upd(t.mid ? t.m.ci : evCi(t.ev, d), add), ciLate: upd(x.ciLate, add && flag === 'ciLate'), ciPost: upd(x.ciPost, add && flag === 'ciPost'), ...st }; return patchEv(t.mid ? { eid: t.eid, mid: t.mid, set } : { eid: t.eid, set }); }
   const one = { [t.k]: [t.pid] }; return patchEv({ eid: t.eid, mid: t.mid || undefined, ...(add ? { push: { ci: one, ...(flag ? { [flag]: one } : {}) } } : { pull: { ci: one, ciLate: one, ciPost: one } }), set: st, ...(t.mid ? {} : { ciDay: d }) }); }
 const scBeep = ok => { try { beep(ok); navigator.vibrate?.(ok ? 40 : [80, 60, 80]); } catch (e) { } };
-function scShow(r) { SC.res = r; if (r.log) { SC.log.unshift({ ...r.log, at: Date.now() }); SC.log = SC.log.slice(0, 30); } scRefresh(); const el = $('#scares'); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
+let SC_T = 0;
+function scShow(r) { clearTimeout(SC_T); if (SC.mode !== 'badge' && r.k !== 'idle') { r.card = true; SC.ov = true; if (['ok', 'info'].includes(r.k)) { r.auto = 1; SC_T = setTimeout(() => { if (SC.res === r && SC.ov) scCloseCard(); }, 2000); } }
+  SC.res = r; if (r.log) { SC.log.unshift({ ...r.log, at: Date.now() }); SC.log = SC.log.slice(0, 30); } scRefresh(); const el = $('#scares'); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
 /* ประมวลผลค่าที่สแกน/พิมพ์ */
 function scHandle(raw, src) {
   if (SC.ov && src === 'cam') return; /* การ์ดผลตรวจบัตรเปิดอยู่: หยุดอ่านจากกล้องจนกว่าจะแตะปิด (เครื่องสแกนแบบปุ่มกดอ่านใบถัดไปได้เลย) */
@@ -3301,13 +3307,13 @@ function vScan() {
     <p class="muted sm scinst" id="scinst"></p>
     <div id="scov" class="scov" hidden role="dialog" aria-label="ผลตรวจบัตร"></div></div>`;
 }
-function scLogHTML() { return SC.log.length ? `<h3 class="sub">สแกนล่าสุด (เครื่องนี้)</h3>${SC.log.map(x => `<div class="scli ${x.k}"><span class="num">${hhmm(x.at)}</span><b>${esc(x.t)}</b><span>${esc(x.s)}</span></div>`).join('')}` : ''; }
+function scLogHTML() { return SC.log.length ? `<h3 class="sub">สแกนล่าสุด (เครื่องนี้)</h3>${SC.log.map((x, i) => `<div class="scli ${x.k}"><span class="num">${hhmm(x.at)}</span><b>${esc(x.t)}</b><span>${esc(x.s)}${i === 0 && x.undo && !x.undone ? ` <button class="btn sm ghost" data-scun="${x.undo.eid}|${x.undo.mid || ''}|${x.undo.k}|${x.undo.pid}">ยกเลิก</button>` : ''}</span></div>`).join('')}` : ''; }
 /* ใส่รูปถ่ายในทุกช่อง data-pid ของแอปสแกน (การ์ดผลตรวจบัตร ผลรายงานตัว หน้าที่กรรมการ) */
 function scPhotos() { document.querySelectorAll('#scanapp [data-pid]').forEach(el => { const pid = el.dataset.pid; if (!pid || el.dataset.ph === pid) return; el.dataset.ph = pid;
   getPhoto(pid).then(img => { if (img && el.isConnected && el.dataset.pid === pid) el.innerHTML = `<img src="${img}" alt="">`; }).catch(() => { }); }); }
 function scCard() { const ov = $('#scov'); if (!ov) return; const show = SC.ov && SC.res?.card; ov.hidden = !show; document.body.classList.toggle('scovopen', !!show);
-  if (show) { ov.className = 'scov ' + SC.res.k; ov.innerHTML = `${scResHTML(true)}<p class="scovtap">แตะที่ใดก็ได้เพื่อปิด แล้วสแกนใบถัดไป</p>`; ov.scrollTop = 0; scPhotos(); } }
-function scCloseCard() { SC.ov = false; scCard(); SC.last.clear(); if (SC.input === 'hw') setTimeout(() => $('#schw')?.focus({ preventScroll: true }), 0); }
+  if (show) { ov.className = 'scov ' + SC.res.k; ov.innerHTML = `${scResHTML(true)}<p class="scovtap${SC.res.auto ? ' auto' : ''}">${SC.res.auto ? 'ปิดเองใน 2 วินาที · แตะเพื่อปิดทันที' : 'แตะที่ใดก็ได้เพื่อปิด แล้วสแกนต่อ'}</p>`; ov.scrollTop = 0; scPhotos(); } }
+function scCloseCard() { clearTimeout(SC_T); SC.ov = false; scCard(); SC.last.clear(); if (SC.input === 'hw') setTimeout(() => $('#schw')?.focus({ preventScroll: true }), 0); }
 function scRefresh() { if (!$('#scanapp')) return; scCard(); $('#scnet').innerHTML = scNetHTML(); const r = $('#scares'); if (r) r.innerHTML = scResHTML(); const l = $('#sclog'); if (l) l.innerHTML = scLogHTML();
   scPhotos();
   const ctx = $('#scctx'); if (ctx && !ctx.contains(document.activeElement)) ctx.innerHTML = anyEdit() || SC.mode === 'badge' ? scCtxHTML() : ''; }
@@ -5556,7 +5562,7 @@ document.addEventListener('click', e => {
   else if (d.scin) { SC.input = d.scin; SC.res = null; SC.ov = false; scSave(); render(); }
   else if (d.scci || d.scun) { const [eid, mid, k, pid] = (d.scci || d.scun).split('|'); const ev = evById(eid); const m = mid ? mOf(ev, mid) : null; const t = { eid, mid: mid || null, ev, m, k, pid };
     if (!canScore(ev.sport)) { toast('บัญชีนี้บันทึกรายการนี้ไม่ได้'); return; } ciWrite(t, !!d.scci); scBeep(true);
-    if (d.scun) { SC.res = { k: 'info', t: 'ยกเลิกการรายงานตัวแล้ว', s: evTitle(ev) + (m ? ' · คู่ ' + m.no : '') }; SC.log.unshift({ t: 'ยกเลิก', s: evTitle(ev), k: 'info', at: Date.now() }); }
+    if (d.scun) { if (SC.log[0]?.undo) SC.log[0].undone = 1; SC.ov = false; SC.res = null; toast('ยกเลิกการรายงานตัวแล้ว'); SC.log.unshift({ t: 'ยกเลิก', s: evTitle(ev), k: 'info', at: Date.now() }); }
     else if (SC.res?.who) { const f = findAthSid(SC.res.who.sid); SC.res = { ...SC.res, k: 'ok', t: '✓ รายงานตัวแล้ว', s: evTitle(ev) + (m ? ' · คู่ ' + m.no : ''), L: f ? ciTargets(f.c, f.key, scDay()) : SC.res.L, undo: t }; }
     scRefresh(); }
   else if (d.act === 'pwainst') { INSTALL_EV?.prompt(); INSTALL_EV?.userChoice?.finally?.(() => { INSTALL_EV = null; scInstallHint(); }); }
@@ -5706,7 +5712,7 @@ function route() { const raw = location.hash.slice(1); const [h, arg] = raw.spli
   if (nv === 'venues' && arg) { UI.vFocus = decodeURIComponent(arg); UI.vScroll = true; }
   /* เปลี่ยนหน้า: ล้างคำค้น ตัวกรองชั้น/ห้อง/สถานะ และการเลือกที่ค้างไว้ (คงไว้: คณะที่เลือก ชนิดกีฬาที่กำลังดู และรูปแบบการแสดงผล) */
   /* ออกจากแอปสแกน: ล้างนัดที่เลือกไว้และผลล่าสุด เปิดครั้งหน้าต้องเลือกนัดใหม่ */
-  if (UI.view === 'scan' && nv !== 'scan') { SC.lock = SC.jlock = ''; SC.res = null; SC.ov = false; stopScan(); }
+  if (UI.view === 'scan' && nv !== 'scan') { SC.lock = SC.jlock = SC.venue = ''; SC.res = null; SC.ov = false; clearTimeout(SC_T); stopScan(); scSave(); }
   if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = UI.q = UI.pickq = UI.regQ = UI.pickG = UI.pickR = UI.stRoom = ''; UI.regSel = new Set(); UI.stfSel = new Set(); UI.onlyClash = false; UI.regSt = null; UI.regPF = false; }
   UI.view = nv; $('#main').dataset.view = ''; window.scrollTo(0, 0); render(); }
 document.addEventListener('submit', e => { if (e.target.id === 'scaform') { e.preventDefault(); const el = $('#scaq'); const v = el.value; el.value = ''; SC.last.clear(); scHandle(v); return; } if (e.target.id !== 'bvform') return; e.preventDefault(); const el = $('#bvq'); const v = el.value; el.value = ''; if (!goBadge(v)) { beep(false); toast('อ่านหมายเลขบัตรไม่ได้ ตัวอย่าง: A-41308 หรือ J-9K2M7'); el.focus(); } });
