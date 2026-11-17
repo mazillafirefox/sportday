@@ -761,6 +761,12 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .pfilt{margin:0 0 8px;display:inline-flex;width:auto}
 @media(max-width:600px){.mrow.g2.ci .ta,.mrow.g2.ci .tb{min-width:0;max-width:100%}.mrow.g2.ci .cis{gap:3px;padding-right:6px;max-width:100%}.mrow.g2.ci .cis b{font-size:12px}.mrow.g2.ci .cis .tm{padding-left:8px;padding-right:8px}.mrow.g2.ci .cis .tm svg,.mrow.g2.ci .cis .tm img,.mrow.g2.ci .cis .tm .gem{display:none}}
 .rby{display:block;font-size:11.5px;margin-top:1px}.updline{margin:6px 0 0}
+.cimeth{display:inline-flex;width:auto;margin:0 0 10px}
+.ciscan{position:relative;background:#000;border-radius:12px;overflow:hidden;margin:0 0 8px;max-width:520px}.ciscan video{display:block;width:100%;max-height:46vh;object-fit:cover}
+.ciaim{position:absolute;left:50%;top:42%;width:min(56%,220px);aspect-ratio:1;transform:translate(-50%,-50%);border:3px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}
+.ciscan #cistat{position:absolute;left:0;right:0;bottom:0;margin:0;padding:6px 10px;background:rgba(0,0,0,.55);color:#fff}.ciscan #cistat.err{color:#FFD2D2}
+.citype{display:flex;gap:8px;align-items:flex-end;margin:0 0 8px}.citype .fld{flex:1;margin:0}
+.cifb{min-height:0;border-radius:10px;font-weight:600;margin:0 0 8px}.cifb.ok{padding:10px 12px;background:#E6F6EC;color:#14532D}.cifb.no{padding:10px 12px;background:#FDE8E8;color:#991B1B}
 </style>
 </head>
 <body>
@@ -860,8 +866,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.19', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.23.0', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.23.0', 'เช็คชื่อด้วย QR: เลือกวิธีติ๊กรายชื่อ/สแกน QR/พิมพ์รหัส · พิมพ์บัตร QR นักกีฬาจากรหัสประจำตัวนักเรียน'],
   ['1.22.19', 'หน้าบันทึกผลแสดงผู้กดเริ่มแข่งและเวลา · แก้การตั้งค่ารายการล้างเวลาเริ่มของรายการที่ไม่มีคู่'],
   ['1.22.18', 'แสดง “อัปเดตล่าสุดโดย … เวลา …” ในรายงานตัว ส่งรายชื่อ คะแนนรอบ ผลอันดับ ตั้งค่ากีฬา/รายการ/ระบบ และนำเข้ารายชื่อนักเรียน'],
   ['1.22.17', 'PIN ยืนยันในโหมดข้อมูลกลาง: ตั้ง/เปลี่ยน PIN ของตัวเอง · ผู้ดูแลล้าง PIN ได้ · ใส่ผิด 5 ครั้งรอ 1 นาที'],
@@ -2400,7 +2407,7 @@ function vRegister() {
       ${people.filter(p => p.clash).map(p => `<div class="clrow click" data-ath="${c}~${esc(pkey(p))}" tabindex="0"><span class="plink">${esc(p.name)}</span> <small class="muted">${esc(p.cls)}</small><small>${p.cl.slice(0, 2).map(pr => { const [x, y] = Array.isArray(pr) ? pr : [pr.a || pr[0], pr.b || pr[1]]; return x && y ? `${esc(x.label)} ${fmtDate(x.date)} ${esc(x.time)} ↔ ${esc(y.label)} ${esc(y.time)}` : ''; }).join(' · ')}</small></div>`).join('')}</details>` : ''}
     ${nProb ? `<div class="seg mini pfilt"><button data-regpf="" class="${onlyProb ? '' : 'on'}">ทุกคน ${people.length}</button><button data-regpf="1" class="${onlyProb ? 'on' : ''}">มีปัญหา ${nProb}</button></div>` : ''}
     <div class="plist">${shown.map(p => { const bad = p.prob; return `<div class="prow click${bad ? ' bad' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูข้อมูลนักกีฬาและแก้ไขการส่งรายชื่อ"><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="errt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="muted sm">${p.evs.map(id => esc(S.events[id] ? sportName(S.events[id].sport) : '')).filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span></div>`; }).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
-    <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
+    <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="qrcards">พิมพ์บัตร QR คณะนี้</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
   <section class="card"><h2>ภาพรวมการส่งรายชื่อทุกคณะสี</h2><p class="muted sm">ส่งครบ / รายการที่คณะสีนั้นลงแข่ง (ไม่นับรายการที่ไม่ได้อยู่ในสาย)</p>${matrix}</section>`;
 }
 
@@ -2441,7 +2448,7 @@ function vCheckin() {
     : sec('later', d < todayStr() ? 'นัดในวันนั้น' : 'นัดทั้งหมดของวัน', '', [...g.now, ...g.soon, ...g.live, ...g.later]) + sec('done', 'จบแล้ว', '', g.done, d < todayStr());
   return `<section class="hero"><h1>รายงานตัวนักกีฬา</h1><p class="muted">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${mins} นาที ไม่มาภายใน 10 นาทีหลังเวลาแข่งถือว่าสละสิทธิ์ · ตัวเลขคือ รายงานตัวแล้ว/ตัวจริงขั้นต่ำ${editOn ? ' · แตะนัดเพื่อเช็คชื่อ' : ''}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-ciday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div></div>
-  <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button></div>
+  <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button>${anyEdit() ? '<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาทุกคณะ</button>' : ''}</div>
   <section class="card">${body || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>'}
   ${others.length ? `<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>${others.map(ev => `<div class="mrow g2 ci${editOn && canScore(ev.sport) ? ' click' : ''}" ${editOn && canScore(ev.sport) ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ev.time || '–')}</b></span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
     <span class="span3 cimany">${(ev.teams || []).map(c => { const n = (ev.ci?.[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span><span class="ncol"></span></div>`).join('')}` : ''}</section>`;
@@ -3117,7 +3124,7 @@ const TXSEC = window.CSS?.supports?.('-webkit-text-security', 'disc');
 function fixPins(root) { root.querySelectorAll('input.pinf').forEach(x => { if (!TXSEC) { x.type = 'password'; x.autocomplete = 'new-password'; } x.value = ''; }); setTimeout(() => root.querySelectorAll('input.pinf').forEach(x => { if (document.activeElement !== x) x.value = ''; }), 300); }
 new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1 && (n.matches?.('input.pinf') || n.querySelector?.('input.pinf'))) fixPins(n.matches('input.pinf') ? n.parentNode : n); }))).observe(document.getElementById('modal'), { childList: true, subtree: true });
 function modal(html, onMount) { mDirty = false; $('#modal').innerHTML = html; $('#modal').hidden = false; onMount && onMount(); const f = [...document.querySelectorAll('#modal input, #modal select, #modal textarea, #modal button')].find(x => !x.disabled && !x.readOnly && x.type !== 'hidden'); f && setTimeout(() => { if (!$('#modal').contains(document.activeElement) || document.activeElement === document.body) f.focus(); }, 30); }
-function closeModal() { mDirty = false; $('#modal').hidden = true; $('#modal').innerHTML = ''; }
+function closeModal() { if (typeof stopScan === 'function') stopScan(); mDirty = false; $('#modal').hidden = true; $('#modal').innerHTML = ''; }
 /* ปิดหน้าต่าง: ถ้ามีข้อมูลที่พิมพ์ค้างไว้ ถามก่อน */
 function tryClose() {
   if ($('#modal').hidden) return;
@@ -3129,7 +3136,7 @@ function tryClose() {
 const NODIRTY = '#stpick,[type=search],#rsc,[data-nodirty]';
 ['input', 'change'].forEach(t => $('#modal').addEventListener(t, e => { if (!e.target.matches(NODIRTY)) { mDirty = true; $('#dirtybar')?.remove(); } }, true));
 /* กันกดซ้ำ: ฟอร์มส่งได้ครั้งเดียวในช่วงสั้น ๆ และปุ่มหลักกดซ้ำเร็ว ๆ ไม่ได้ */
-$('#modal').addEventListener('submit', e => { const f = e.target; if (f.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } f.dataset.busy = '1'; setTimeout(() => { if (f.querySelector('.err')?.textContent) delete f.dataset.busy; }, 0); setTimeout(() => { delete f.dataset.busy; }, 900); }, true);
+$('#modal').addEventListener('submit', e => { const f = e.target; if (f.dataset.nobusy != null) return; if (f.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } f.dataset.busy = '1'; setTimeout(() => { if (f.querySelector('.err')?.textContent) delete f.dataset.busy; }, 0); setTimeout(() => { delete f.dataset.busy; }, 900); }, true);
 $('#modal').addEventListener('click', e => { const b = e.target.closest('button.btn:not(.ghost):not([type=submit])'); if (!b || b.closest('form') && b.type !== 'button') return; if (b.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } b.dataset.busy = '1'; setTimeout(() => { if ([...(b.closest('.protf, .cfbox, .dlg')?.querySelectorAll('.err') || [])].some(x => x.textContent.trim())) delete b.dataset.busy; }, 0); setTimeout(() => { delete b.dataset.busy; }, 900); }, true);
 function ask(msg, yes, label = 'ยืนยัน') {
   modal(`<div class="dlg"><h3>${esc(msg)}</h3><div class="actions"><button class="btn danger" id="yes">${esc(label)}</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`, () => $('#yes').onclick = () => { closeModal(); yes(); });
@@ -3577,6 +3584,60 @@ function openRoster(eid, focusKey) {
 function resetModalHandlers() { mDirty = false; $('#modal').oninput = null; $('#modal').onchange = null; $('#modal').onclick = null; }
 
 /* ---- check-in ---- */
+/* ===================== เช็คชื่อด้วย QR / รหัสนักเรียน =====================
+   วิธีเช็คชื่อ: ติ๊กรายชื่อ · สแกน QR (กล้องมือถือ) · พิมพ์รหัส — จำวิธีที่เลือกไว้ในเครื่อง
+   QR บนบัตรเก็บ “รหัสประจำตัวนักเรียน” อย่างเดียว · สแกนบัตรนักเรียนที่มี QR/บาร์โค้ดรหัสเดียวกันได้ */
+const CI_METHODS = [['tick', '☑ ติ๊กรายชื่อ'], ['scan', '📷 สแกน QR'], ['type', '⌨ พิมพ์รหัส']];
+function ciMethod() { try { const v = localStorage.getItem('gem-cim'); return CI_METHODS.some(m => m[0] === v) ? v : 'tick'; } catch (e) { return 'tick'; } }
+function setCiMethod(v) { try { localStorage.setItem('gem-cim', v); } catch (e) { } }
+const clsKey = c => { const [g, r] = String(c || '').split('/').map(x => parseInt(x, 10) || 0); return g * 100 + r; };
+const normSid = v => String(v || '').trim().replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
+let SCAN = null; /* { stream, timer, video, det, onCode } */
+function stopScan() { if (!SCAN) return; try { clearTimeout(SCAN.timer); SCAN.stream?.getTracks().forEach(t => t.stop()); } catch (e) { } SCAN = null; }
+let JSQR_P = null;
+function loadJsQR() { if (window.jsQR) return Promise.resolve(window.jsQR); if (JSQR_P) return JSQR_P;
+  JSQR_P = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; s.onload = () => window.jsQR ? res(window.jsQR) : rej(new Error('jsQR')); s.onerror = () => { JSQR_P = null; rej(new Error('โหลดตัวอ่าน QR ไม่ได้ ตรวจอินเทอร์เน็ต')); }; document.head.appendChild(s); });
+  return JSQR_P; }
+async function startScan(video, onCode, onStatus) {
+  stopScan();
+  if (!navigator.mediaDevices?.getUserMedia) { onStatus('อุปกรณ์นี้เปิดกล้องในเว็บไม่ได้ ใช้วิธี “พิมพ์รหัส” แทน', true); return; }
+  if (!location.protocol.startsWith('https') && !/^(localhost|127\.)/.test(location.hostname)) { onStatus('ต้องเปิดเว็บผ่าน https จึงจะใช้กล้องได้', true); return; }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
+  catch (e) { onStatus(e?.name === 'NotAllowedError' ? 'ไม่ได้รับอนุญาตให้ใช้กล้อง: กดรูปกุญแจ/การตั้งค่าเว็บ แล้วอนุญาตกล้อง' : 'เปิดกล้องไม่ได้ (' + (e?.name || e) + ')', true); return; }
+  if (!video.isConnected) { stream.getTracks().forEach(t => t.stop()); return; }
+  video.srcObject = stream; video.setAttribute('playsinline', ''); video.muted = true; try { await video.play(); } catch (e) { }
+  const me = SCAN = { stream, video, onCode }; let det = null, jsqr = null;
+  try { if ('BarcodeDetector' in window) { const f = await BarcodeDetector.getSupportedFormats(); if (f.includes('qr_code')) det = new BarcodeDetector({ formats: f.filter(x => ['qr_code', 'code_128', 'code_39', 'ean_13', 'itf', 'codabar'].includes(x)) }); } } catch (e) { det = null; }
+  if (!det) { onStatus('กำลังโหลดตัวอ่าน QR…'); try { jsqr = await loadJsQR(); } catch (e) { onStatus(e.message, true); return; } }
+  if (SCAN !== me) return; onStatus('เล็งกล้องไปที่ QR บนบัตร');
+  const cv = document.createElement('canvas'); const cx = cv.getContext('2d', { willReadFrequently: true });
+  const tick = async () => {
+    if (SCAN !== me) return; if (!video.isConnected || $('#modal').hidden) { stopScan(); return; }
+    try { if (video.readyState >= 2) {
+      let code = '';
+      if (det) { const r = await det.detect(video); code = r[0]?.rawValue || ''; }
+      else { const w = Math.min(640, video.videoWidth), h = Math.round(video.videoHeight * w / video.videoWidth); if (w && h) { cv.width = w; cv.height = h; cx.drawImage(video, 0, 0, w, h); const r = jsqr(cx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); code = r?.data || ''; } }
+      if (code) onCode(code);
+    } } catch (e) { }
+    if (SCAN === me) me.timer = setTimeout(tick, det ? 120 : 180);
+  };
+  tick();
+}
+function beep(ok) { try { navigator.vibrate?.(ok ? 60 : [80, 60, 80]); const A = window.__ac || (window.__ac = new (window.AudioContext || window.webkitAudioContext)()); const o = A.createOscillator(), g = A.createGain(); o.frequency.value = ok ? 1250 : 330; g.gain.value = .08; o.connect(g); g.connect(A.destination); o.start(); o.stop(A.currentTime + (ok ? .09 : .25)); } catch (e) { } }
+
+/* บัตร QR นักกีฬา: c = คณะ (null = ทุกคณะ) */
+function printQRCards(c) {
+  const cols = c == null ? COLORS.map((_, i) => i) : [c]; const cards = [];
+  cols.forEach(ci => { const seen = new Map(); Object.entries(S.rosters).forEach(([id, r]) => { if (!id.endsWith('__' + ci)) return; (r.players || []).forEach(p => { const sid = normSid(p.sid); if (!sid || !normName(p.name)) return; const k = sid; const ev = S.events[id.split('__')[0]];
+      if (!seen.has(k)) seen.set(k, { c: ci, sid, name: p.name, cls: p.cls || '', evs: [] }); if (ev) seen.get(k).evs.push(sportName(ev.sport)); }); });
+    [...seen.values()].sort((a, b) => clsKey(a.cls) - clsKey(b.cls) || String(a.cls).localeCompare(String(b.cls)) || a.name.localeCompare(b.name, 'th')).forEach(x => cards.push(x)); });
+  if (!cards.length) { toast('ยังไม่มีนักกีฬาที่มีรหัสประจำตัว (เลือกจากรายชื่อนักเรียน) ในคณะนี้'); return; }
+  const card = x => `<div class="qc" style="--tc:${COLORS[x.c].c}"><div class="qq">${qrSVG(x.sid, 86)}</div><div class="qi"><b class="qn">${esc(x.name)}</b><span>ม.${esc(x.cls)} · ${esc(x.sid)}</span><span class="qcol">คณะ${esc(COLORS[x.c].n)}</span><small>${esc([...new Set(x.evs)].slice(0, 4).join(', '))}</small></div></div>`;
+  const per = 24; const pages = []; for (let i = 0; i < cards.length; i += per) pages.push(cards.slice(i, i + per));
+  printDoc(`บัตร QR นักกีฬา ${c == null ? 'ทุกคณะ' : 'คณะ' + COLORS[c].n}`, pages.map((pg, i) => `<section class="sheet qs">${phead('บัตร QR รายงานตัวนักกีฬา' + (c == null ? '' : ' · คณะ' + COLORS[c].n), `แผ่น ${i + 1}/${pages.length} · ${cards.length} คน`)}<div class="qgrid">${pg.map(card).join('')}</div><p class="small">ตัดตามเส้น · ใช้สแกนที่จุดรายงานตัว · QR เก็บรหัสประจำตัวนักเรียน</p></section>`).join(''),
+    `.qs{padding:8mm 8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
+}
+
 function openCheckin(eid, mid) {
   const ev = evById(eid); const m = mid ? mOf(ev, mid) : null;
   if (ciEarly(ev, m)) { toast(ciEarlyMsg(ev, m)); return; }
@@ -3589,11 +3650,32 @@ function openCheckin(eid, mid) {
       ${ps.length ? `<label class="ck all"><input type="checkbox" data-all="${k}" ${ps.every(p => set.has(p.id)) ? 'checked' : ''}> ทั้งทีม</label>` + ps.map(p => { const ban = isBanned(c, p, B); return `<label class="ck${ban ? ' banned' : ''}"><input type="checkbox" data-ck="${k}|${p.id}" ${set.has(p.id) ? 'checked' : ''} ${ban ? 'disabled' : ''}> <span class="num muted">${esc(p.num || '')}</span> ${esc(p.name)} <small class="muted">${esc(p.cls)}${ban ? ' · ถูกตัดสิทธิ์' : ''}</small></label>`; }).join('') : '<p class="muted sm">คณะนี้ยังไม่ส่งรายชื่อ</p>'}
       ${m && !sideWin(m) && canScore(ev.sport) ? `<button class="btn sm danger" data-forfeit="${k}">${COLORS[c].n} สละสิทธิ์</button>` : ''}</div>`;
   };
-  const draw = () => {
-    $('#modal').innerHTML = `<div class="dlg wide"><h3>รายงานตัว · ${esc(evTitle(ev))}${m ? ` · คู่ ${m.no} ${esc(m.time || '')}` : ''}</h3><div class="cigrid">${sides.map(col).join('')}</div>
-      ${updLine((m || ev).ciBy, (m || ev).ciAt, 'รายงานตัวล่าสุดโดย')}<p class="err" id="cierr">${ciErr}</p><div class="actions"><button class="btn" id="saveci">บันทึกการรายงานตัว</button><button class="btn ghost" data-close>ปิด</button></div></div>`;
+  let meth = ciMethod(); let dirty = 0; const last = new Map(); let fb = null;
+  /* หา sid ในรายชื่อทุกฝั่งของคู่นี้ */
+  const findSid = code => { const sid = normSid(code); if (!sid) return null; for (const [k, c] of sides) { if (c < 0) continue; const p = (rosterOf(eid, c).players || []).find(p => normSid(p.sid) === sid || (p.num && normSid(p.num) === sid && false)); if (p) return { k, c, p }; } return { sid }; };
+  const onCode = raw => { const sid = normSid(raw); const now = Date.now(); if (last.get(sid) > now - 2500) return; last.set(sid, now);
+    const f = findSid(sid); if (!f) return;
+    if (!f.p) { const st = allStudents().find(x => normSid(x.sid) === sid); fb = { ok: false, t: st ? `${st.name || ((st.pre || '') + (st.fn || '') + ' ' + (st.ln || '')).trim()} (ม.${st.cls}) ไม่อยู่ในรายชื่อ${m ? 'คู่นี้' : 'รายการนี้'}` : `ไม่พบรหัส ${sid} ในรายชื่อ` }; beep(false); drawFb(); return; }
+    if (isBanned(f.c, f.p, bannedSet())) { fb = { ok: false, t: `${f.p.name} ถูกตัดสิทธิ์ รายงานตัวไม่ได้` }; beep(false); drawFb(); return; }
+    const set = new Set(ci[f.k] || []); const was = set.has(f.p.id); set.add(f.p.id); ci[f.k] = [...set]; if (!was) dirty++;
+    fb = { ok: true, t: `${was ? 'รายงานตัวแล้ว: ' : '✓ '}${f.p.name} · ${COLORS[f.c].n}${f.p.num ? ' · เบอร์ ' + f.p.num : ''}`, c: f.c }; beep(true); ciErr = ''; draw(); drawFb(); };
+  const drawFb = () => { const el = $('#cifb'); if (!el) return; el.className = 'cifb ' + (fb ? (fb.ok ? 'ok' : 'no') : ''); el.innerHTML = fb ? `${fb.c != null ? chip(fb.c) + ' ' : ''}${esc(fb.t)}` : ''; };
+  const shell = () => {
+    $('#modal').innerHTML = `<div class="dlg wide cidlg"><h3>รายงานตัว · ${esc(evTitle(ev))}${m ? ` · คู่ ${m.no} ${esc(m.time || '')}` : ''}</h3>
+      <div class="seg mini cimeth">${CI_METHODS.map(([k, n]) => `<button type="button" data-cim="${k}" class="${meth === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      ${meth === 'scan' ? `<div class="ciscan"><video id="civ" playsinline muted></video><div class="ciaim"></div><p class="muted sm" id="cistat">กำลังเปิดกล้อง…</p></div>` : meth === 'type' ? `<form class="citype" id="citf" data-nobusy><label class="fld">รหัสประจำตัวนักเรียน<input id="cit" inputmode="numeric" autocomplete="off" placeholder="พิมพ์หรือใช้เครื่องอ่านบาร์โค้ด แล้วกด Enter"></label><button class="btn">รายงานตัว</button></form>` : ''}
+      ${meth !== 'tick' ? '<div class="cifb" id="cifb" aria-live="polite"></div>' : ''}
+      <div id="cibody"></div></div>`;
+    if (meth === 'scan') startScan($('#civ'), onCode, (t, bad) => { const el = $('#cistat'); if (el) { el.textContent = t; el.classList.toggle('err', !!bad); } });
+    if (meth === 'type') { $('#citf').onsubmit = e2 => { e2.preventDefault(); const v = $('#cit').value; $('#cit').value = ''; last.delete(normSid(v)); onCode(v); $('#cit').focus(); }; setTimeout(() => $('#cit')?.focus(), 50); }
+    drawFb(); draw();
   };
-  $('#modal').hidden = false; draw();
+  const draw = () => {
+    const b = $('#cibody'); if (!b) return;
+    b.innerHTML = `<div class="cigrid">${sides.map(col).join('')}</div>
+      ${dirty ? `<p class="qwarn sm">สแกน/พิมพ์เพิ่ม ${dirty} คน ยังไม่บันทึก กด “บันทึกการรายงานตัว”</p>` : ''}${updLine((m || ev).ciBy, (m || ev).ciAt, 'รายงานตัวล่าสุดโดย')}<p class="err" id="cierr">${ciErr}</p><div class="actions"><button class="btn" id="saveci">บันทึกการรายงานตัว</button><button class="btn ghost" data-close>ปิด</button></div>`;
+  };
+  $('#modal').hidden = false; shell();
   $('#modal').onchange = e => {
     const a = e.target.dataset.all, k = e.target.dataset.ck;
     ciErr = '';
@@ -3601,7 +3683,9 @@ function openCheckin(eid, mid) {
     if (k) { const [s, id] = k.split('|'); const set = new Set(ci[s] || []); e.target.checked ? set.add(id) : set.delete(id); ci[s] = [...set]; draw(); }
   };
   $('#modal').onclick = e => {
-    if (e.target.id === 'saveci') { const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
+    const mb = e.target.closest('[data-cim]'); if (mb) { stopScan(); meth = mb.dataset.cim; setCiMethod(meth); fb = null; shell(); return; }
+    if (e.target.closest('[data-close]')) stopScan();
+    if (e.target.id === 'saveci') { stopScan(); const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
       if (!n && !ci0) { ciErr = sides.some(([k, c]) => c >= 0 && (rosterOf(eid, c).players || []).length) ? 'ยังไม่ได้เลือกนักกีฬา: ติ๊กชื่อนักกีฬาที่มารายงานตัว (หรือ “ทั้งทีม”) ก่อนกดบันทึก' : 'ยังบันทึกไม่ได้: ยังไม่มีคณะสีไหนส่งรายชื่อนักกีฬา'; draw(); $('#cierr')?.scrollIntoView({ block: 'nearest' }); return; }
       if (!n && ci0) { ask('ไม่ได้เลือกนักกีฬาเลย ยืนยันล้างการรายงานตัวของคู่นี้ทั้งหมด?', () => { recUndo('ล้างรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } })); }, 'ล้างการรายงานตัว'); return; }
       closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } })); return; }
@@ -4434,6 +4518,8 @@ document.addEventListener('click', e => {
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
     const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
   else if (d.act === 'mypin') openMyPin();
+  else if (d.act === 'qrcards') printQRCards(UI.regColor);
+  else if (d.act === 'qrcardsall') printQRCards(null);
   else if (d.act === 'bknow') { takeSnap(true); downloadBackup(); }
   else if (d.act === 'bklater') { try { sessionStorage.setItem('gem-bklater', todayISO()); } catch (e) { } render(); }
   else if (d.act === 'gorules') { UI.teamTab = 'rules'; location.hash = 'teams'; }
