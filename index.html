@@ -881,8 +881,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.24.0', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.24.1', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.24.1', 'บัตรห้อยคอ: ชื่อ/สกุลแยกบรรทัด ไม่มีคำนำหน้า · ด้านหลังมีกำหนดการ แผนที่สนาม และความหมายรหัสบัตร · แก้ไขข้อมูลนักเรียนได้จากหน้าประวัติและหน้านักเรียน'],
   ['1.24.0', 'หน้าประวัตินักกีฬา (ผลงาน ผลการแข่ง วินัย รูป) · บัตรนักกีฬาแบบห้อยคอ · เกียรติบัตร · ตารางนักกีฬาค้นหาและเลือกพิมพ์บัตร · แผนที่สนามเต็มความกว้าง · “ถัดไป” เฉพาะคู่ที่ใกล้เวลา'],
   ['1.23.0', 'เช็คชื่อด้วย QR: เลือกวิธีติ๊กรายชื่อ/สแกน QR/พิมพ์รหัส · พิมพ์บัตร QR นักกีฬาจากรหัสประจำตัวนักเรียน'],
   ['1.22.19', 'หน้าบันทึกผลแสดงผู้กดเริ่มแข่งและเวลา · แก้การตั้งค่ารายการล้างเวลาเริ่มของรายการที่ไม่มีคู่'],
@@ -2391,7 +2392,7 @@ function regPlist(c, shown) {
   const nSel = shown.filter(p => sel.has(c + '~' + pkey(p))).length; const allOn = list.length && list.every(p => sel.has(c + '~' + pkey(p)));
   return `<div class="pselbar"><label class="ck"><input type="checkbox" data-pselall ${allOn ? 'checked' : ''}> เลือกทั้งหมด${q ? 'ที่ค้นพบ' : ''} (${list.length})</label>
     <span class="muted sm">เลือกแล้ว ${nSel} คน${nSel ? ' · <a href="#" data-pselclr>ล้าง</a>' : ''}</span>
-    <span class="pprint"><select id="cardstyle" aria-label="แบบบัตร"><option value="badge" ${UI.cardStyle !== 'qr' ? 'selected' : ''}>บัตรนักกีฬา (ห้อยคอ 4 ใบ/แผ่น)</option><option value="qr" ${UI.cardStyle === 'qr' ? 'selected' : ''}>บัตร QR เล็ก (24 ใบ/แผ่น)</option></select>
+    <span class="pprint"><select id="cardstyle" aria-label="แบบบัตร"><option value="badge" ${!UI.cardStyle || UI.cardStyle === 'badge' ? 'selected' : ''}>บัตรห้อยคอ หน้า-หลัง (4 ใบ/แผ่น)</option><option value="badgef" ${UI.cardStyle === 'badgef' ? 'selected' : ''}>บัตรห้อยคอ ด้านหน้าอย่างเดียว</option><option value="qr" ${UI.cardStyle === 'qr' ? 'selected' : ''}>บัตร QR เล็ก (24 ใบ/แผ่น)</option></select>
     <button class="btn sm" data-act="printsel" ${nSel ? '' : 'disabled'}>พิมพ์ที่เลือก ${nSel || ''}</button></span></div>
     <div class="plist">${list.map(p => { const bad = p.prob; const k = c + '~' + pkey(p); const sid = sidOf(p); return `<div class="prow click${bad ? ' bad' : ''}${sel.has(k) ? ' on' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูประวัตินักกีฬา"><label class="psel" data-psel><input type="checkbox" data-pk="${esc(k)}" ${sel.has(k) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></label><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="warnt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="num muted sm">${esc(sid)}</span><span class="muted sm">${[...p.sports].map(sportName).join(', ')}${p.ath.size ? (p.sports.size ? ', ' : '') + 'กรีฑา ' + p.ath.size : ''}</span></div>`; }).join('') || '<p class="muted sm">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>'}</div>`;
 }
@@ -2599,7 +2600,7 @@ function studentTable(list, used) {
   if (!list.length) return `<p class="muted">${allStudents().length ? 'ไม่พบนักเรียนตามเงื่อนไข' : 'ยังไม่มีรายชื่อนักเรียน กด “นำเข้าไฟล์ Excel/CSV” เพื่อเริ่ม'}</p>`;
   return `<div class="scroll"><table class="std sttab"><thead><tr><th>ห้อง</th><th>เลขที่</th><th>เลขประจำตัว</th><th>ชื่อ-สกุล</th><th>เพศ</th><th>คณะสี</th><th>ลงแข่ง</th>${isAdmin() ? '<th></th>' : ''}</tr></thead><tbody>
     ${list.slice(0, 300).map(st => { const c = colorOfRoom(st.cls); const u = (st.sid && used[st.sid]) || used[normName(`${st.fn} ${st.ln}`) + '|' + st.cls] || 0;
-      return `<tr><td class="num">ม.${st.cls}</td><td class="num">${st.no}</td><td class="num">${esc(st.sid)}</td><td>${esc(stName(st))}</td><td>${esc(st.sex)}</td><td>${c >= 0 ? chip(c) : '<span class="muted">—</span>'}</td><td class="num">${u ? u + ' รายการ' : ''}</td>${isAdmin() ? `<td><button class="x" data-rmst="${st.cls}|${esc(st.sid || st.no)}" aria-label="ลบ">×</button></td>` : ''}</tr>`; }).join('')}</tbody></table></div>
+      return `<tr><td class="num">ม.${st.cls}</td><td class="num">${st.no}</td><td class="num">${esc(st.sid)}</td><td>${esc(stName(st))}</td><td>${esc(st.sex)}</td><td>${c >= 0 ? chip(c) : '<span class="muted">—</span>'}</td><td class="num">${u ? u + ' รายการ' : ''}</td>${isAdmin() ? `<td class="nowrap"><button class="btn sm ghost" data-stedit="${esc(st.sid || '')}|${st.cls}|${esc(stName(st))}">แก้ไข</button> <button class="x" data-rmst="${st.cls}|${esc(st.sid || st.no)}" aria-label="ลบ">×</button></td>` : ''}</tr>`; }).join('')}</tbody></table></div>
     ${list.length > 300 ? `<p class="muted sm">แสดง 300 จาก ${list.length.toLocaleString()} คน เลือกห้องหรือค้นหาเพื่อดูส่วนที่เหลือ</p>` : ''}`;
 }
 async function importStudentsFile(file) {
@@ -2629,6 +2630,44 @@ async function importStudentsFile(file) {
     logIt('นำเข้ารายชื่อนักเรียน', `${Object.values(data).reduce((a, l) => a + l.length, 0)} คน`); toast('นำเข้ารายชื่อนักเรียนแล้ว'); render();
   };
 }
+/* แก้ไขข้อมูลนักเรียน: แก้ในรายชื่อนักเรียน แล้วอัปเดตรายชื่อนักกีฬาทุกรายการที่มีรหัสเดียวกัน (และย้ายรูปถ้าเปลี่ยนรหัส) */
+function findStudent(sid, cls, name) {
+  const n = normSid(sid);
+  for (const [id, d] of Object.entries(S.students || {})) { const i = (d.list || []).findIndex(st => (n && normSid(st.sid) === n) || (!n && cls && d.cls === cls && normName(stName(st)) === normName(name))); if (i >= 0) return { id, i, st: { ...d.list[i], cls: d.cls } }; }
+  return null;
+}
+function openStudentEdit(sid, cls, name, back) {
+  if (!isAdmin()) { toast('เฉพาะผู้ดูแลที่แก้ข้อมูลนักเรียนได้'); return; }
+  const f = findStudent(sid, cls, name); if (!f) { toast('ไม่พบนักเรียนคนนี้ในรายชื่อนักเรียน (อาจพิมพ์ชื่อเองตอนส่งรายชื่อ)'); return; }
+  const st = f.st; const rooms = Object.values(S.students || {}).map(d => d.cls).sort(clsSort); const nUse = Object.values(S.rosters).reduce((n, r) => n + (r.players || []).filter(p => normSid(p.sid) === normSid(st.sid)).length, 0);
+  modal(`<form class="dlg" id="stef"><h3>แก้ไขข้อมูลนักเรียน</h3>
+    <div class="ov"><label class="fld">คำนำหน้า<select id="se_p">${['เด็กชาย', 'เด็กหญิง', 'นาย', 'นางสาว'].map(x => `<option ${x === st.pre ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="fld">ชื่อ<input id="se_f" value="${esc(st.fn || '')}" required></label><label class="fld">นามสกุล<input id="se_l" value="${esc(st.ln || '')}"></label></div>
+    <div class="ov"><label class="fld">ห้อง<select id="se_c">${rooms.map(r => `<option value="${r}" ${r === st.cls ? 'selected' : ''}>ม.${r}${colorOfRoom(r) >= 0 ? ' · ' + COLORS[colorOfRoom(r)].n : ''}</option>`).join('')}</select></label><label class="fld">เลขที่<input id="se_n" type="number" min="1" value="${esc(st.no ?? '')}"></label><label class="fld">เลขประจำตัว<input id="se_s" value="${esc(st.sid || '')}" inputmode="numeric"></label></div>
+    <label class="fld">เพศ<select id="se_x"><option ${st.sex === 'ชาย' ? 'selected' : ''}>ชาย</option><option ${st.sex === 'หญิง' ? 'selected' : ''}>หญิง</option></select></label>
+    ${nUse ? `<p class="muted sm">นักเรียนคนนี้อยู่ในรายชื่อนักกีฬา ${nUse} รายการ ระบบจะแก้ชื่อ ห้อง และรหัสในรายการเหล่านั้นให้ด้วย ถ้าย้ายห้องไปคณะอื่น รายการเดิมจะขึ้น “ต้องแก้”</p>` : ''}
+    ${updLine(S.students[f.id]?.editBy, S.students[f.id]?.editAt)}
+    <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" id="se_back">${back ? 'กลับ' : 'ยกเลิก'}</button></div></form>`);
+  $('#se_back').onclick = () => back ? back() : closeModal();
+  $('#stef').onsubmit = async e => { e.preventDefault();
+    const nw = { ...st, pre: $('#se_p').value, fn: $('#se_f').value.trim(), ln: $('#se_l').value.trim(), no: +$('#se_n').value || st.no, sid: $('#se_s').value.trim(), sex: $('#se_x').value }; const ncls = $('#se_c').value; delete nw.cls;
+    if (!nw.fn) { $('#err').textContent = 'ใส่ชื่อ'; return; }
+    if (nw.sid && normSid(nw.sid) !== normSid(st.sid) && allStudents().some(x => normSid(x.sid) === normSid(nw.sid))) { $('#err').textContent = 'เลขประจำตัวนี้มีนักเรียนคนอื่นใช้แล้ว'; return; }
+    const oldId = f.id, newId = `g${ncls.replace('/', '-')}`;
+    const od = clone(S.students[oldId]); od.list.splice(f.i, 1);
+    if (newId === oldId) { od.list.splice(f.i, 0, nw); od.list.sort((a, b) => a.no - b.no); await put('students', oldId, od); }
+    else { const nd = clone(S.students[newId] || { cls: ncls, list: [] }); nd.list.push(nw); nd.list.sort((a, b) => a.no - b.no); await put('students', oldId, od); await put('students', newId, nd); }
+    /* อัปเดตรายชื่อนักกีฬาที่ใช้รหัสเดิม */
+    const oldSid = normSid(st.sid); const oldKeyPh = {}; let n = 0;
+    for (const [rid, r] of Object.entries(S.rosters)) { if (!(r.players || []).some(p => oldSid && normSid(p.sid) === oldSid)) continue; const r2 = clone(r);
+      r2.players.forEach(p => { if (normSid(p.sid) !== oldSid) return; p.name = stName(nw); p.cls = ncls; p.sid = nw.sid; p.sex = nw.sex; n++; }); r2.at = Date.now(); r2.by = ME.id || ''; await put('rosters', rid, r2); }
+    if (oldSid && normSid(nw.sid) !== oldSid) { try { const img = await getPhoto('s' + oldSid); if (img) { await setPhoto('s' + normSid(nw.sid), img); await setPhoto('s' + oldSid, null); } } catch (x) { } }
+    logIt('แก้ไขข้อมูลนักเรียน', `${stName(st)} ม.${st.cls} → ${stName(nw)} ม.${ncls}${n ? ` · แก้รายชื่อนักกีฬา ${n} รายการ` : ''}`);
+    toast(`บันทึกแล้ว${n ? ` · แก้รายชื่อนักกีฬา ${n} รายการ` : ''}`);
+    const c = colorOfRoom(ncls); const k = normName(stName(nw)) + '|' + ncls;
+    if (back && c >= 0 && athleteIndex(c)[k]) openAthlete(c, k); else closeModal();
+  };
+}
+
 function openAddStudent() {
   modal(`<form class="dlg" id="asf"><h3>เพิ่มนักเรียน</h3>
     <div class="ov"><label class="fld">ห้อง<input id="as_c" placeholder="3/6" required></label><label class="fld">เลขที่<input id="as_n" type="number" min="1"></label><label class="fld">เลขประจำตัว<input id="as_s"></label></div>
@@ -2695,24 +2734,44 @@ function logoSrc() { return document.querySelector('.brand img')?.src || ''; }
 function spriteDefs(ids) { return `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${[...new Set(ids)].map(id => document.getElementById(id)?.outerHTML || '').join('')}</svg>`; }
 function dayRange() { const d = days(); if (!d.length) return ''; const a = new Date(d[0]), b = new Date(d[d.length - 1]); const mo = x => x.toLocaleDateString('th-TH', { month: 'short' }); const y = b.getFullYear() + 543;
   return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${mo(b)} ${y}` : `${a.getDate()} ${mo(a)} – ${b.getDate()} ${mo(b)} ${y}`; }
+const stripPre = n => String(n || '').trim().replace(/^(เด็กชาย|เด็กหญิง|ด\.\s?ช\.|ด\.\s?ญ\.|นางสาว|น\.\s?ส\.|นาย|นาง)\s*/, '');
+function splitName(n) { const t = stripPre(n).split(/\s+/); return [t[0] || '', t.slice(1).join(' ')]; }
+/* รหัสประเภทบัตร (แบบบัตรกีฬาระดับชาติ) */
+const BADGE_CODES = [['A', 'นักกีฬา', 'Athlete'], ['C', 'ครูคณะสี / ผู้ฝึกสอน', 'Coach'], ['J', 'กรรมการตัดสิน', 'Judge'], ['O', 'กรรมการจัดการแข่งขัน / บันทึกผล', 'Official'], ['M', 'ประชาสัมพันธ์ / สื่อ', 'Media'], ['V', 'แขกผู้มีเกียรติ', 'VIP']];
 async function printBadges(list, style = 'badge') {
   list = list.filter(x => athleteIndex(x.c)[x.key]); if (!list.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; }
   if (style === 'qr') { printQRList(list); return; }
-  toast('กำลังเตรียมบัตร…');
+  const both = style !== 'badgef'; toast('กำลังเตรียมบัตร…');
   const ids = list.map(x => photoId(x.c, x.key)); const ph = await getPhotos(ids); const logo = logoSrc(); const icons = new Set();
-  const card = (x, i) => { const a = athleteIndex(x.c)[x.key]; const sid = athSid(x.c, x.key); const k = COLORS[x.c]; const img = ph[ids[i]];
+  const vIdx = name => venuesList().find(v => v.name === name);
+  const front = (x, i) => { const a = athleteIndex(x.c)[x.key]; const sid = athSid(x.c, x.key); const k = COLORS[x.c]; const img = ph[ids[i]]; const [fn, ln] = splitName(a.name);
     const sps = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean))]; sps.forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); icons.add('gem-' + x.c); icons.add('gg' + x.c);
-    const evL = [...new Set(a.evs.filter(id => S.events[id]).map(id => evTitle(evById(id))))];
     return `<div class="bd" style="--tc:${k.c}">
       <div class="bdh">${logo ? `<img src="${logo}" alt="">` : ''}<div><b>${esc(evName())} ${esc(evYear())}</b><span>${esc(evSchool())}</span><span>${esc(dayRange())}</span></div></div>
       <div class="bdc"><svg class="g" viewBox="0 0 24 24"><use href="#gem-${x.c}"/></svg><b>คณะ${esc(k.n)}</b><span class="cat">A</span></div>
-      <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">นักกีฬา · ATHLETE</span><b class="nm">${esc(a.name)}</b><span>ชั้น ม.${esc(a.cls)}</span>${sid ? `<span class="sid">เลขประจำตัว ${esc(sid)}</span>` : ''}</div></div>
-      <div class="bdt">ชนิดกีฬาที่ลงแข่ง</div><div class="bds">${sps.slice(0, 6).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>
-      <div class="bde">${esc(evL.slice(0, 4).join(' · '))}${evL.length > 4 ? ` และอีก ${evL.length - 4}` : ''}</div>
-      <div class="bdf"><div class="qr">${sid ? qrSVG(sid, 90) : ''}</div><div><b>บัตรประจำตัวนักกีฬา</b><span>ใช้แสดงต่อกรรมการเมื่อรายงานตัว</span><span>หมายเลขบัตร ${esc(sid || '-')}</span></div></div>
+      <div class="bdm"><div class="ph">${img ? `<img src="${img}" alt="">` : PH_SIL}</div><div class="who"><span class="role">นักกีฬา · ATHLETE</span><b class="nm">${esc(fn)}</b><b class="nm2">${esc(ln)}</b><span>ชั้น ม.${esc(a.cls)}</span>${sid ? `<span class="sid">เลขประจำตัว ${esc(sid)}</span>` : ''}</div></div>
+      <div class="bdt">ชนิดกีฬาที่ลงแข่ง</div><div class="bds">${sps.slice(0, 8).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>
+      <div class="bdf"><div class="qr">${sid ? qrSVG(sid, 90) : ''}</div><div><b>บัตรประจำตัวนักกีฬา</b><span>แสดงต่อกรรมการเมื่อรายงานตัว</span><span>หมายเลขบัตร ${esc(sid || '-')}</span>${both ? '<span>รายละเอียดการแข่งขันอยู่ด้านหลัง</span>' : ''}</div></div>
       <div class="bdbar"></div></div>`; };
-  const cards = list.map(card); const pages = []; for (let i = 0; i < cards.length; i += 4) pages.push(cards.slice(i, i + 4));
-  printDoc(`บัตรนักกีฬา ${list.length} ใบ`, spriteDefs([...icons]) + pages.map(pg => `<section class="sheet bsheet"><div class="bgrid">${pg.join('')}</div></section>`).join(''), BADGE_CSS);
+  const back = x => { if (!x) return '<div class="bd blank"></div>'; const a = athleteIndex(x.c)[x.key]; const k = COLORS[x.c]; const [fn, ln] = splitName(a.name);
+    const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)).sort((p, q) => (p.date || '').localeCompare(q.date || ''));
+    const vs = []; const vNo = n => { if (!n) return 0; let i = vs.findIndex(v => v.name === n); if (i < 0) { vs.push({ name: n, sp: new Set() }); i = vs.length - 1; } return i + 1; };
+    const rows = evs.map(ev => { const sl = evSlots(ev.id, ev, x.c, false).sort((p, q) => (p.date + p.time).localeCompare(q.date + q.time)); const own = (ev.matches || []).filter(m => { const t = teamsOf(ev, m); return t.a === x.c || t.b === x.c; });
+      const vn = sl[0]?.venue || (own[0] && venueOf(ev, own[0])) || ev.venue || ''; const no = vNo(vn); if (no) vs[no - 1].sp.add(sportName(ev.sport));
+      const when = sl.length ? sl.slice(0, 2).map(t => `${fmtDate(t.date)} ${t.time}`).join(', ') + (sl.length > 2 ? ` +${sl.length - 2}` : '') : (own.length || hasResults(ev) ? 'แข่งครบแล้ว' : 'รอกำหนดเวลา');
+      return `<tr><td>${esc(sportName(ev.sport))} ${esc(ev.label)}</td><td class="nw">${esc(when)}</td><td class="c">${no ? `<i class="vn">${no}</i>` : ''}</td></tr>`; }).join('');
+    const pins = vs.map((v, i) => { const p = pinOf(vIdx(v.name)); return p ? `<i class="vp" style="left:${p[0]}%;top:${p[1]}%">${i + 1}</i>` : ''; }).join('');
+    return `<div class="bd bk" style="--tc:${k.c}"><div class="bkh"><b>${esc(fn)} ${esc(ln)}</b><span>คณะ${esc(k.n)} · ม.${esc(a.cls)}</span></div>
+      <div class="bks"><div class="bkt">กำหนดการแข่งขัน</div><table class="bkr"><tbody>${rows || '<tr><td>ยังไม่มีรายการ</td></tr>'}</tbody></table></div>
+      <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)} <small>(${esc([...v.sp].join(', '))})</small>${pinOf(vIdx(v.name)) ? '' : ' <small>· ไม่มีหมุด</small>'}</span>`).join('') || '<span>-</span>'}</div></div>
+      <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t, e]) => `<span class="${c === 'A' ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">แถบสีบนบัตร = สีของคณะ · QR ด้านหน้า = เลขประจำตัวนักเรียน ใช้สแกนรายงานตัว</div></div>
+      <div class="bkf">บัตรนี้เป็นของ${esc(evSchool())} หากพบโปรดส่งคืนกองอำนวยการ · ห้ามให้ผู้อื่นใช้แทน</div><div class="bdbar"></div></div>`; };
+  const fronts = list.map(front); const sheets = [];
+  for (let i = 0; i < list.length; i += 4) { const pg = list.slice(i, i + 4);
+    sheets.push(`<section class="sheet bsheet"><div class="bgrid">${fronts.slice(i, i + 4).join('')}</div></section>`);
+    if (both) { const order = [1, 0, 3, 2].map(j => pg[j] || null); if (pg.length <= 2) order.length = 2; sheets.push(`<section class="sheet bsheet"><div class="bgrid">${order.map(back).join('')}</div></section>`); } }
+  const mapCss = typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '';
+  printDoc(`บัตรนักกีฬา ${list.length} ใบ${both ? ' (หน้า-หลัง)' : ''}`, spriteDefs([...icons]) + sheets.join(''), BADGE_CSS + mapCss);
 }
 const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-columns:repeat(2,100mm);grid-auto-rows:142mm;gap:3mm 5mm;justify-content:center}
 .bd{position:relative;border:.3mm solid #bbb;border-radius:3mm;overflow:hidden;display:flex;flex-direction:column;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -2721,11 +2780,19 @@ const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-c
 .bdc{display:flex;align-items:center;gap:2mm;padding:1.8mm 3mm;background:var(--tc);color:#fff}.bdc .g{width:6mm;height:6mm;background:#fff;border-radius:50%;padding:.6mm}.bdc b{font-size:16px;flex:1;text-shadow:0 1px 1px rgba(0,0,0,.25)}
 .bdc .cat{width:9mm;height:9mm;border-radius:1.5mm;background:#fff;color:#0B1F4D;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
 .bdm{display:flex;gap:3.5mm;padding:4mm 4mm 3mm}.ph{width:36mm;height:48mm;flex:none;border:.4mm solid var(--tc);border-radius:1.5mm;overflow:hidden;background:#E6EBF3}.ph img,.ph svg{width:100%;height:100%;object-fit:cover;display:block}
-.who{display:flex;flex-direction:column;gap:1mm;min-width:0;justify-content:center}.who .role{font-size:9.5px;font-weight:700;letter-spacing:.3px;color:var(--tc)}.who .nm{font-size:19px;line-height:1.25}.who span{font-size:12.5px}.who .sid{font-size:10.5px;color:#444}
+.who{display:flex;flex-direction:column;gap:1mm;min-width:0;justify-content:center}.who .role{font-size:9.5px;font-weight:700;letter-spacing:.3px;color:var(--tc)}.who .nm{font-size:21px;line-height:1.2}.who .nm2{font-size:17px;line-height:1.2;margin-top:-.5mm}.who span{font-size:12.5px}.who .sid{font-size:10.5px;color:#444}
 .bdt{margin:0 4mm;padding:1mm 0;border-top:.3mm solid #e5e7eb;font-size:9px;font-weight:700;color:#666;letter-spacing:.3px}.bds{display:flex;flex-wrap:wrap;gap:1.5mm 3mm;padding:.5mm 4mm 0}.bds span{display:inline-flex;align-items:center;gap:1.2mm;font-size:12px;font-weight:600}.bds svg{width:6mm;height:6mm;color:var(--tc)}
 .bde{padding:1.5mm 4mm 0;font-size:9.5px;color:#555;line-height:1.3;flex:1}
 .bdf{display:flex;gap:2.5mm;align-items:center;padding:2mm 3mm;border-top:.3mm dashed #ccc}.bdf .qr svg{width:26mm;height:26mm;display:block}.bdf div:last-child{display:flex;flex-direction:column;font-size:9.5px;line-height:1.35}.bdf b{font-size:11px}
-.bdbar{height:4mm;background:var(--tc)}`;
+.bdbar{height:4mm;background:var(--tc)}.bds{flex:1;align-content:flex-start}
+.bd.blank{border:0}.bk{font-size:10px}.bkh{display:flex;justify-content:space-between;align-items:baseline;gap:2mm;padding:2.5mm 3.5mm;background:var(--tc);color:#fff}.bkh b{font-size:13px}.bkh span{font-size:10px}
+.bks{padding:1.6mm 3.5mm 0}.bkt{font-size:9px;font-weight:700;color:#555;letter-spacing:.3px;border-bottom:.3mm solid #e5e7eb;margin-bottom:1mm;padding-bottom:.5mm}
+.bkr{width:100%;border-collapse:collapse;margin:0}.bkr td{border:0;border-bottom:.2mm dotted #ddd;padding:.6mm .5mm;font-size:9.5px;vertical-align:top}.bkr .nw{white-space:nowrap;color:#333}.bkr .c{width:5mm;text-align:center}
+.vn,.vp{display:inline-flex;align-items:center;justify-content:center;width:4mm;height:4mm;border-radius:50%;background:var(--tc);color:#fff;font-style:normal;font-size:7.5px;font-weight:700;margin-right:1mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.bmap{position:relative;width:100%;aspect-ratio:1748/604;background-size:100% 100%;border-radius:1.5mm;border:.2mm solid #ccc;-webkit-print-color-adjust:exact;print-color-adjust:exact}.bmap .vp{position:absolute;transform:translate(-50%,-50%);width:4.6mm;height:4.6mm;border:.4mm solid #fff;box-shadow:0 0 .6mm rgba(0,0,0,.6);margin:0;font-size:8px}
+.bvl{display:flex;flex-direction:column;gap:.6mm;margin-top:1.2mm}.bvl span{font-size:9.5px;display:flex;align-items:center}.bvl small{color:#666;margin-left:1mm}
+.bcl{display:grid;grid-template-columns:1fr 1fr;gap:.8mm 2mm}.bcl span{display:flex;align-items:center;gap:1.2mm;font-size:9px}.bcl b{width:4.5mm;height:4.5mm;border:.3mm solid #999;border-radius:1mm;display:inline-flex;align-items:center;justify-content:center;font-size:9px}.bcl .on b{background:#0B1F4D;color:#fff;border-color:#0B1F4D}.bcl .on{font-weight:700}
+.bkn{font-size:8.5px;color:#555;margin-top:1mm}.bkf{margin-top:auto;padding:1.5mm 3.5mm;font-size:8.5px;color:#555;border-top:.3mm dashed #ccc}`;
 function printQRList(list) {
   const cards = list.map(x => { const a = athleteIndex(x.c)[x.key]; const ev = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean).map(sportName))]; return { c: x.c, sid: athSid(x.c, x.key), name: a.name, cls: a.cls, evs: ev }; }).filter(x => x.sid);
   if (!cards.length) { toast('นักกีฬาที่เลือกยังไม่มีรหัสประจำตัว'); return; }
@@ -2781,7 +2848,7 @@ function openAthlete(c, key) {
       <div class="apinfo"><div class="maphead"><div><h3>${esc(a.name)}</h3><p class="muted sm">ชั้น ม.${esc(a.cls)}${sid ? ` · เลขประจำตัว ${esc(sid)}` : ''} · ลง ${evs.length} รายการ · กีฬา ${a.sports.size}/${maxS} ชนิด · กรีฑา ${a.ath.size}/${maxA} ประเภท</p></div>${chip(c)}</div>
       <div class="apstat"><span><b class="num">${meds.g}</b>ทอง</span><span><b class="num">${meds.s}</b>เงิน</span><span><b class="num">${meds.b}</b>ทองแดง</span><span><b class="num">${W}–${L}</b>ชนะ–แพ้</span><span><b class="num">${cards.length}</b>วินัย</span></div>
       <div class="actions m0">${canPh ? `<label class="btn sm ghost">📷 ${'เพิ่ม/เปลี่ยนรูป'}<input type="file" id="aphf" accept="image/*" hidden></label><button class="btn sm ghost" id="aphx" hidden>ลบรูป</button>` : ''}
-        <button class="btn sm ghost" id="apcard">🪪 พิมพ์บัตรนักกีฬา</button><button class="btn sm ghost" id="apcert">📜 พิมพ์เกียรติบัตร</button></div><p class="err" id="aperr"></p></div></div>
+        ${isAdmin() ? '<button class="btn sm ghost" id="apedit">✏️ แก้ไขข้อมูลนักเรียน</button>' : ''}<button class="btn sm ghost" id="apcard">🪪 พิมพ์บัตรนักกีฬา</button><button class="btn sm ghost" id="apcert">📜 พิมพ์เกียรติบัตร</button></div><p class="err" id="aperr"></p></div></div>
     ${ban ? '<p class="warn">ถูกตัดสิทธิ์ทุกรายการตามข้อ 6</p>' : ''}${overS ? `<p class="warn">ลงกีฬาเกิน ${maxS} ชนิด (${[...a.sports].map(sportName).join(', ')}) ต้องเอาออกจากบางรายการ</p>` : ''}${overA ? `<p class="warn">ลงกรีฑาเกิน ${maxA} ประเภท</p>` : ''}
     ${cl.map(([p, q]) => `<p class="warn">เวลาชน ${fmtDate(p.date)}: ${p.time} ${esc(p.label)} กับ ${q.time} ${esc(q.label)} — เปลี่ยนตัวในรายการใดรายการหนึ่ง</p>`).join('')}
     <h4 class="subh">รายการที่ลงแข่งและผลการแข่งขัน</h4><div class="athevs">${R.map(row).join('')}</div>
@@ -2794,6 +2861,7 @@ function openAthlete(c, key) {
     catch (x) { $('#aperr').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); } });
   $('#aphx')?.addEventListener('click', () => ask(`ลบรูปของ ${a.name}?`, async () => { try { await setPhoto(pid, null); logIt('ลบรูปนักกีฬา', a.name); toast('ลบรูปแล้ว'); } catch (x) { toast('ลบไม่ได้'); } openAthlete(c, key); }, 'ลบรูป'));
   $('#apcard').onclick = () => printBadges([{ c, key }], 'badge');
+  $('#apedit')?.addEventListener('click', () => openStudentEdit(sid, a.cls, a.name, () => openAthlete(c, key)));
   $('#apcert').onclick = () => openCertDlg(c, key);
   $('#modal').onclick = e => { const b = e.target.closest('[data-athed]'); if (!b) return; e.stopPropagation(); const [eid, cc, ...k] = b.dataset.athed.split('~'); closeModal(); resetModalHandlers(); UI.regColor = +cc;
     if (location.hash !== '#register') { location.hash = '#register'; setTimeout(() => openRoster(eid, k.join('~')), 120); } else { render(); openRoster(eid, k.join('~')); } };
@@ -4587,7 +4655,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -4606,6 +4674,7 @@ document.addEventListener('click', e => {
     const st = (UI.mapF = UI.mapF || {})[key] = UI.mapF[key] || {};
     if (k === '*') UI.mapF[key] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; if (key === UI.mapSport) UI.mapEv = null; render(); }
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
+  else if (d.stedit) { const [sid, cls, ...nm] = d.stedit.split('|'); openStudentEdit(sid, cls, nm.join('|')); }
   else if (d.psel != null) { /* checkbox: handled by change */ }
   else if (d.pselclr != null) { e.preventDefault(); UI.regSel = new Set(); $('#plistbox').innerHTML = regPlist(UI.regColor); }
   else if (d.regpf != null) { UI.regPF = !!d.regpf; render(); }
