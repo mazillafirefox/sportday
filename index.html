@@ -892,8 +892,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.3', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.26.4', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.26.4', 'ครูคณะสีเห็นเฉพาะคณะตัวเอง: ส่งรายชื่อ ค้นหานักกีฬา คณะสีและนักเรียน · พิมพ์บัตร QR เฉพาะคณะตัวเอง'],
   ['1.26.3', 'หน้าต่างบุคลากรจัดใหม่: คำนำหน้า/ชื่อ/สกุลแยกช่อง ตำแหน่งและหน้าที่เป็นตัวเลือก · นำเข้าบุคลากรจาก Excel/CSV พร้อมแม่แบบ'],
   ['1.26.2', 'พิมพ์บัตรห้อยคอบนสติ๊กเกอร์ CARD014 (หน้า+หลังแผ่นเดียว พับประกบ) พร้อมปรับเลื่อนตำแหน่งและเส้นตัดตัวอย่าง'],
   ['1.26.1', 'แจ้งเตือนนักกีฬาเวลาชน (ปุ่ม ⚠ ที่หัวเว็บ + แจ้งทันทีเมื่อเกิดใหม่หลังบันทึกผล) · ตัวเลือกตำแหน่ง/หน้าที่ตามประเภทบัตร · หมุดเลขบนแผนที่ในบัตรไม่ทับกัน'],
@@ -1019,6 +1020,9 @@ const isAdmin = () => myRole().role === 'admin';
 const canScore = sport => { const r = myRole(); return r.role === 'admin' || (r.role === 'scorer' && (!r.sports?.length || r.sports.includes(sport))); };
 const canRoster = c => { const r = myRole(); return r.role === 'admin' || (r.role === 'color' && r.c === c); };
 const anyEdit = () => myRole().role !== 'viewer';
+/* ครูคณะสีเห็น/จัดการได้เฉพาะคณะของตัวเอง (null = เห็นทุกคณะ) */
+const myColor = () => { const r = myRole(); return r.role === 'color' && r.c >= 0 ? +r.c : null; };
+const colorsVisible = () => { const m = myColor(); return m == null ? COLORS.map((_, i) => i) : [m]; };
 function nameOf(id) {
   if (!id) return 'ไม่ทราบผู้บันทึก';
   const st = staffOf(id); const u = localUsers()[id] || (S.meta.roles || {})[id]; const n = st?.name || u?.name || (id === ME.id && ME.name) || NAMES[id] || id;
@@ -2414,6 +2418,7 @@ function regPlist(c, shown) {
     <div class="plist">${list.map(p => { const bad = p.prob; const k = c + '~' + pkey(p); const sid = sidOf(p); return `<div class="prow click${bad ? ' bad' : ''}${sel.has(k) ? ' on' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูประวัตินักกีฬา"><label class="psel" data-psel><input type="checkbox" data-pk="${esc(k)}" ${sel.has(k) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></label><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="warnt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="num muted sm">${esc(sid)}</span><span class="muted sm">${[...p.sports].map(sportName).join(', ')}${p.ath.size ? (p.sports.size ? ', ' : '') + 'กรีฑา ' + p.ath.size : ''}</span></div>`; }).join('') || '<p class="muted sm">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>'}</div>`;
 }
 function vRegister() {
+  if (myColor() != null) UI.regColor = myColor();
   const c = UI.regColor; const idx = athleteIndex(c); const SF = UI.regSt || null;
   const allEv = sportsList().flatMap(sp => eventsOf(sp.id).filter(e => rosterMax(e) > 0));
   const stOf = {}; allEv.forEach(e => stOf[e.id] = regState(e, c));
@@ -2450,7 +2455,7 @@ function vRegister() {
     return `<tr><td><span class="sumi">${sIcon(sp.id)}${esc(sp.name)}</span></td>${COLORS.map((_, i) => { const nd = evs.map(e => regState(e, i)).filter(s => s.k !== 'na'); const n = nd.filter(s => s.k === 'done').length; return `<td class="num ${n === nd.length ? 'ok' : n ? 'mid' : ''}" title="ส่งครบ ${n} จาก ${nd.length} รายการที่ลงแข่ง">${n}/${nd.length}</td>`; }).join('')}</tr>`;
   }).join('')}</tbody></table></div>`;
   return `<section class="hero"><h1>ส่งรายชื่อนักกีฬา</h1><p class="muted">เลือกคณะสี แล้วกรอกรายชื่อในแต่ละรายการ ระบบตรวจกติกาให้: ห้องต้องอยู่ในคณะสี · ระดับชั้นต้องตรงรุ่นอายุ (ม.1–2 รุ่น 14, ม.3–4 รุ่น 16, ม.5–6 รุ่น 18, ม.1–3 รุ่น 15, ม.4–6 รุ่น 17) · 1 คนลงกีฬาไม่เกิน ${S.meta.maxSports ?? 2} ชนิด และกรีฑาไม่เกิน ${S.meta.maxAthletics ?? 2} ประเภท</p></section>
-  <div class="filters"><div class="seg">${COLORS.map((k, i) => `<button data-regc="${i}" class="${i === c ? 'on' : ''}" style="--tc:${k.c}">${gem(i)}${k.n}</button>`).join('')}</div></div>
+ <div class="filters"><div class="seg">${COLORS.map((k, i) => myColor() != null && i !== myColor() ? '' : `<button data-regc="${i}" class="${i === c ? 'on' : ''}" style="--tc:${k.c}">${gem(i)}${k.n}</button>`).join('')}</div></div>
   <div class="two"><section class="card"><h2>สถานะการส่งรายชื่อคณะ${COLORS[c].n}</h2>${statusBar}${urgBox}<div class="reglist">${sum}</div></section>
   <section class="card"><h2>นักกีฬาคณะ${COLORS[c].n} <small class="muted">${people.length} คน</small></h2>
     ${flagged.length ? `<p class="warn">${flagged.length} คนลงเกินจำนวนที่กติกากำหนด</p>` : ''}${nClash ? `<details class="qwarn clashbox" open><summary><b>${nClash} คนมีนัดแข่งเวลาทับกัน</b> <span class="sm">(นัดถัดไปเริ่มก่อนนัดก่อนหน้าจบ หรือห่างไม่ถึง ${S.meta.clashMin ?? 30} นาที) แก้โดยเปลี่ยนตัวในรายการใดรายการหนึ่ง · กดชื่อเพื่อแก้</span></summary>
@@ -2458,8 +2463,8 @@ function vRegister() {
     ${nProb ? `<div class="seg mini pfilt"><button data-regpf="" class="${onlyProb ? '' : 'on'}">ทุกคน ${people.length}</button><button data-regpf="1" class="${onlyProb ? 'on' : ''}">มีปัญหา ${nProb}</button></div>` : ''}
     <div class="psearch">${qbox('rq', UI.regQ, 'ค้นหาชื่อ ห้อง หรือรหัส เช่น สมชาย / 3/6 / 41294')}</div>
     <div id="plistbox">${regPlist(c, shown)}</div>
-    <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button></div></section></div>
-  <section class="card"><h2>ภาพรวมการส่งรายชื่อทุกคณะสี</h2><p class="muted sm">ส่งครบ / รายการที่คณะสีนั้นลงแข่ง (ไม่นับรายการที่ไม่ได้อยู่ในสาย)</p>${matrix}</section>`;
+    <div class="actions"><button class="btn ghost" data-act="dlroster">ดาวน์โหลดรายชื่อคณะนี้ (CSV)</button>${myColor() == null ? `<button class="btn ghost" data-act="dlrosterall">รายชื่อทุกคณะ (CSV)</button>` : ''}</div></section></div>
+  ${myColor() != null ? '' : `<section class="card"><h2>ภาพรวมการส่งรายชื่อทุกคณะสี</h2><p class="muted sm">ส่งครบ / รายการที่คณะสีนั้นลงแข่ง (ไม่นับรายการที่ไม่ได้อยู่ในสาย)</p>${matrix}</section>`}`;
 }
 
 /* ---------- รายงานตัว ---------- */
@@ -2499,7 +2504,7 @@ function vCheckin() {
     : sec('later', d < todayStr() ? 'นัดในวันนั้น' : 'นัดทั้งหมดของวัน', '', [...g.now, ...g.soon, ...g.live, ...g.later]) + sec('done', 'จบแล้ว', '', g.done, d < todayStr());
   return `<section class="hero"><h1>รายงานตัวนักกีฬา</h1><p class="muted">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${mins} นาที ไม่มาภายใน 10 นาทีหลังเวลาแข่งถือว่าสละสิทธิ์ · ตัวเลขคือ รายงานตัวแล้ว/ตัวจริงขั้นต่ำ${editOn ? ' · แตะนัดเพื่อเช็คชื่อ' : ''}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-ciday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div></div>
-  <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button>${anyEdit() ? '<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาทุกคณะ</button>' : ''}</div>
+  <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button>${anyEdit() ? (myColor() == null ? '<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาทุกคณะ</button>' : `<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาคณะ${esc(COLORS[myColor()].n)}</button>`) : ''}</div>
   <section class="card">${body || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>'}
   ${others.length ? `<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>${others.map(ev => `<div class="mrow g2 ci${editOn && canScore(ev.sport) ? ' click' : ''}" ${editOn && canScore(ev.sport) ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ev.time || '–')}</b></span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
     <span class="span3 cimany">${(ev.teams || []).map(c => { const n = (ev.ci?.[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span><span class="ncol"></span></div>`).join('')}` : ''}</section>`;
@@ -2507,15 +2512,16 @@ function vCheckin() {
 
 /* ---------- คณะสีและนักเรียน ---------- */
 function vTeams() {
-  const tab = UI.teamTab || 'colors'; const ed = isAdmin();
-  const studs = allStudents(); const rooms = roomsAll();
+  const tab = UI.teamTab || 'colors'; const ed = isAdmin(); const mc = myColor();
+  const ownRooms = mc == null ? null : new Set(S.meta.classes?.[mc] || []);
+  const studs = allStudents().filter(st => !ownRooms || ownRooms.has(st.cls)); const rooms = roomsAll().filter(r => !ownRooms || ownRooms.has(r));
   const head = `<section class="hero"><h1>คณะสีและนักเรียน</h1><p class="muted">ตั้งชื่อคณะสี กำหนดว่าห้องไหนอยู่คณะสีไหน และนำเข้ารายชื่อนักเรียนเพื่อใช้เลือกนักกีฬาตอนส่งรายชื่อ</p></section>
   <div class="filters"><div class="seg">${[['colors', 'คณะสีและห้องเรียน'], ['students', `นักเรียน (${studs.length.toLocaleString()})`], ['rules', 'กติกานักกีฬา']].map(([k, n]) => `<button data-ttab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div></div>`;
   if (tab === 'colors') {
     const unassigned = rooms.filter(r => colorOfRoom(r) < 0);
     const byGrade = {}; rooms.forEach(r => (byGrade[r.split('/')[0]] = byGrade[r.split('/')[0]] || []).push(r));
     const cnt = c => { const rs = new Set(S.meta.classes?.[c] || []); const l = studs.filter(st => rs.has(st.cls)); return { rooms: rs.size, n: l.length, m: l.filter(x => x.sex === 'ชาย').length, f: l.filter(x => x.sex === 'หญิง').length }; };
-    return head + `<div class="cgrid">${COLORS.map((k, c) => { const x = cnt(c); const info = S.meta.colorInfo?.[c] || {};
+    return head + `<div class="cgrid">${COLORS.map((k, c) => { if (mc != null && c !== mc) return ''; const x = cnt(c); const info = S.meta.colorInfo?.[c] || {};
       return `<section class="card ccard" style="--tc:${k.c}"><div class="cch">${gem(c, 'xl')}<div class="grow0">${ed ? `<input class="cname" data-cname="${c}" value="${esc(k.n)}" aria-label="ชื่อคณะสี">` : `<h2>คณะ${esc(k.n)}</h2>`}<small class="muted">${x.rooms} ห้อง · นักเรียน ${x.n.toLocaleString()} คน${x.n ? ` (ชาย ${x.m} · หญิง ${x.f})` : ''}</small></div></div>
         ${ed ? `<div class="ov"><label class="fld">ครูประธานคณะสี<input data-cinfo="${c}|teacher" list="stafflist" value="${esc(info.teacher || '')}" placeholder="เลือกจากทะเบียนบุคลากร"></label><label class="fld">ประธานนักเรียน<input data-cinfo="${c}|leader" value="${esc(info.leader || '')}"></label></div>` : (info.teacher || info.leader ? `<p class="sm">${info.teacher ? 'ครูประธาน: ' + esc(info.teacher) : ''}${info.leader ? ' · ประธานนักเรียน: ' + esc(info.leader) : ''}</p>` : '')}
         <div class="rchips">${(S.meta.classes?.[c] || []).slice().sort(clsSort).map(r => `<span class="rchip">ม.${r}</span>`).join('') || '<span class="muted sm">ยังไม่มีห้อง</span>'}</div></section>`; }).join('')}</div>
@@ -2917,7 +2923,7 @@ function vAthletes() {
 }
 function athleteResults() {
   const q = String(UI.q || '').trim().toLowerCase(); const B = bannedSet(); const out = [];
-  COLORS.forEach((_, c) => {
+  colorsVisible().forEach(c => {
     const idx = athleteIndex(c); const sched = athleteSchedule(c);
     Object.entries(idx).forEach(([k, a]) => {
       if (q && !(a.name.toLowerCase().includes(q) || String(a.cls).replace(/\s/g, '') === q.replace(/\s/g, '') || (a.sid && /^\d+$/.test(q.replace(/\s/g, '')) && a.sid.includes(normSid(q))))) return;
@@ -4957,7 +4963,7 @@ document.addEventListener('click', e => {
   else if (d.pselclr != null) { e.preventDefault(); UI.regSel = new Set(); $('#plistbox').innerHTML = regPlist(UI.regColor); }
   else if (d.regpf != null) { UI.regPF = !!d.regpf; render(); }
   else if (d.schv) { UI.schView = d.schv; render(); }
-  else if (d.regc) { UI.regColor = +d.regc; render(); }
+  else if (d.regc) { UI.regColor = myColor() ?? +d.regc; render(); }
   else if (d.roster) openRoster(d.roster);
   else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); }
   else if (d.ci) { const [a, b] = d.ci.split('|'); openCheckin(a, b); }
@@ -5002,7 +5008,7 @@ document.addEventListener('click', e => {
   else if (d.clrev) { const t = evTitle(evById(d.clrev)); ask(`ล้างผลทั้งหมดของ “${t}” (คงคู่และเวลาไว้)?`, () => { put('events', d.clrev, stripResults(clone(S.events[d.clrev]))); logIt('ล้างผลรายการ', t); toast('ล้างผลแล้ว'); }, 'ล้างผล'); }
   else if (d.act === 'dlmedal') exportMedals();
   else if (d.act === 'dlroster') exportRosters(UI.regColor);
-  else if (d.act === 'dlrosterall') exportRosters(null);
+  else if (d.act === 'dlrosterall') exportRosters(myColor());
   else if (d.act === 'dlci') exportCheckin();
   else if (d.act === 'sheets') openPrint();
   else if (d.act === 'qr') openQR();
@@ -5039,7 +5045,7 @@ document.addEventListener('click', e => {
   else if (d.act === 'staffprint') printStaffBadges([...(UI.stfSel || [])], $('#stfstyle')?.value || 'badge');
   else if (d.act === 'qrcards') printQRCards(UI.regColor);
   else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); printBadges(sel, $('#cardstyle')?.value || 'badge'); }
-  else if (d.act === 'qrcardsall') printQRCards(null);
+  else if (d.act === 'qrcardsall') printQRCards(myColor());
   else if (d.act === 'bknow') { takeSnap(true); downloadBackup(); }
   else if (d.act === 'bklater') { try { sessionStorage.setItem('gem-bklater', todayISO()); } catch (e) { } render(); }
   else if (d.act === 'gorules') { UI.teamTab = 'rules'; location.hash = 'teams'; }
