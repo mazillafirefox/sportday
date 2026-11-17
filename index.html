@@ -994,8 +994,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.0', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.1', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.1', 'รายงานตัว: ก่อนเปิดรับติ๊ก/บันทึกไม่ได้ทุกบทบาท (รวมผู้ดูแล) · แอปสแกน: ออกจากหน้าแล้วล้างนัดที่เลือก ไม่จำข้ามการเปิดแอป'],
   ['1.33.0', 'ช่วงรับรายงานตัว: เปิดรับ 60 นาทีก่อนแข่ง (ตั้งได้) · ถึงกำหนด 20 นาทีก่อนแข่ง · เลยกำหนดรับได้จนกดเริ่มแข่งแต่บันทึกว่า “มาช้า” · หลังเริ่มแข่งสแกนไม่ได้ ติ๊กเองได้โดยบันทึกว่า “หลังเริ่มแข่ง” · ใช้ทั้งหน้ารายงานตัวและแอปสแกน'],
   ['1.32.0', 'แอปสแกน (รายงานตัว): ต้องเลือกนัดก่อนสแกน · ไม่อยู่ในรายชื่อนัดนี้แจ้งนัดอื่นวันนี้/นัดถัดไป · แสดงจำนวนที่มาแล้ว · เมนูบาร์ด้านบนพอดีจอ (รายการที่ล้นย้ายไปที่ “เพิ่มเติม ▾”)'],
   ['1.31.2', 'แอปสแกน: แสดงรูปนักเรียน/บุคลากรในการ์ดตรวจบัตร ผลรายงานตัว และโหมดกรรมการ'],
@@ -3198,8 +3199,8 @@ function fillBadgePhoto() { const el = $('#bvph'); const pid = el?.dataset.pid; 
 
 /* ===================== แอปสแกน (PWA) · #scan ===================== */
 const SCK = 'gem-scan';
-const SC = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem(SCK) || '{}'); } catch (e) { } return { mode: o.mode || 'ci', input: o.input === 'hw' ? 'hw' : 'cam', lock: o.lock || '', jlock: o.jlock || '', venue: o.venue || '', auto: o.auto !== false, res: null, ov: false, log: [], last: new Map() }; })();
-const scSave = () => { try { localStorage.setItem(SCK, JSON.stringify({ mode: SC.mode, input: SC.input, lock: SC.lock, jlock: SC.jlock, venue: SC.venue, auto: SC.auto })); } catch (e) { } };
+const SC = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem(SCK) || '{}'); } catch (e) { } return { mode: o.mode || 'ci', input: o.input === 'hw' ? 'hw' : 'cam', lock: '', jlock: '', venue: o.venue || '', auto: o.auto !== false, res: null, ov: false, log: [], last: new Map() }; })();
+const scSave = () => { try { localStorage.setItem(SCK, JSON.stringify({ mode: SC.mode, input: SC.input, venue: SC.venue, auto: SC.auto })); } catch (e) { } };
 const scDay = () => todayISO();
 const nowHM = () => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); };
 const hm2min = s => { const m = String(s || '').match(/(\d{1,2})[:.](\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };
@@ -4706,7 +4707,7 @@ function openCheckin(eid, mid) {
   const ciD = m ? '' : (UI.view === 'checkin' && UI.ciDay) || todayStr(); if (!m && ciD > todayISO()) { toast(`ยังรายงานตัวไม่ได้ รายการนี้แข่ง ${fmtDate(ciD, true)} เปิดให้รายงานตัวในวันแข่ง`); return; }
   const ci = clone(m ? (m.ci || {}) : evCi(ev, ciD)); const ci0 = Object.values(ci).some(l => (l || []).length); let ciErr = '';
   /* ช่วงรับรายงานตัว: ก่อนเปิด ผู้ดูแลเท่านั้นที่ติ๊กได้ · เลยกำหนด = มาช้า · เริ่มแข่งแล้ว = มาหลังเริ่มแข่ง (ติ๊กเองได้ สแกนไม่ได้) */
-  const W = ciWin(ev, m, ciD); const ro = W.k === 'early' && !isAdmin(); const ci00 = clone(ci);
+  const W = ciWin(ev, m, ciD); const ro = W.k === 'early'; /* ยังไม่เปิดรับ: ติ๊ก/สแกน/บันทึกไม่ได้ ทุกบทบาท */ const ci00 = clone(ci);
   const sameDay = m || evCi(ev, ciD) === ev.ci; const fl0 = k => clone(sameDay ? ((m || ev)[k] || {}) : {}); const late0 = fl0('ciLate'), post0 = fl0('ciPost');
   const flagOf = (k, id) => (post0[k] || []).includes(id) ? 'หลังเริ่มแข่ง' : (late0[k] || []).includes(id) ? 'มาช้า' : !(ci00[k] || []).includes(id) && (ci[k] || []).includes(id) ? (W.k === 'closed' ? 'หลังเริ่มแข่ง' : W.k === 'late' ? 'มาช้า' : '') : '';
   /* รวมธงมาช้า/หลังเริ่ม สำหรับบันทึก (เฉพาะคนที่ยังอยู่ในรายชื่อ) */
@@ -4742,7 +4743,7 @@ function openCheckin(eid, mid) {
   const drawFb = () => { const el = $('#cifb'); if (!el) return; el.className = 'cifb ' + (fb ? (fb.ok ? 'ok' : 'no') : ''); el.innerHTML = fb ? `${fb.c != null ? chip(fb.c) + ' ' : ''}${esc(fb.t)}` : ''; };
   const shell = () => {
     $('#modal').innerHTML = `<div class="dlg wide cidlg"><h3>รายงานตัว · ${esc(evTitle(ev))}${m ? ` · คู่ ${m.no} ${esc(m.time || '')}` : ''}</h3>
-      <p class="ciwin ${W.k}">${esc(ciWinText(W))}${ro ? '' : W.k === 'early' ? ' · ผู้ดูแลติ๊กล่วงหน้าได้' : ''}</p>
+      <p class="ciwin ${W.k}">${esc(ciWinText(W))}</p>
       <div class="seg mini cimeth">${CI_METHODS.map(([k, n]) => `<button type="button" data-cim="${k}" class="${meth === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       ${meth === 'scan' ? `<div class="ciscan"><video id="civ" playsinline muted></video><div class="ciaim"></div><p class="muted sm" id="cistat">กำลังเปิดกล้อง…</p></div>` : meth === 'type' ? `<form class="citype" id="citf" data-nobusy><label class="fld">รหัสประจำตัวนักเรียน<input id="cit" inputmode="numeric" autocomplete="off" placeholder="พิมพ์หรือใช้เครื่องอ่านบาร์โค้ด แล้วกด Enter"></label><button class="btn">รายงานตัว</button></form>` : ''}
       ${meth !== 'tick' ? '<div class="cifb" id="cifb" aria-live="polite"></div>' : ''}
@@ -4754,10 +4755,11 @@ function openCheckin(eid, mid) {
   const draw = () => {
     const b = $('#cibody'); if (!b) return;
     b.innerHTML = `<div class="cigrid">${sides.map(col).join('')}</div>
-      ${dirty ? `<p class="qwarn sm">สแกน/พิมพ์เพิ่ม ${dirty} คน ยังไม่บันทึก กด “บันทึกการรายงานตัว”</p>` : ''}${m || evCi(ev, ciD) === ev.ci ? updLine((m || ev).ciBy, (m || ev).ciAt, 'รายงานตัวล่าสุดโดย') : ''}<p class="err" id="cierr">${ciErr}</p><div class="actions"><button class="btn" id="saveci">บันทึกการรายงานตัว</button><button class="btn ghost" data-close>ปิด</button></div>`;
+      ${dirty ? `<p class="qwarn sm">สแกน/พิมพ์เพิ่ม ${dirty} คน ยังไม่บันทึก กด “บันทึกการรายงานตัว”</p>` : ''}${m || evCi(ev, ciD) === ev.ci ? updLine((m || ev).ciBy, (m || ev).ciAt, 'รายงานตัวล่าสุดโดย') : ''}<p class="err" id="cierr">${ciErr}</p><div class="actions"><button class="btn" id="saveci" ${ro ? 'disabled' : ''}>บันทึกการรายงานตัว</button><button class="btn ghost" data-close>ปิด</button></div>`;
   };
   $('#modal').hidden = false; shell();
   $('#modal').onchange = e => {
+    if (ro) { e.target.checked = !e.target.checked; return; }
     const a = e.target.dataset.all, k = e.target.dataset.ck;
     ciErr = '';
     if (a) { const c = sides.find(s => s[0] === a)[1]; const B = bannedSet(); ci[a] = e.target.checked ? (rosterOf(eid, c).players || []).filter(p => !isBanned(c, p, B)).map(p => p.id) : []; draw(); }
@@ -4766,7 +4768,7 @@ function openCheckin(eid, mid) {
   $('#modal').onclick = e => {
     const mb = e.target.closest('[data-cim]'); if (mb) { stopScan(); meth = mb.dataset.cim; setCiMethod(meth); fb = null; shell(); return; }
     if (e.target.closest('[data-close]')) stopScan();
-    if (e.target.id === 'saveci') { stopScan(); const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
+    if (e.target.id === 'saveci') { if (ro) { toast(ciWinText(W)); return; } stopScan(); const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
       if (!n && !ci0) { ciErr = sides.some(([k, c]) => c >= 0 && (rosterOf(eid, c).players || []).length) ? 'ยังไม่ได้เลือกนักกีฬา: ติ๊กชื่อนักกีฬาที่มารายงานตัว (หรือ “ทั้งทีม”) ก่อนกดบันทึก' : 'ยังบันทึกไม่ได้: ยังไม่มีคณะสีไหนส่งรายชื่อนักกีฬา'; draw(); $('#cierr')?.scrollIntoView({ block: 'nearest' }); return; }
       if (!n && ci0) { ask('ไม่ได้เลือกนักกีฬาเลย ยืนยันล้างการรายงานตัวของคู่นี้ทั้งหมด?', () => { recUndo('ล้างรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: ME.id || '', ciAt: Date.now() } })); }, 'ล้างการรายงานตัว'); return; }
       closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ...flagsOut(), ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ...flagsOut(), ciDate: ciD, ciBy: ME.id || '', ciAt: Date.now() } })); return; }
@@ -5687,6 +5689,8 @@ function route() { const raw = location.hash.slice(1); const [h, arg] = raw.spli
   if (nv === 'tv' && UI.view && UI.view !== 'tv') UI.prevView = UI.view;
   if (nv === 'venues' && arg) { UI.vFocus = decodeURIComponent(arg); UI.vScroll = true; }
   /* เปลี่ยนหน้า: ล้างคำค้น ตัวกรองชั้น/ห้อง/สถานะ และการเลือกที่ค้างไว้ (คงไว้: คณะที่เลือก ชนิดกีฬาที่กำลังดู และรูปแบบการแสดงผล) */
+  /* ออกจากแอปสแกน: ล้างนัดที่เลือกไว้และผลล่าสุด เปิดครั้งหน้าต้องเลือกนัดใหม่ */
+  if (UI.view === 'scan' && nv !== 'scan') { SC.lock = SC.jlock = ''; SC.res = null; SC.ov = false; stopScan(); }
   if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = UI.q = UI.pickq = UI.regQ = UI.pickG = UI.pickR = UI.stRoom = ''; UI.regSel = new Set(); UI.stfSel = new Set(); UI.onlyClash = false; UI.regSt = null; UI.regPF = false; }
   UI.view = nv; $('#main').dataset.view = ''; window.scrollTo(0, 0); render(); }
 document.addEventListener('submit', e => { if (e.target.id === 'scaform') { e.preventDefault(); const el = $('#scaq'); const v = el.value; el.value = ''; SC.last.clear(); scHandle(v); return; } if (e.target.id !== 'bvform') return; e.preventDefault(); const el = $('#bvq'); const v = el.value; el.value = ''; if (!goBadge(v)) { beep(false); toast('อ่านหมายเลขบัตรไม่ได้ ตัวอย่าง: A-41308 หรือ J-9K2M7'); el.focus(); } });
