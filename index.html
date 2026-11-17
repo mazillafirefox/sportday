@@ -892,8 +892,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.6', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.26.7', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.26.7', 'ครูคณะสี: ช่องค้นหาในแท็บนักเรียนค้นได้เฉพาะนักเรียนคณะของตัวเอง'],
   ['1.26.6', 'บัตรห้อยคอ: กันล้นบนสติ๊กเกอร์ CARD014 (ช่องกีฬา/รูป/ด้านหลังย่อพอดี QR แสดงครบ)'],
   ['1.26.5', 'บัตรห้อยคอ: ช่องชนิดกีฬาปรับขนาดตามจำนวน (กรรมการหลายชนิดกีฬาไม่ล้นบัตร) · ครบทุกชนิดแสดง “ทุกชนิดกีฬา”'],
   ['1.26.4', 'ครูคณะสีเห็นเฉพาะคณะตัวเอง: ส่งรายชื่อ ค้นหานักกีฬา คณะสีและนักเรียน · พิมพ์บัตร QR เฉพาะคณะตัวเอง'],
@@ -1953,6 +1954,8 @@ function liveBoard(big) {
 
 /* ===================== นักเรียน / คณะสี ===================== */
 const clsSort = (a, b) => { const [g1, r1] = a.split('/').map(Number), [g2, r2] = b.split('/').map(Number); return g1 - g2 || r1 - r2; };
+/* นักเรียนที่ผู้ใช้เห็นได้: ครูคณะสีเห็นเฉพาะห้องในคณะของตัวเอง */
+function visibleStudents() { const mc = myColor(); if (mc == null) return allStudents(); const rs = new Set(S.meta.classes?.[mc] || []); return allStudents().filter(st => rs.has(st.cls)); }
 function allStudents() { const out = []; Object.values(S.students || {}).forEach(d => (d.list || []).forEach(st => out.push({ ...st, cls: d.cls }))); return out; }
 const stName = st => `${st.pre || ''}${st.fn || ''} ${st.ln || ''}`.trim();
 function colorOfRoom(cls) { const cl = S.meta.classes || {}; for (const k of Object.keys(cl)) if ((cl[k] || []).includes(cls)) return +k; return -1; }
@@ -2516,7 +2519,7 @@ function vCheckin() {
 function vTeams() {
   const tab = UI.teamTab || 'colors'; const ed = isAdmin(); const mc = myColor();
   const ownRooms = mc == null ? null : new Set(S.meta.classes?.[mc] || []);
-  const studs = allStudents().filter(st => !ownRooms || ownRooms.has(st.cls)); const rooms = roomsAll().filter(r => !ownRooms || ownRooms.has(r));
+  const studs = visibleStudents(); const rooms = roomsAll().filter(r => !ownRooms || ownRooms.has(r));
   const head = `<section class="hero"><h1>คณะสีและนักเรียน</h1><p class="muted">ตั้งชื่อคณะสี กำหนดว่าห้องไหนอยู่คณะสีไหน และนำเข้ารายชื่อนักเรียนเพื่อใช้เลือกนักกีฬาตอนส่งรายชื่อ</p></section>
   <div class="filters"><div class="seg">${[['colors', 'คณะสีและห้องเรียน'], ['students', `นักเรียน (${studs.length.toLocaleString()})`], ['rules', 'กติกานักกีฬา']].map(([k, n]) => `<button data-ttab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div></div>`;
   if (tab === 'colors') {
@@ -5104,7 +5107,7 @@ function clearQ(id) { const el = document.getElementById(id); if (!el) return; e
 document.addEventListener('click', e => { const x = e.target.closest('[data-qx]'); if (x) { e.stopPropagation(); clearQ(x.dataset.qx); } }, true);
 document.addEventListener('input', e => {
   if (e.target.matches?.('.qbox input')) { const b = e.target.parentNode.querySelector('.qx'); if (b) b.hidden = !e.target.value; }
-  if (e.target.id === 'stq') { UI.stq = e.target.value; const q = UI.stq.trim(), room = UI.stRoom || ''; const used = usedMap(); const list = allStudents().filter(st => (!room || st.cls === room) && (!q || stName(st).includes(q) || String(st.sid).includes(q))).sort((a, b) => clsSort(a.cls, b.cls) || a.no - b.no); $('#stlist').innerHTML = studentTable(list, used); }
+  if (e.target.id === 'stq') { UI.stq = e.target.value; const q = UI.stq.trim(), room = UI.stRoom || ''; const used = usedMap(); const list = visibleStudents().filter(st => (!room || st.cls === room) && (!q || stName(st).includes(q) || String(st.sid).includes(q))).sort((a, b) => clsSort(a.cls, b.cls) || a.no - b.no); $('#stlist').innerHTML = studentTable(list, used); }
   if (e.target.id === 'aq') { UI.q = e.target.value; $('#athres').innerHTML = athleteResults(); }
   if (e.target.id === 'rq') { UI.regQ = e.target.value; $('#plistbox').innerHTML = regPlist(UI.regColor); }
 });
