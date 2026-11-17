@@ -887,8 +887,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.1', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.26.2', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.26.2', 'พิมพ์บัตรห้อยคอบนสติ๊กเกอร์ CARD014 (หน้า+หลังแผ่นเดียว พับประกบ) พร้อมปรับเลื่อนตำแหน่งและเส้นตัดตัวอย่าง'],
   ['1.26.1', 'แจ้งเตือนนักกีฬาเวลาชน (ปุ่ม ⚠ ที่หัวเว็บ + แจ้งทันทีเมื่อเกิดใหม่หลังบันทึกผล) · ตัวเลือกตำแหน่ง/หน้าที่ตามประเภทบัตร · หมุดเลขบนแผนที่ในบัตรไม่ทับกัน'],
   ['1.26.0', 'ทะเบียนบุคลากร: รวมผู้ใช้/สิทธิ์ ครูประธานคณะสี บัตรบุคลากร ผู้ลงนามเกียรติบัตร และชื่อกรรมการในใบบันทึกผลไว้ที่เดียว'],
   ['1.25.0', 'บัตรบุคลากร C J O M V: เพิ่ม/แก้/ลบ รูป ดึงจากผู้ใช้ เลือกพิมพ์หน้า-หลัง (หน้าจัดการการแข่งขัน)'],
@@ -2402,7 +2403,7 @@ function regPlist(c, shown) {
   const nSel = shown.filter(p => sel.has(c + '~' + pkey(p))).length; const allOn = list.length && list.every(p => sel.has(c + '~' + pkey(p)));
   return `<div class="pselbar"><label class="ck"><input type="checkbox" data-pselall ${allOn ? 'checked' : ''}> เลือกทั้งหมด${q ? 'ที่ค้นพบ' : ''} (${list.length})</label>
     <span class="muted sm">เลือกแล้ว ${nSel} คน${nSel ? ' · <a href="#" data-pselclr>ล้าง</a>' : ''}</span>
-    <span class="pprint"><select id="cardstyle" aria-label="แบบบัตร"><option value="badge" ${!UI.cardStyle || UI.cardStyle === 'badge' ? 'selected' : ''}>บัตรห้อยคอ หน้า-หลัง (4 ใบ/แผ่น)</option><option value="badgef" ${UI.cardStyle === 'badgef' ? 'selected' : ''}>บัตรห้อยคอ ด้านหน้าอย่างเดียว</option><option value="qr" ${UI.cardStyle === 'qr' ? 'selected' : ''}>บัตร QR เล็ก (24 ใบ/แผ่น)</option></select>
+    <span class="pprint"><select id="cardstyle" aria-label="แบบบัตร"><option value="badge" ${!UI.cardStyle || UI.cardStyle === 'badge' ? 'selected' : ''}>บัตรห้อยคอ หน้า-หลัง (4 ใบ/แผ่น)</option><option value="badgef" ${UI.cardStyle === 'badgef' ? 'selected' : ''}>บัตรห้อยคอ ด้านหน้าอย่างเดียว</option><option value="sticker" ${UI.cardStyle === 'sticker' ? 'selected' : ''}>สติ๊กเกอร์ CARD014 (1 ใบ/แผ่น พับประกบ)</option><option value="qr" ${UI.cardStyle === 'qr' ? 'selected' : ''}>บัตร QR เล็ก (24 ใบ/แผ่น)</option></select>
     <button class="btn sm" data-act="printsel" ${nSel ? '' : 'disabled'}>พิมพ์ที่เลือก ${nSel || ''}</button></span></div>
     <div class="plist">${list.map(p => { const bad = p.prob; const k = c + '~' + pkey(p); const sid = sidOf(p); return `<div class="prow click${bad ? ' bad' : ''}${sel.has(k) ? ' on' : ''}" data-ath="${c}~${esc(pkey(p))}" tabindex="0" title="ดูประวัตินักกีฬา"><label class="psel" data-psel><input type="checkbox" data-pk="${esc(k)}" ${sel.has(k) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></label><span class="plink">${esc(p.name)}${p.clash ? ' <small class="warnt">เวลาชน</small>' : ''}${p.ban ? ' <small class="warnt">ตัดสิทธิ์</small>' : ''}</span><span class="num muted">${esc(p.cls)}</span><span class="num muted sm">${esc(sid)}</span><span class="muted sm">${[...p.sports].map(sportName).join(', ')}${p.ath.size ? (p.sports.size ? ', ' : '') + 'กรีฑา ' + p.ath.size : ''}</span></div>`; }).join('') || '<p class="muted sm">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>'}</div>`;
 }
@@ -2748,6 +2749,35 @@ const stripPre = n => String(n || '').trim().replace(/^(เด็กชาย|�
 function splitName(n) { const t = stripPre(n).split(/\s+/); return [t[0] || '', t.slice(1).join(' ')]; }
 /* รหัสประเภทบัตร (แบบบัตรกีฬาระดับชาติ) */
 const BADGE_CODES = [['A', 'นักกีฬา', 'Athlete'], ['C', 'ครูคณะสี / ผู้ฝึกสอน', 'Coach'], ['J', 'กรรมการตัดสิน', 'Judge'], ['O', 'กรรมการจัดการแข่งขัน / บันทึกผล', 'Official'], ['M', 'ประชาสัมพันธ์ / สื่อ', 'Media'], ['V', 'แขกผู้มีเกียรติ', 'VIP']];
+/* จัดหน้าพิมพ์บัตร: 'badge' = 4 ใบ/แผ่น หน้า-หลังแยกแผ่น · 'badgef' = ด้านหน้าอย่างเดียว
+   'sticker' = สติ๊กเกอร์ CARD014: 1 ใบ/แผ่น A4 ช่องซ้าย (หน้า) + ช่องขวา (หลัง) 97×145 มม. ห่างขอบซ้าย 8 มม. ขอบล่าง 11 มม. ลอกแล้วพับประกบ */
+function badgePages(items, fr, back, style) {
+  if (style === 'sticker') return items.map((x, i) => `<section class="sheet stk"><div class="stkc"><div class="stkp">${fr[i]}</div><div class="stkp">${back(x)}</div><i class="fold"></i></div></section>`).join('');
+  const both = style !== 'badgef'; const sheets = [];
+  for (let i = 0; i < items.length; i += 4) { const pg = items.slice(i, i + 4); sheets.push(`<section class="sheet bsheet"><div class="bgrid">${fr.slice(i, i + 4).join('')}</div></section>`);
+    if (both) { const order = [1, 0, 3, 2].map(j => pg[j] || null); if (pg.length <= 2) order.length = 2; sheets.push(`<section class="sheet bsheet"><div class="bgrid">${order.map(back).join('')}</div></section>`); } }
+  return sheets.join('');
+}
+const STK_BAR = `<div class="stkbar"><b>สติ๊กเกอร์ CARD014</b> · ใส่กระดาษให้ช่องสติ๊กเกอร์อยู่ด้านล่างของแผ่น · ตั้ง Scale 100% และเปิด Background graphics
+  <label>เลื่อนซ้าย-ขวา <input type="number" step="0.5" id="stkx"> มม.</label><label>ขึ้น-ลง <input type="number" step="0.5" id="stky"> มม.</label>
+  <label><input type="checkbox" id="stkg" checked> แสดงเส้นตัด (ไม่พิมพ์)</label><button id="stkp">พิมพ์</button></div>
+`;
+/* ตั้งค่าแถบปรับตำแหน่งในหน้าต่างพิมพ์ (ทำจากหน้าหลัก ไม่พึ่งสคริปต์ในหน้าต่างพิมพ์) */
+function setupStk(w, tries = 0) {
+  const d = w && w.document; const X = d && d.getElementById('stkx'); if (!X) { if (tries < 40) setTimeout(() => setupStk(w, tries + 1), 150); return; }
+  const Y = d.getElementById('stky'), G = d.getElementById('stkg'); let o = { x: 0, y: 0 }; try { o = JSON.parse(localStorage.getItem('gem-stkoff')) || o; } catch (e) { }
+  const ap = () => { d.documentElement.style.setProperty('--ox', (+X.value || 0) + 'mm'); d.documentElement.style.setProperty('--oy', (+Y.value || 0) + 'mm'); try { localStorage.setItem('gem-stkoff', JSON.stringify({ x: +X.value || 0, y: +Y.value || 0 })); } catch (e) { } };
+  X.value = o.x; Y.value = o.y; ap(); X.oninput = ap; Y.oninput = ap; G.onchange = () => d.body.classList.toggle('noguide', !G.checked);
+  d.getElementById('stkp').onclick = () => w.print();
+}
+const STK_CSS = `.sheet.stk{position:relative;width:210mm;height:297mm;padding:0;max-width:none;box-sizing:border-box;overflow:hidden}
+.stkc{position:absolute;left:calc(8mm + var(--ox,0mm));top:calc(141mm - var(--oy,0mm));width:194mm;height:145mm;display:flex}
+.stkp{position:relative;width:97mm;height:145mm;overflow:hidden}.stkp .bd{width:100%;height:100%;border:0;border-radius:0}
+.stkp .bdh,.stkp .bkh{padding-top:12.5mm}.stkp .bdbar{height:5mm}
+@media screen{.sheet.stk{max-width:210mm!important}.stkp{outline:.3mm dashed #E11D48;border-radius:3.2mm}.stkp::before,.stkp::after{content:'';position:absolute;top:5mm;width:4.5mm;height:4.5mm;border-radius:50%;border:.3mm solid #E11D48;background:rgba(255,255,255,.7);z-index:5}.stkp::before{left:5mm}.stkp::after{right:5mm}
+.stkc .fold{position:absolute;left:97mm;top:0;bottom:0;border-left:.3mm dotted #E11D48;z-index:6}.noguide .stkp{outline:0}.noguide .stkp::before,.noguide .stkp::after,.noguide .fold{display:none}
+.stkbar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:#0B1F4D;color:#fff;padding:8px 14px;font-size:13px}.stkbar input[type=number]{width:60px}.stkbar button{margin-left:auto;padding:6px 16px;font:inherit;font-weight:700;border-radius:8px;border:0;cursor:pointer}}
+@media print{.stkbar,.fold{display:none}}`;
 async function printBadges(list, style = 'badge') {
   list = list.filter(x => athleteIndex(x.c)[x.key]); if (!list.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; }
   if (style === 'qr') { printQRList(list); return; }
@@ -2776,12 +2806,9 @@ async function printBadges(list, style = 'badge') {
       <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)} <small>(${esc([...v.sp].join(', '))})</small>${pinOf(vIdx(v.name)) ? '' : ' <small>· ไม่มีหมุด</small>'}</span>`).join('') || '<span>-</span>'}</div></div>
       <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t, e]) => `<span class="${c === 'A' ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">แถบสีบนบัตร = สีของคณะ · QR ด้านหน้า = เลขประจำตัวนักเรียน ใช้สแกนรายงานตัว</div></div>
       <div class="bkf">บัตรนี้เป็นของ${esc(evSchool())} หากพบโปรดส่งคืนกองอำนวยการ · ห้ามให้ผู้อื่นใช้แทน</div><div class="bdbar"></div></div>`; };
-  const fronts = list.map(front); const sheets = [];
-  for (let i = 0; i < list.length; i += 4) { const pg = list.slice(i, i + 4);
-    sheets.push(`<section class="sheet bsheet"><div class="bgrid">${fronts.slice(i, i + 4).join('')}</div></section>`);
-    if (both) { const order = [1, 0, 3, 2].map(j => pg[j] || null); if (pg.length <= 2) order.length = 2; sheets.push(`<section class="sheet bsheet"><div class="bgrid">${order.map(back).join('')}</div></section>`); } }
+  const fronts = list.map(front);
   const mapCss = typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '';
-  printDoc(`บัตรนักกีฬา ${list.length} ใบ${both ? ' (หน้า-หลัง)' : ''}`, spriteDefs([...icons]) + sheets.join(''), BADGE_CSS + mapCss);
+  const pw = printDoc(`บัตรนักกีฬา ${list.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : both ? ' (หน้า-หลัง)' : ''}`, (style === 'sticker' ? STK_BAR : '') + spriteDefs([...icons]) + badgePages(list, fronts, back, style), BADGE_CSS + mapCss + (style === 'sticker' ? STK_CSS : ''), style === 'sticker'); if (style === 'sticker') setupStk(pw);
 }
 const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-columns:repeat(2,100mm);grid-auto-rows:142mm;gap:3mm 5mm;justify-content:center}
 .bd{position:relative;border:.3mm solid #bbb;border-radius:3mm;overflow:hidden;display:flex;flex-direction:column;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -2870,7 +2897,7 @@ function openAthlete(c, key) {
     try { const img = await fileToPhoto(f); await setPhoto(pid, img); $('#aph').innerHTML = `<img src="${img}" alt="">`; $('#aphx').hidden = false; $('#aphl').textContent = '📷 เปลี่ยนรูป'; $('#aperr').textContent = ''; logIt('เพิ่มรูปนักกีฬา', `${a.name} · ${COLORS[c].n}`); toast('บันทึกรูปแล้ว'); }
     catch (x) { $('#aperr').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); } });
   $('#aphx')?.addEventListener('click', () => ask(`ลบรูปของ ${a.name}?`, async () => { try { await setPhoto(pid, null); logIt('ลบรูปนักกีฬา', a.name); toast('ลบรูปแล้ว'); } catch (x) { toast('ลบไม่ได้'); } openAthlete(c, key); }, 'ลบรูป'));
-  $('#apcard').onclick = () => printBadges([{ c, key }], 'badge');
+  $('#apcard').onclick = () => printBadges([{ c, key }], UI.cardStyle && UI.cardStyle !== 'qr' ? UI.cardStyle : 'badge');
   $('#apedit')?.addEventListener('click', () => openStudentEdit(sid, a.cls, a.name, () => openAthlete(c, key)));
   $('#apcert').onclick = () => openCertDlg(c, key);
   $('#modal').onclick = e => { const b = e.target.closest('[data-athed]'); if (!b) return; e.stopPropagation(); const [eid, cc, ...k] = b.dataset.athed.split('~'); closeModal(); resetModalHandlers(); UI.regColor = +cc;
@@ -2937,10 +2964,10 @@ header.ph{display:flex;justify-content:space-between;gap:10px;border-bottom:2px 
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:8mm}h3{font-size:15px;margin:6px 0}table{width:100%;border-collapse:collapse;margin:4px 0}th,td{border:1px solid #888;padding:3px 5px;text-align:left;font-size:12px;vertical-align:top}th{background:#eef}
 .sign{display:flex;justify-content:space-between;gap:10mm;margin-top:10mm}.box{display:inline-block;width:11px;height:11px;border:1px solid #333;vertical-align:middle}.num{text-align:center}
 .mt{margin-top:6mm}@page{size:A4;margin:0}@media screen{body{background:#ddd}.sheet{background:#fff;max-width:186mm;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.2)}}`;
-function printDoc(title, body, css = '') {
-  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>${esc(title)}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap"><style>${PRINT_CSS}${css}</style></head><body>${body}<script>window.onload=function(){(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){setTimeout(function(){window.print()},300)})}<\/script></body></html>`;
+function printDoc(title, body, css = '', noAuto = false) {
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>${esc(title)}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap"><style>${PRINT_CSS}${css}</style></head><body>${body}${noAuto ? '' : '<script>window.onload=function(){(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){setTimeout(function(){window.print()},300)})}<\/script>'}</body></html>`;
   const w = window.open('', '_blank');
-  if (w && w.document) { w.document.open(); w.document.write(html); w.document.close(); } else { download(title + '.html', html); toast('เบราว์เซอร์บล็อกหน้าต่างใหม่ จึงดาวน์โหลดเป็นไฟล์แทน เปิดไฟล์แล้วสั่งพิมพ์'); }
+  if (w && w.document) { w.document.open(); w.document.write(html); w.document.close(); return w; } else { download(title + '.html', html); toast('เบราว์เซอร์บล็อกหน้าต่างใหม่ จึงดาวน์โหลดเป็นไฟล์แทน เปิดไฟล์แล้วสั่งพิมพ์'); }
 }
 const phead = (t, r) => `<header class="ph"><div><b>${esc(evName() + (evYear() ? ' ' + evYear() : ''))}</b> · ${esc(t)}</div><div>${r}</div></header>`;
 const SIGN2 = `<div class="sign"><span>ลงชื่อกรรมการผู้ตัดสิน ____________________</span><span>ลงชื่อกรรมการบันทึกผล ____________________</span></div>`;
@@ -3270,7 +3297,7 @@ function staffCard() {
     <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button></div></div>
     <div class="seg mini stff"><button data-stff="" class="${F === '' ? 'on' : ''}">ทั้งหมด ${L.length}</button><button data-stff="acc" class="${F === 'acc' ? 'on' : ''}">มีบัญชีเข้าใช้ ${nAcc}</button>${['C', 'J', 'O', 'M', 'V'].map(k => `<button data-stff="${k}" class="${F === k ? 'on' : ''}"><b>${k}</b> ${esc(codeName(k))} ${n(k)}</button>`).join('')}</div>
     ${shown.length ? `<div class="pselbar"><label class="ck"><input type="checkbox" data-stfall ${shown.every(p => sel.has(p.id)) ? 'checked' : ''}> เลือกทั้งหมด (${shown.length})</label><span class="muted sm">เลือกแล้ว ${nSel} คน</span>
-      <span class="pprint"><select id="stfstyle"><option value="badge">บัตรหน้า-หลัง</option><option value="badgef" ${UI.stfStyle === 'badgef' ? 'selected' : ''}>บัตรด้านหน้าอย่างเดียว</option></select><button class="btn sm" data-act="staffprint" ${nSel ? '' : 'disabled'}>พิมพ์บัตรที่เลือก ${nSel || ''}</button></span></div>
+      <span class="pprint"><select id="stfstyle"><option value="badge">บัตรหน้า-หลัง</option><option value="badgef" ${UI.stfStyle === 'badgef' ? 'selected' : ''}>บัตรด้านหน้าอย่างเดียว</option><option value="sticker" ${UI.stfStyle === 'sticker' ? 'selected' : ''}>สติ๊กเกอร์ CARD014 (1 ใบ/แผ่น)</option></select><button class="btn sm" data-act="staffprint" ${nSel ? '' : 'disabled'}>พิมพ์บัตรที่เลือก ${nSel || ''}</button></span></div>
     <div class="scroll"><table class="std stftab"><thead><tr><th></th><th>บัตร</th><th>ชื่อ-สกุล / ตำแหน่ง</th><th>หน้าที่ในงาน</th><th>บัญชีและสิทธิ์</th><th>ลงนาม</th><th></th></tr></thead><tbody>
       ${shown.map(p => `<tr><td><input type="checkbox" data-stfk="${p.id}" ${sel.has(p.id) ? 'checked' : ''} ${p.code ? '' : 'disabled title="ยังไม่ได้กำหนดประเภทบัตร"'} aria-label="เลือก ${esc(p.name)}"></td><td>${p.code ? `<span class="bcode" style="--tc:${p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code]}">${p.code}</span>` : '<span class="muted">–</span>'}</td>
         <td><b>${esc(p.name)}</b>${p.job ? `<br><small class="muted">${esc(p.job)}</small>` : ''}</td><td>${esc(p.pos || '')}${p.code === 'C' && p.c >= 0 ? ' ' + chip(p.c) : ''}${(p.sports || []).length && p.role !== 'scorer' ? '<br><small class="muted">' + p.sports.map(sportName).join(', ') + '</small>' : ''}</td><td class="sm">${acc(p)}</td><td class="num">${p.sign ? `ลำดับ ${p.sign}` : ''}</td>
@@ -3334,10 +3361,8 @@ async function printStaffBadges(ids, style) {
       <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน${(p.sports || []).length ? 'ที่รับผิดชอบ' : ''}</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl${vs.length > 6 ? ' two' : ''}">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)}</span>`).join('') || '<span>-</span>'}</div></div>
       <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t]) => `<span class="${c === p.code ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">สีแถบบนบัตรบอกประเภทบัตร (ครูคณะสีใช้สีของคณะ)</div></div>
       <div class="bkf">บัตรนี้เป็นของ${esc(evSchool())} หากพบโปรดส่งคืนกองอำนวยการ · ห้ามให้ผู้อื่นใช้แทน</div><div class="bdbar"></div></div>`; };
-  const fr = L.map(front); const sheets = [];
-  for (let i = 0; i < L.length; i += 4) { const pg = L.slice(i, i + 4); sheets.push(`<section class="sheet bsheet"><div class="bgrid">${fr.slice(i, i + 4).join('')}</div></section>`);
-    if (both) { const order = [1, 0, 3, 2].map(j => pg[j] || null); if (pg.length <= 2) order.length = 2; sheets.push(`<section class="sheet bsheet"><div class="bgrid">${order.map(back).join('')}</div></section>`); } }
-  printDoc(`บัตรบุคลากร ${L.length} ใบ`, spriteDefs([...icons]) + sheets.join(''), BADGE_CSS + (typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : ''));
+  const fr = L.map(front);
+  const pw = printDoc(`บัตรบุคลากร ${L.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : ''}`, (style === 'sticker' ? STK_BAR : '') + spriteDefs([...icons]) + badgePages(L, fr, back, style), BADGE_CSS + (typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '') + (style === 'sticker' ? STK_CSS : ''), style === 'sticker'); if (style === 'sticker') setupStk(pw);
 }
 
 function rolesCard() {
