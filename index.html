@@ -785,6 +785,9 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .btn.danger-t{color:#B91C1C}
 .bcode{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:var(--tc);color:#fff;font-weight:800}
 .stff{display:inline-flex;flex-wrap:wrap;width:auto;margin:6px 0 8px}.stff b{margin-right:2px}.spck{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px 8px}.stftab td{vertical-align:middle}
+.clbtn{background:#FFF4E5;color:#9A3412;border:1px solid #F5B971}.clbtn.new{background:#C2410C;color:#fff;border-color:#C2410C;animation:clp 1.6s ease-in-out 3}.clbtn b{background:#fff;color:#C2410C;border-radius:999px;padding:0 6px;margin-left:4px;font-size:11px}
+@keyframes clp{50%{box-shadow:0 0 0 6px rgba(194,65,12,.25)}}
+.clrow2{padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:0 0 6px}.clrow2.new{border-color:#F5B971;background:#FFF8EE}.clrow2>div:first-child{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -884,8 +887,10 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.25.0', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.26.1', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.26.1', 'แจ้งเตือนนักกีฬาเวลาชน (ปุ่ม ⚠ ที่หัวเว็บ + แจ้งทันทีเมื่อเกิดใหม่หลังบันทึกผล) · ตัวเลือกตำแหน่ง/หน้าที่ตามประเภทบัตร · หมุดเลขบนแผนที่ในบัตรไม่ทับกัน'],
+  ['1.26.0', 'ทะเบียนบุคลากร: รวมผู้ใช้/สิทธิ์ ครูประธานคณะสี บัตรบุคลากร ผู้ลงนามเกียรติบัตร และชื่อกรรมการในใบบันทึกผลไว้ที่เดียว'],
   ['1.25.0', 'บัตรบุคลากร C J O M V: เพิ่ม/แก้/ลบ รูป ดึงจากผู้ใช้ เลือกพิมพ์หน้า-หลัง (หน้าจัดการการแข่งขัน)'],
   ['1.24.2', 'ค้นหานักกีฬาด้วยรหัสประจำตัว · ปุ่มเปลี่ยนรูป/ลบรูปในหน้าประวัตินักกีฬาชัดขึ้น'],
   ['1.24.1', 'บัตรห้อยคอ: ชื่อ/สกุลแยกบรรทัด ไม่มีคำนำหน้า · ด้านหลังมีกำหนดการ แผนที่สนาม และความหมายรหัสบัตร · แก้ไขข้อมูลนักเรียนได้จากหน้าประวัติและหน้านักเรียน'],
@@ -1009,7 +1014,7 @@ const canRoster = c => { const r = myRole(); return r.role === 'admin' || (r.rol
 const anyEdit = () => myRole().role !== 'viewer';
 function nameOf(id) {
   if (!id) return 'ไม่ทราบผู้บันทึก';
-  const u = localUsers()[id] || (S.meta.roles || {})[id]; const n = u?.name || (id === ME.id && ME.name) || NAMES[id] || id;
+  const st = staffOf(id); const u = localUsers()[id] || (S.meta.roles || {})[id]; const n = st?.name || u?.name || (id === ME.id && ME.name) || NAMES[id] || id;
   return id === ME.id ? n + ' (คุณ)' : n;
 }
 /* ---------- ผู้ใช้ในโหมดทดลอง (ข้อมูลในเครื่อง): ชื่อ + PIN ---------- */
@@ -2004,7 +2009,7 @@ function render() { DATA_TICK++;
   const nLive = mode === 'connecting' ? 0 : liveList().length;
   const nDel = mode === 'connecting' ? 0 : delayList().length;
   $('#livechip').innerHTML = (nLive ? `<a href="#venues" class="livechip" data-tip="livelist"><i></i>กำลังแข่ง ${nLive} นัด</a>` : '') + (nDel ? `<a href="#venues" class="delaychip" data-tip="delaylist">ล่าช้า/รอ ${nDel} นัด</a>` : '');
-  $('#authbox').innerHTML = mode === 'local' ? (ME.id ? `<span class="who">${esc(ME.name)}</span><button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm" data-act="login">เข้าสู่ระบบ</button>') : mode === 'shared' && (auth || sb) ? (ME.id ? `<span class="who" title="${esc(ME.id)}">${esc(ME.name || ME.id)}</span>${fbPinMode() ? `<button class="btn sm ghost" data-act="mypin">${MYPIN ? 'เปลี่ยน PIN' : 'ตั้ง PIN'}</button>` : ''}<button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm ghost" data-act="login">เข้าสู่ระบบ (ครู/กรรมการ)</button>') : '';
+  $('#authbox').innerHTML = mode === 'local' ? (ME.id ? `<span class="who">${esc(ME.name)}</span><button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm" data-act="login">เข้าสู่ระบบ</button>') : mode === 'shared' && (auth || sb) ? (ME.id ? `<span class="who" title="${esc(ME.id)}">${esc(ME.name || ME.id)}</span>${fbPinMode() ? `<button class="btn sm ghost" data-act="mypin">${MYPIN ? 'เปลี่ยน PIN' : 'ตั้ง PIN'}</button>` : ''}<button class="btn sm ghost" data-act="logout">ออกจากระบบ</button>` : '<button class="btn sm ghost" data-act="login">เข้าสู่ระบบ (ครู/กรรมการ)</button>') : ''; $('#authbox').insertAdjacentHTML('afterbegin', clashBtn());
   if (!anyEdit()) editOn = false;
   $('#editbtn').hidden = !anyEdit(); $('#editbtn').textContent = editOn ? 'ปิดโหมดแก้ไข' : 'โหมดแก้ไข'; $('#editbtn').classList.toggle('on', editOn);
   const sx = window.scrollX, sy = window.scrollY;
@@ -2505,9 +2510,9 @@ function vTeams() {
     const cnt = c => { const rs = new Set(S.meta.classes?.[c] || []); const l = studs.filter(st => rs.has(st.cls)); return { rooms: rs.size, n: l.length, m: l.filter(x => x.sex === 'ชาย').length, f: l.filter(x => x.sex === 'หญิง').length }; };
     return head + `<div class="cgrid">${COLORS.map((k, c) => { const x = cnt(c); const info = S.meta.colorInfo?.[c] || {};
       return `<section class="card ccard" style="--tc:${k.c}"><div class="cch">${gem(c, 'xl')}<div class="grow0">${ed ? `<input class="cname" data-cname="${c}" value="${esc(k.n)}" aria-label="ชื่อคณะสี">` : `<h2>คณะ${esc(k.n)}</h2>`}<small class="muted">${x.rooms} ห้อง · นักเรียน ${x.n.toLocaleString()} คน${x.n ? ` (ชาย ${x.m} · หญิง ${x.f})` : ''}</small></div></div>
-        ${ed ? `<div class="ov"><label class="fld">ครูประธานคณะสี<input data-cinfo="${c}|teacher" value="${esc(info.teacher || '')}"></label><label class="fld">ประธานนักเรียน<input data-cinfo="${c}|leader" value="${esc(info.leader || '')}"></label></div>` : (info.teacher || info.leader ? `<p class="sm">${info.teacher ? 'ครูประธาน: ' + esc(info.teacher) : ''}${info.leader ? ' · ประธานนักเรียน: ' + esc(info.leader) : ''}</p>` : '')}
+        ${ed ? `<div class="ov"><label class="fld">ครูประธานคณะสี<input data-cinfo="${c}|teacher" list="stafflist" value="${esc(info.teacher || '')}" placeholder="เลือกจากทะเบียนบุคลากร"></label><label class="fld">ประธานนักเรียน<input data-cinfo="${c}|leader" value="${esc(info.leader || '')}"></label></div>` : (info.teacher || info.leader ? `<p class="sm">${info.teacher ? 'ครูประธาน: ' + esc(info.teacher) : ''}${info.leader ? ' · ประธานนักเรียน: ' + esc(info.leader) : ''}</p>` : '')}
         <div class="rchips">${(S.meta.classes?.[c] || []).slice().sort(clsSort).map(r => `<span class="rchip">ม.${r}</span>`).join('') || '<span class="muted sm">ยังไม่มีห้อง</span>'}</div></section>`; }).join('')}</div>
-    <section class="card"><div class="maphead"><div><h2>กำหนดห้องเรียนให้คณะสี</h2><p class="muted sm">${ed ? 'เลือกคณะสีของแต่ละห้อง ระบบบันทึกทันที' : 'เฉพาะผู้ดูแลที่แก้ไขได้'} · ${rooms.length} ห้อง${unassigned.length ? ` · <b class="warnt">ยังไม่กำหนด ${unassigned.length} ห้อง</b>` : ''}</p></div>
+    <datalist id="stafflist">${(S.meta.staff || []).map(p => `<option value="${esc(p.name)}">${esc(p.job || p.pos || '')}</option>`).join('')}</datalist><section class="card"><div class="maphead"><div><h2>กำหนดห้องเรียนให้คณะสี</h2><p class="muted sm">${ed ? 'เลือกคณะสีของแต่ละห้อง ระบบบันทึกทันที' : 'เฉพาะผู้ดูแลที่แก้ไขได้'} · ${rooms.length} ห้อง${unassigned.length ? ` · <b class="warnt">ยังไม่กำหนด ${unassigned.length} ห้อง</b>` : ''}</p></div>
       ${ed ? `<div class="actions m0">${rooms.length ? '<button class="btn sm" data-act="autorooms">จัดห้องอัตโนมัติ</button>' : ''}<label class="fld inline"><span class="vh">เพิ่มห้อง</span><input id="newroom" placeholder="เช่น 1/13" size="7"></label><button class="btn sm ghost" data-act="addroom">เพิ่มห้อง</button></div>` : ''}</div>
       ${rooms.length ? `<div class="rmx">${Object.keys(byGrade).sort().map(g => `<div class="rmrow"><b class="rmg">ม.${g}</b><div class="rmcells">${byGrade[g].map(r => { const c = colorOfRoom(r); const n = (S.students?.[`g${r.replace('/', '-')}`]?.list || []).length;
         return `<label class="rmc${c >= 0 ? '' : ' none'}" style="${c >= 0 ? `--tc:${COLORS[c].c}` : ''}" title="ม.${r}${n ? ' · ' + n + ' คน' : ''}"><span>${r}${n ? `<small>${n}</small>` : ''}</span>${ed ? `<select data-room="${r}" aria-label="คณะสีของห้อง ${r}"><option value="">—</option>${COLORS.map((k, i) => `<option value="${i}" ${i === c ? 'selected' : ''}>${k.n}</option>`).join('')}</select>` : `<em>${c >= 0 ? COLORS[c].n : '—'}</em>`}</label>`; }).join('')}</div></div>`).join('')}</div>` : '<p class="muted">ยังไม่มีห้องเรียน นำเข้ารายชื่อนักเรียนในแท็บ “นักเรียน” หรือเพิ่มห้องเอง</p>'}</section>`;
@@ -2765,7 +2770,7 @@ async function printBadges(list, style = 'badge') {
       const vn = sl[0]?.venue || (own[0] && venueOf(ev, own[0])) || ev.venue || ''; const no = vNo(vn); if (no) vs[no - 1].sp.add(sportName(ev.sport));
       const when = sl.length ? sl.slice(0, 2).map(t => `${fmtDate(t.date)} ${t.time}`).join(', ') + (sl.length > 2 ? ` +${sl.length - 2}` : '') : (own.length || hasResults(ev) ? 'แข่งครบแล้ว' : 'รอกำหนดเวลา');
       return `<tr><td>${esc(sportName(ev.sport))} ${esc(ev.label)}</td><td class="nw">${esc(when)}</td><td class="c">${no ? `<i class="vn">${no}</i>` : ''}</td></tr>`; }).join('');
-    const pins = vs.map((v, i) => { const p = pinOf(vIdx(v.name)); return p ? `<i class="vp" style="left:${p[0]}%;top:${p[1]}%">${i + 1}</i>` : ''; }).join('');
+    const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(vIdx(v.name)) })).filter(x => x.p));
     return `<div class="bd bk" style="--tc:${k.c}"><div class="bkh"><b>${esc(fn)} ${esc(ln)}</b><span>คณะ${esc(k.n)} · ม.${esc(a.cls)}</span></div>
       <div class="bks"><div class="bkt">กำหนดการแข่งขัน</div><table class="bkr"><tbody>${rows || '<tr><td>ยังไม่มีรายการ</td></tr>'}</tbody></table></div>
       <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)} <small>(${esc([...v.sp].join(', '))})</small>${pinOf(vIdx(v.name)) ? '' : ' <small>· ไม่มีหมุด</small>'}</span>`).join('') || '<span>-</span>'}</div></div>
@@ -2794,7 +2799,7 @@ const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-c
 .bks{padding:1.6mm 3.5mm 0}.bkt{font-size:9px;font-weight:700;color:#555;letter-spacing:.3px;border-bottom:.3mm solid #e5e7eb;margin-bottom:1mm;padding-bottom:.5mm}
 .bkr{width:100%;border-collapse:collapse;margin:0}.bkr td{border:0;border-bottom:.2mm dotted #ddd;padding:.6mm .5mm;font-size:9.5px;vertical-align:top}.bkr .nw{white-space:nowrap;color:#333}.bkr .c{width:5mm;text-align:center}
 .vn,.vp{display:inline-flex;align-items:center;justify-content:center;width:4mm;height:4mm;border-radius:50%;background:var(--tc);color:#fff;font-style:normal;font-size:7.5px;font-weight:700;margin-right:1mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.bmap{position:relative;width:100%;aspect-ratio:1748/604;background-size:100% 100%;border-radius:1.5mm;border:.2mm solid #ccc;-webkit-print-color-adjust:exact;print-color-adjust:exact}.bmap .vp{position:absolute;transform:translate(-50%,-50%);width:4.6mm;height:4.6mm;border:.4mm solid #fff;box-shadow:0 0 .6mm rgba(0,0,0,.6);margin:0;font-size:8px}
+.bmap{position:relative;width:100%;aspect-ratio:1748/604;background-size:100% 100%;border-radius:1.5mm;border:.2mm solid #ccc;-webkit-print-color-adjust:exact;print-color-adjust:exact}.bmap .vpl{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.bmap .vpl line{stroke:#111;stroke-width:.25}.bmap .vpl circle{fill:#111}.bmap .vp{position:absolute;transform:translate(-50%,-50%);width:4.6mm;height:4.6mm;border:.4mm solid #fff;box-shadow:0 0 .6mm rgba(0,0,0,.6);margin:0;font-size:8px}
 .bvl{display:flex;flex-direction:column;gap:.6mm;margin-top:1.2mm}.bvl.two{display:grid;grid-template-columns:1fr 1fr;gap:.5mm 2mm}.bvl.two span{font-size:7.6px;line-height:1.15;align-items:flex-start}.bvl.two .vn{width:3.4mm;height:3.4mm;font-size:6.5px;flex:none}.bvl span{font-size:9.5px;display:flex;align-items:center}.bvl small{color:#666;margin-left:1mm}
 .bcl{display:grid;grid-template-columns:1fr 1fr;gap:.8mm 2mm}.bcl span{display:flex;align-items:center;gap:1.2mm;font-size:9px}.bcl b{width:4.5mm;height:4.5mm;border:.3mm solid #999;border-radius:1mm;display:inline-flex;align-items:center;justify-content:center;font-size:9px}.bcl .on b{background:#0B1F4D;color:#fff;border-color:#0B1F4D}.bcl .on{font-weight:700}
 .bkn{font-size:8.5px;color:#555;margin-top:1mm}.bkf{margin-top:auto;padding:1.5mm 3.5mm;font-size:8.5px;color:#555;border-top:.3mm dashed #ccc}`;
@@ -2806,7 +2811,7 @@ function printQRList(list) {
   printDoc(`บัตร QR ${cards.length} ใบ`, pages.map((pg, i) => `<section class="sheet qs">${phead('บัตร QR รายงานตัวนักกีฬา', `แผ่น ${i + 1}/${pages.length} · ${cards.length} คน`)}<div class="qgrid">${pg.map(card).join('')}</div><p class="small">ตัดตามเส้น · QR เก็บรหัสประจำตัวนักเรียน</p></section>`).join(''),
     `.qs{padding:8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
 }
-function certSigners() { try { return JSON.parse(localStorage.getItem('gem-cert') || 'null') || S.meta.certSigners || [{ n: '', p: 'ประธานคณะกรรมการจัดการแข่งขัน' }, { n: '', p: 'ผู้อำนวยการ' + evSchool() }]; } catch (e) { return [{ n: '', p: '' }, { n: '', p: '' }]; } }
+function certSigners() { const L = S.meta.staff || []; const g = k => L.find(p => p.sign === k); if (g(1) || g(2)) return [1, 2].map(k => g(k) ? { n: g(k).name, p: g(k).job || g(k).pos || '' } : { n: '', p: '' }); try { return JSON.parse(localStorage.getItem('gem-cert') || 'null') || S.meta.certSigners || [{ n: '', p: 'ประธานคณะกรรมการจัดการแข่งขัน' }, { n: '', p: 'ผู้อำนวยการ' + evSchool() }]; } catch (e) { return [{ n: '', p: '' }, { n: '', p: '' }]; } }
 function printCert(c, key, eid) {
   const a = athleteIndex(c)[key]; if (!a) return; const ev = eid ? evById(eid) : null; const md = ev ? athMedal(ev, c) : ''; const sg = certSigners(); const d = days(); const last = d[d.length - 1];
   const dt = last ? new Date(last) : new Date(); const thd = `${dt.getDate()} ${dt.toLocaleDateString('th-TH', { month: 'long' })} พ.ศ. ${dt.getFullYear() + 543}`;
@@ -2827,7 +2832,7 @@ function openCertDlg(c, key) {
   modal(`<div class="dlg"><h3>พิมพ์เกียรติบัตร · ${esc(a.name)}</h3>
     <label class="fld">ประเภทเกียรติบัตร<select id="cte"><option value="">เข้าร่วมการแข่งขัน (ไม่ระบุรายการ)</option>${evs.map(e => { const md = athMedal(e, c); return `<option value="${e.id}" ${md ? 'selected' : ''}>${md ? '🏅 ' + MED_N[md] + ' · ' : 'เข้าร่วม · '}${esc(evTitle(e))}</option>`; }).join('')}</select></label>
     ${sg.map((s, i) => `<div class="g2"><label class="fld">ผู้ลงนาม ${i + 1}<input id="sn${i}" value="${esc(s.n)}" placeholder="ชื่อ-สกุล"></label><label class="fld">ตำแหน่ง<input id="sp${i}" value="${esc(s.p)}"></label></div>`).join('')}
-    <p class="muted sm">ชื่อผู้ลงนามจำไว้ในเครื่องนี้สำหรับครั้งต่อไป</p>
+    <p class="muted sm">${(S.meta.staff || []).some(p => p.sign) ? 'ผู้ลงนามมาจากทะเบียนบุคลากร (แก้ไขที่หน้าจัดการการแข่งขัน › บุคลากร) แก้เฉพาะครั้งนี้ได้' : 'ตั้งผู้ลงนามประจำได้ที่ทะเบียนบุคลากร (จัดการการแข่งขัน › บุคลากร)'}</p>
     <div class="actions"><button class="btn" id="ctgo">พิมพ์</button><button class="btn ghost" data-back>กลับ</button></div></div>`);
   $('#ctgo').onclick = () => { const s2 = sg.map((_, i) => ({ n: $('#sn' + i).value.trim(), p: $('#sp' + i).value.trim() })); try { localStorage.setItem('gem-cert', JSON.stringify(s2)); } catch (e) { } printCert(c, key, $('#cte').value || null); };
   $('#modal [data-back]').onclick = () => openAthlete(c, key);
@@ -2939,6 +2944,11 @@ function printDoc(title, body, css = '') {
 }
 const phead = (t, r) => `<header class="ph"><div><b>${esc(evName() + (evYear() ? ' ' + evYear() : ''))}</b> · ${esc(t)}</div><div>${r}</div></header>`;
 const SIGN2 = `<div class="sign"><span>ลงชื่อกรรมการผู้ตัดสิน ____________________</span><span>ลงชื่อกรรมการบันทึกผล ____________________</span></div>`;
+/* ช่องลงชื่อใส่ชื่อกรรมการจากทะเบียนบุคลากร (J = ตัดสิน, O/กรรมการบันทึกผล ของชนิดกีฬานั้น) */
+function signFor(ev) { const L = S.meta.staff || []; const has = p => (p.sports || []).includes(ev.sport);
+  const j = L.filter(p => p.code === 'J' && has(p)).map(p => p.name); const o = L.filter(p => (p.role === 'scorer' || p.code === 'O') && has(p)).map(p => p.name);
+  const ln = (t, n) => `<span>ลงชื่อ${t} ____________________${n.length ? `<br><small>(${esc(n.slice(0, 2).join(' / '))})</small>` : ''}</span>`;
+  return `<div class="sign">${ln('กรรมการผู้ตัดสิน', j)}${ln('กรรมการบันทึกผล', o)}</div>`; }
 function sheetMatch({ ev, m }) {
   const t = teamsOf(ev, m); const sp = S.sports[ev.sport] || {};
   const side = sd => { const c = t[sd]; const ps = c >= 0 ? (rosterOf(ev.id, c).players || []) : []; const n = Math.max(ps.length, Math.min(rosterMax(ev) || 6, 20));
@@ -2948,7 +2958,7 @@ function sheetMatch({ ev, m }) {
     <h2>${esc(evTitle(ev))} · คู่ที่ ${m.no} ${esc(m.round || '')}</h2><p class="small">หน่วยคะแนน: ${esc(sp.unit || '')} · รายงานตัวก่อนแข่ง ${S.meta.checkinMin ?? 20} นาที ไม่มาภายใน ${S.meta.forfeitMin ?? 10} นาทีถือว่าสละสิทธิ์ · ประท้วงภายใน 15 นาทีหลังจบเกม${sp.rule || SPORT_RULES[ev.sport] ? ' · ' + esc(sp.rule || SPORT_RULES[ev.sport]) : ''}</p>
     <div class="cols">${side('a')}${side('b')}</div>
     ${setsOf(ev) ? (() => { const SET = setsOf(ev); return `<table class="settbl"><tr><th>เซต</th>${Array.from({ length: SET.n }, (_, i) => `<th>#${i + 1}${SET.pts[i] ? ` (${SET.pts[i]})` : ''}</th>`).join('')}<th>เซตที่ชนะ</th></tr>${['a', 'b'].map(sd => `<tr><td>${t[sd] >= 0 ? 'คณะ' + esc(COLORS[t[sd]].n) : esc(slotLabel(ev, m[sd]))}</td>${Array.from({ length: SET.n }, () => '<td></td>').join('')}<td></td></tr>`).join('')}</table><p class="small">ชนะ ${Math.floor(SET.n / 2) + 1} ใน ${SET.n} เซต${SET.deuce ? ' · ดิวซ์ ชนะห่าง 2 แต้ม' + (SET.cap ? ` (สูงสุด ${SET.cap})` : '') : ''}</p>`; })() : '<p>ผลการแข่งขัน (รายละเอียดครึ่ง/ช่วง): ________________________________________________</p>'}
-    <p>ผู้ชนะ: คณะ __________________ &nbsp; การประท้วง: <span class="box"></span> ไม่มี <span class="box"></span> มี (เวลา ______ น.)</p>${SIGN2}</section>`;
+    <p>ผู้ชนะ: คณะ __________________ &nbsp; การประท้วง: <span class="box"></span> ไม่มี <span class="box"></span> มี (เวลา ______ น.)</p>${signFor(ev)}</section>`;
 }
 function sheetEvent(ev) {
   const teams = ev.teams || []; const head = phead('ใบบันทึกผลการแข่งขัน', `${ev.date ? fmtDate(ev.date, true) : ''} ${ev.time ? 'เวลา ' + esc(ev.time) + ' น.' : ''} · ${esc(ev.venue || '')}`);
@@ -2957,10 +2967,10 @@ function sheetEvent(ev) {
     return Array.from({ length: judgeCount(ev) }, (_, j) => `<section class="sheet">${head}<h2>${esc(evTitle(ev))}</h2><p class="small">ใบให้คะแนน · ${esc(judgeName(ev, j + 1))} · ${esc(ev.note || '')}</p>
       <table><tr><th>คณะสี</th>${crit.map(k => `<th class="num">${esc(k.n)}<br><small>(${k.max})</small></th>`).join('')}<th class="num">รวม</th></tr>${teams.map(c => `<tr><td style="height:12mm">คณะ${esc(COLORS[c].n)}</td>${crit.map(() => '<td></td>').join('')}<td></td></tr>`).join('')}</table>
       <div class="sign"><span>ลงชื่อ ${esc(judgeName(ev, j + 1))} ____________________</span><span>วันที่ ______________</span></div></section>`).join(''); }
-  if (ev.format === 'points') return `<section class="sheet">${head}<h2>${esc(evTitle(ev))}</h2><p class="small">สะสมคะแนนหลายรอบ</p><table><tr><th>คณะสี</th>${(ev.rounds || []).map(r => `<th class="num">${esc(r.label)}</th>`).join('')}<th class="num">รวม</th></tr>${teams.map(c => `<tr><td style="height:10mm">คณะ${esc(COLORS[c].n)}</td>${(ev.rounds || []).map(() => '<td></td>').join('')}<td></td></tr>`).join('')}</table>${SIGN2}</section>`;
+  if (ev.format === 'points') return `<section class="sheet">${head}<h2>${esc(evTitle(ev))}</h2><p class="small">สะสมคะแนนหลายรอบ</p><table><tr><th>คณะสี</th>${(ev.rounds || []).map(r => `<th class="num">${esc(r.label)}</th>`).join('')}<th class="num">รวม</th></tr>${teams.map(c => `<tr><td style="height:10mm">คณะ${esc(COLORS[c].n)}</td>${(ev.rounds || []).map(() => '<td></td>').join('')}<td></td></tr>`).join('')}</table>${signFor(ev)}</section>`;
   return `<section class="sheet">${head}<h2>${esc(evTitle(ev))}</h2><p class="small">จัดอันดับ · รายงานตัวก่อนแข่ง ${S.meta.checkinMin ?? 20} นาที</p>
     <table><tr><th>คณะสี</th><th>นักกีฬา</th><th>มา</th><th class="num">สถิติ (เวลา/ระยะ)</th><th class="num">อันดับ</th></tr>${teams.map(c => `<tr><td>คณะ${esc(COLORS[c].n)}</td><td style="height:11mm">${names(c)}</td><td class="num"><span class="box"></span></td><td></td><td></td></tr>`).join('')}</table>
-    <p class="mt">ที่ 1 (ทอง): คณะ ____________ &nbsp; ที่ 2 (เงิน): คณะ ____________ &nbsp; ที่ 3 (ทองแดง): คณะ ____________</p>${SIGN2}</section>`;
+    <p class="mt">ที่ 1 (ทอง): คณะ ____________ &nbsp; ที่ 2 (เงิน): คณะ ____________ &nbsp; ที่ 3 (ทองแดง): คณะ ____________</p>${signFor(ev)}</section>`;
 }
 function sheetCheckin(v, list) {
   return `<section class="sheet">${phead('ใบเช็กชื่อนักกีฬา', `${fmtDate(UI.prDay, true)} · ${esc(v)}`)}<h2>เช็กชื่อนักกีฬา · ${esc(v)}</h2><p class="small">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${S.meta.checkinMin ?? 20} นาที · ติ๊กช่องเมื่อมาถึง</p>
@@ -3165,65 +3175,151 @@ function vAdmin() {
     <div class="actions"><button class="btn sm" data-addev="${sp.id}">+ เพิ่มรายการ (รุ่น/ประเภท)</button>${sp.isAthletics && evsAll.length ? `<button class="btn sm ghost" data-athsched="${sp.id}">จัดเวลากรีฑาอัตโนมัติ</button>` : ''}</div>` : '<p class="muted">เพิ่มชนิดกีฬาก่อน</p>'}</section></div>
   ${(() => { const pl = allMatches().filter(x => x.m.protest?.status === 'pending' || x.m.protest?.status === 'upheld' && x.m.protest.outcome === 'edit' && !x.m.protest.editedAt); return pl.length ? `<section class="card cfwarn"><h2>⚑ คำร้องประท้วงที่ต้องดำเนินการ <small class="muted num">${pl.length} เรื่อง</small></h2>${pl.map(x => { const t = teamsOf(x.ev, x.m); return `<div class="feed sm click" data-res="${x.ev.id}|${x.m.id}" tabindex="0"><span class="fl">${sIcon(x.ev.sport, 'sm')}${esc(evTitle(x.ev))} คู่ ${x.m.no} · ${chip(t[x.m.protest.side])} ประท้วง ${x.m.protest.status === 'pending' ? '<span class="protf-ic pending">รอพิจารณา</span>' : '<span class="protf-ic need">รอแก้ผลตามมติ</span>'}</span><span class="muted sm">${esc(x.m.protest.text || '')} · ยื่น ${new Date(x.m.protest.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span></div>`; }).join('')}<p class="muted sm">แตะเพื่อเปิดคู่นั้น แล้วกด “พิจารณาคำร้อง” ในส่วนวินัยและการประท้วง</p></section>` : ''; })()}
   ${conflictCard(conflicts, true)}
-  ${rolesCard()}${staffCard()}${scoringCard()}
+  ${mode === 'shared' && !sb ? '' : rolesCard()}${staffCard()}${scoringCard()}
   <section class="card"><h2>ข้อมูลและไฟล์</h2><div class="actions m0"><button class="btn ghost" data-act="backup">สำรอง/นำเข้าข้อมูลทั้งหมด</button><button class="btn ghost" data-act="dlsched">ตารางแข่ง (CSV)</button><button class="btn ghost" data-act="dlmedal">ผลทุกรายการ (CSV)</button><button class="btn ghost" data-act="dlrosterall">รายชื่อนักกีฬาทุกคณะ (CSV)</button></div>
     <h3 class="sub">พิมพ์และประกาศ</h3><div class="actions m0"><button class="btn ghost" data-act="report">ใบรายงานผลการแข่งขัน</button><button class="btn ghost" data-act="sheets" data-tip="text|ใบบันทึกผล ใบเช็กชื่อนักกีฬา และตารางแข่งติดหน้าสนาม พิมพ์ได้ทีละวัน/สนาม">เอกสารกรรมการ</button><button class="btn ghost" data-act="qr">โปสเตอร์ QR code</button><button class="btn ghost" data-act="medrec">รายชื่อผู้ได้รับเหรียญ (พิมพ์)</button><button class="btn ghost" data-act="medrecc">รายชื่อผู้ได้รับเหรียญ (CSV)</button></div>
     <h3 class="sub">ล้างข้อมูล</h3><div class="actions m0"><button class="btn danger" data-act="reset">ล้างข้อมูล / เริ่มใหม่</button></div>
     <p class="muted sm" data-tip="version">เวอร์ชัน ${APP_VERSION} · ปรับปรุง ${fmtDate(APP_DATE, true)}</p></section>
   ${logCard()}`;
 }
-/* ===================== บัตรบุคลากร (C J O M V) =====================
-   เก็บใน meta.staff = [{ id, code, name, pos, c, sports:[] }] · รูปเก็บที่ photos/st{id} (เฉพาะผู้มีสิทธิ์) */
+/* ===================== แจ้งเตือนนักกีฬาเวลาชน =====================
+   เกิดได้หลังบันทึกผล: ทีมที่ชนะถูกส่งเข้าคู่ถัดไป ซึ่งอาจทับกับรายการอื่นที่นักกีฬาคนเดียวกันลงไว้
+   ปุ่ม ⚠ ที่หัวเว็บ (เฉพาะผู้มีสิทธิ์) + แจ้งทันทีเมื่อมีกรณีใหม่ · ครูคณะสีเห็นเฉพาะคณะตัวเอง */
+let CL_C = { k: '', l: [] }, CL_PREV = null;
+function clashAlerts() {
+  if (CL_C.k === DATA_TICK + '|' + ME.id) return CL_C.l; const r = myRole(); const cols = r.role === 'color' ? [r.c] : COLORS.map((_, i) => i); const out = [];
+  cols.forEach(c => { const sch = athleteSchedule(c); const idx = athleteIndex(c); Object.entries(sch).forEach(([k, items]) => { const cl = clashesOf(items); if (!cl.length || !idx[k]) return;
+    cl.forEach(([x, y]) => out.push({ c, key: k, name: idx[k].name, cls: idx[k].cls, x, y, sig: `${c}|${k}|${x.eid}|${x.date}${x.time}|${y.eid}|${y.date}${y.time}` })); }); });
+  out.sort((a, b) => (a.x.date + a.x.time).localeCompare(b.x.date + b.x.time)); CL_C = { k: DATA_TICK + '|' + ME.id, l: out }; return out;
+}
+function clashSeen() { try { return new Set(JSON.parse(localStorage.getItem('gem-clseen') || '[]')); } catch (e) { return new Set(); } }
+function clashBtn() {
+  if (!anyEdit() || !Object.keys(S.rosters).length) return '';
+  const l = clashAlerts(); const seen = clashSeen(); const nNew = l.filter(x => !seen.has(x.sig)).length;
+  /* แจ้งทันทีเมื่อมีเวลาชนใหม่ระหว่างใช้งาน (เช่น หลังบันทึกผลแล้วทีมชนะถูกส่งเข้าคู่ถัดไป) */
+  const sigs = new Set(l.map(x => x.sig)); if (CL_PREV) { const add = l.filter(x => !CL_PREV.has(x.sig)); if (add.length) setTimeout(() => toast(`⚠ นักกีฬาเวลาชนเพิ่ม ${add.length} กรณี: ${add[0].name} (${COLORS[add[0].c].n})`, 'ดูและแก้', openClashes), 400); } CL_PREV = sigs;
+  const ppl = new Set(l.map(x => x.c + '|' + x.key)).size, pNew = new Set(l.filter(x => !seen.has(x.sig)).map(x => x.c + '|' + x.key)).size;
+  return l.length ? `<button class="btn sm clbtn${nNew ? ' new' : ''}" data-act="clashes" title="นักกีฬาที่มีนัดแข่งเวลาทับกัน">⚠ เวลาชน ${ppl} คน${pNew ? ` <b>ใหม่ ${pNew}</b>` : ''}</button>` : '';
+}
+function openClashes() {
+  const l = clashAlerts(); const seen = clashSeen();
+  modal(`<div class="dlg wide"><h3>นักกีฬาที่มีนัดแข่งเวลาทับกัน (${new Set(l.map(x => x.c + '|' + x.key)).size} คน · ${l.length} กรณี)</h3>
+    <p class="muted sm">มักเกิดหลังบันทึกผล: ทีมที่ชนะถูกส่งเข้าคู่ถัดไป ซึ่งชนกับรายการอื่นที่นักกีฬาคนเดียวกันลงไว้ แก้โดยเปลี่ยนตัวในรายการใดรายการหนึ่ง หรือเลื่อนเวลาคู่</p>
+    ${l.length ? l.map(x => `<div class="clrow2${seen.has(x.sig) ? '' : ' new'}"><div>${chip(x.c)} <a href="#" class="plink" data-ath="${x.c}~${esc(x.key)}">${esc(x.name)}</a> <small class="muted">ม.${esc(x.cls)}</small>${seen.has(x.sig) ? '' : ' <span class="pill bad">ใหม่</span>'}</div>
+      <div class="sm">${fmtDate(x.x.date)} <b>${esc(x.x.time)}</b> ${esc(x.x.label)} ↔ <b>${esc(x.y.time)}</b> ${esc(x.y.label)}</div></div>`).join('') : '<p class="muted">ไม่มีนักกีฬาเวลาชน</p>'}
+    <div class="actions"><button class="btn ghost" id="clseen">รับทราบทั้งหมด (ซ่อนป้าย “ใหม่”)</button><button class="btn ghost" data-close>ปิด</button></div></div>`);
+  $('#clseen').onclick = () => { try { localStorage.setItem('gem-clseen', JSON.stringify(l.map(x => x.sig))); } catch (e) { } closeModal(); render(); };
+}
+/* วางหมุดเลขบนแผนที่ไม่ให้ทับกัน: ดันหมุดที่ใกล้กันออกจากกัน แล้วลากเส้นไปจุดจริง */
+function pinsNoOverlap(list, Wmm = 93, Hmm = 93 * 604 / 1748, D = 5.2) {
+  const P = list.map(l => ({ ...l, ox: l.p[0] * Wmm / 100, oy: l.p[1] * Hmm / 100 })); P.forEach(p => { p.x = p.ox; p.y = p.oy; });
+  for (let it = 0; it < 120; it++) { let moved = false;
+    for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const a = P[i], b = P[j]; let dx = b.x - a.x, dy = b.y - a.y; let d = Math.hypot(dx, dy);
+      if (d < D) { if (d < .01) { dx = (j % 2 ? 1 : -1) * .7; dy = .7; d = 1; } const push = (D - d) / 2; const ux = dx / d, uy = dy / d; a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push; moved = true; } }
+    P.forEach(p => { p.x = Math.max(D / 2, Math.min(Wmm - D / 2, p.x)); p.y = Math.max(D / 2, Math.min(Hmm - D / 2, p.y)); });
+    if (!moved) break; }
+  const lines = P.filter(p => Math.hypot(p.x - p.ox, p.y - p.oy) > 1.2).map(p => `<line x1="${p.ox.toFixed(2)}" y1="${p.oy.toFixed(2)}" x2="${p.x.toFixed(2)}" y2="${p.y.toFixed(2)}"/><circle cx="${p.ox.toFixed(2)}" cy="${p.oy.toFixed(2)}" r=".7"/>`).join('');
+  return `<svg class="vpl" viewBox="0 0 ${Wmm} ${Hmm.toFixed(2)}" preserveAspectRatio="none">${lines}</svg>` + P.map(p => `<i class="vp" style="left:${(p.x / Wmm * 100).toFixed(2)}%;top:${(p.y / Hmm * 100).toFixed(2)}%">${p.n}</i>`).join('');
+}
+/* คำแนะนำตำแหน่ง/หน้าที่ตามประเภทบัตร */
+const DUTY_BY_CODE = { C: ['ครูประธานคณะสี', 'ครูคณะสี', 'ผู้ฝึกสอน', 'ผู้ช่วยผู้ฝึกสอน', 'ผู้จัดการทีม'], J: ['กรรมการตัดสิน', 'ผู้ตัดสินกลาง', 'ผู้กำกับเส้น', 'กรรมการจับเวลา', 'กรรมการวัดระยะ', 'กรรมการปล่อยตัว'], O: ['ผู้อำนวยการการแข่งขัน', 'กรรมการบันทึกผล', 'กรรมการรับรายงานตัว', 'กรรมการประจำสนาม', 'เจ้าหน้าที่สนาม', 'ฝ่ายพยาบาล', 'ฝ่ายสถานที่', 'ฝ่ายรางวัล'], M: ['ฝ่ายประชาสัมพันธ์', 'ผู้ประกาศ / พิธีกร', 'ช่างภาพ', 'ทีมไลฟ์สด / สื่อออนไลน์'], V: ['ประธานในพิธี', 'แขกผู้มีเกียรติ', 'ผู้แทนผู้ปกครอง', 'ผู้แทนเครือข่าย / ศิษย์เก่า'], '': [] };
+const JOB_LIST = ['ผู้อำนวยการโรงเรียน', 'รองผู้อำนวยการ', 'ครูชำนาญการพิเศษ', 'ครูชำนาญการ', 'ครู', 'ครูผู้ช่วย', 'พนักงานราชการ', 'ครูอัตราจ้าง', 'เจ้าหน้าที่', 'นักเรียน'];
+const ROLE_BY_CODE = { C: 'color', J: 'scorer', O: 'scorer', M: '', V: '' };
+
+/* ===================== ทะเบียนบุคลากร =====================
+   meta.staff = [{ id, name, job(ตำแหน่ง), pos(หน้าที่ในงาน), code(C/J/O/M/V/''), c, sports[], email, uid, role(admin/scorer/color/''), sign(0/1/2) }]
+   โหมดข้อมูลกลาง: อีเมล+สิทธิ์ ถูกเขียนลง meta.roles ด้วย (กฎ Firestore ยังตรวจสิทธิ์จาก roles ตามเดิม)
+   โหมดทดลอง: ผูกกับบัญชีในเครื่อง (meta.users) ผ่าน uid */
 const STAFF_COL = { C: '', J: '#B45309', O: '#0F766E', M: '#475569', V: '#A16207' };
 const STAFF_EN = { C: 'COACH', J: 'JUDGE', O: 'OFFICIAL', M: 'MEDIA', V: 'VIP' };
-const staffList = () => (S.meta.staff || []).slice();
+const staffList = () => (S.meta.staff || []).map(p => ({ ...p }));
 const codeName = k => (BADGE_CODES.find(x => x[0] === k) || [])[1] || k;
-function staffCard() {
-  const L = staffList(); const F = UI.stfF || ''; const sel = UI.stfSel || (UI.stfSel = new Set()); const shown = L.filter(p => !F || p.code === F).sort((a, b) => a.code.localeCompare(b.code) || (a.c ?? 9) - (b.c ?? 9) || a.name.localeCompare(b.name, 'th'));
-  const n = k => L.filter(p => p.code === k).length; const nSel = shown.filter(p => sel.has(p.id)).length;
-  return `<section class="card" id="staffcard"><div class="maphead"><div><h2>บัตรบุคลากร</h2><p class="muted sm">พิมพ์บัตรห้อยคอสำหรับครูคณะสี กรรมการ เจ้าหน้าที่ สื่อ และแขก (บัตรนักกีฬา A พิมพ์จากหน้าส่งรายชื่อนักกีฬา) · ${L.length} คน</p></div>
-    <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button><button class="btn sm ghost" data-act="staffimp">ดึงจากผู้ใช้และครูประธานคณะสี</button></div></div>
-    <div class="seg mini stff"><button data-stff="" class="${F ? '' : 'on'}">ทั้งหมด ${L.length}</button>${['C', 'J', 'O', 'M', 'V'].map(k => `<button data-stff="${k}" class="${F === k ? 'on' : ''}"><b>${k}</b> ${esc(codeName(k))} ${n(k)}</button>`).join('')}</div>
-    ${shown.length ? `<div class="pselbar"><label class="ck"><input type="checkbox" data-stfall ${shown.every(p => sel.has(p.id)) ? 'checked' : ''}> เลือกทั้งหมด (${shown.length})</label><span class="muted sm">เลือกแล้ว ${nSel} คน</span>
-      <span class="pprint"><select id="stfstyle"><option value="badge">หน้า-หลัง</option><option value="badgef" ${UI.stfStyle === 'badgef' ? 'selected' : ''}>ด้านหน้าอย่างเดียว</option></select><button class="btn sm" data-act="staffprint" ${nSel ? '' : 'disabled'}>พิมพ์บัตรที่เลือก ${nSel || ''}</button></span></div>
-    <div class="scroll"><table class="std stftab"><thead><tr><th></th><th>รหัส</th><th>ชื่อ-สกุล</th><th>ตำแหน่ง / หน้าที่</th><th>คณะ / ชนิดกีฬา</th><th></th></tr></thead><tbody>
-      ${shown.map(p => `<tr><td><input type="checkbox" data-stfk="${p.id}" ${sel.has(p.id) ? 'checked' : ''} aria-label="เลือก ${esc(p.name)}"></td><td><span class="bcode" style="--tc:${p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code]}">${p.code}</span></td><td>${esc(p.name)}</td><td class="muted">${esc(p.pos || '')}</td><td>${p.code === 'C' && p.c >= 0 ? chip(p.c) : ''}${(p.sports || []).map(s => `<span class="sumi sm">${sIcon(s, 'sm')}${esc(sportName(s))}</span>`).join(' ')}</td>
-        <td class="nowrap"><button class="btn sm ghost" data-stfed="${p.id}">แก้ไข</button> <button class="x" data-stfrm="${p.id}" aria-label="ลบ">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted sm">ยังไม่มีรายชื่อ กด “เพิ่มบุคลากร” หรือ “ดึงจากผู้ใช้และครูประธานคณะสี”</p>'}</section>`;
+const roleCode = r => r === 'color' ? 'C' : r === 'scorer' || r === 'admin' ? 'O' : '';
+function staffOf(id) { if (!id) return null; const L = S.meta.staff || []; return L.find(p => (p.email && p.email === id) || (p.uid && p.uid === id)) || null; }
+/* รวมผู้ใช้/ครูประธานคณะสีที่ยังไม่อยู่ในทะเบียน */
+function mergedStaff() {
+  const L = staffList(); const byName = n => L.find(x => normName(stripPre(x.name)) === normName(stripPre(n)));
+  if (mode === 'shared') Object.entries(S.meta.roles || {}).forEach(([em, r]) => { let p = L.find(x => x.email === em) || (r.name && byName(r.name));
+    if (!p) { p = { id: uid('st'), name: r.name || em.split('@')[0], job: '', pos: ROLE_N[r.role] || '', code: roleCode(r.role), c: r.role === 'color' ? (r.c ?? -1) : -1, sports: r.sports || [], sign: 0 }; L.push(p); }
+    if (!p.email) { p.email = em; p.role = r.role; if (r.role === 'color' && p.c == null) p.c = r.c; } });
+  else Object.entries(localUsers()).forEach(([id, u]) => { let p = L.find(x => x.uid === id) || byName(u.name || '');
+    if (!p) { p = { id: uid('st'), name: u.name || id, job: '', pos: ROLE_N[u.role] || '', code: roleCode(u.role), c: u.role === 'color' ? (u.c ?? -1) : -1, sports: u.sports || [], sign: 0 }; L.push(p); }
+    if (!p.uid) { p.uid = id; p.role = u.role; } });
+  COLORS.forEach((k, c) => { const t = (S.meta.colorInfo?.[c] || {}).teacher; if (t && !byName(t)) L.push({ id: uid('st'), name: t, job: '', pos: 'ครูประธานคณะสี', code: 'C', c, sports: [], sign: 0 }); });
+  return L;
 }
-function saveStaff(L, what) { const m = clone(S.meta); m.staff = L; put('meta', 'config', m); if (what) logIt(what, ''); }
+function staffNeedsMerge() { const a = mergedStaff(), b = S.meta.staff || []; return a.length !== b.length || a.some((p, i) => p.email !== b[i]?.email || p.uid !== b[i]?.uid); }
+/* บันทึกทะเบียน + ซิงก์สิทธิ์ */
+function staffMeta(L, m = clone(S.meta)) {
+  m.staff = L;
+  if (mode === 'shared') { const R = { ...(m.roles || {}) }; const linked = new Set();
+    L.forEach(p => { if (!p.email) return; const em = p.email.toLowerCase(); linked.add(em);
+      if (p.role) R[em] = { name: p.name, role: p.role, ...(p.role === 'color' ? { c: p.c >= 0 ? p.c : 0 } : {}), ...(p.role === 'scorer' ? { sports: p.sports || [] } : {}) }; else delete R[em]; });
+    Object.keys(R).forEach(em => { if (!linked.has(em)) delete R[em]; }); m.roles = R; }
+  else if (m.users) L.forEach(p => { if (p.uid && m.users[p.uid]) { const u = m.users[p.uid]; u.name = p.name; if (p.role) u.role = p.role; if (p.role === 'color') u.c = p.c >= 0 ? p.c : 0; } });
+  return m;
+}
+function saveStaff(L, what) { put('meta', 'config', staffMeta(L)); if (what) logIt(what, ''); }
+function staffCard() {
+  if (isAdmin() && !UI.stfMig && staffNeedsMerge()) { UI.stfMig = 1; setTimeout(() => saveStaff(mergedStaff(), 'ย้ายผู้ใช้และครูประธานคณะสีเข้าทะเบียนบุคลากร'), 0); }
+  const L = staffList(); const F = UI.stfF ?? ''; const sel = UI.stfSel || (UI.stfSel = new Set());
+  const ord = { admin: 0, scorer: 1, color: 2 }; const shown = L.filter(p => F === '' || (F === 'acc' ? !!(p.email || p.uid) && p.role : p.code === F)).sort((a, b) => (a.code || 'Z').localeCompare(b.code || 'Z') || (a.c ?? 9) - (b.c ?? 9) || a.name.localeCompare(b.name, 'th'));
+  const n = k => L.filter(p => p.code === k).length; const nSel = shown.filter(p => sel.has(p.id)).length; const nAcc = L.filter(p => (p.email || p.uid) && p.role).length;
+  const acc = p => p.email || p.uid ? `${p.role ? `<b>${ROLE_N[p.role]}</b>` : '<span class="muted">ไม่มีสิทธิ์</span>'}${p.role === 'color' ? ' ' + esc(COLORS[p.c]?.n || '') : ''}${p.role === 'scorer' ? ' · ' + ((p.sports || []).length ? p.sports.map(sportName).join(', ') : 'ทุกชนิด') : ''}<br><small class="muted">${esc(p.email || ('บัญชีในเครื่อง: ' + (localUsers()[p.uid]?.name || p.uid)))}</small>` : '<span class="muted sm">ไม่มีบัญชี</span>';
+  return `<section class="card" id="staffcard"><div class="maphead"><div><h2>บุคลากร ผู้ใช้ และสิทธิ์</h2><p class="muted sm">ทะเบียนเดียวสำหรับบัญชีเข้าใช้ สิทธิ์ ครูประธานคณะสี บัตรบุคลากร และผู้ลงนามเกียรติบัตร · ${L.length} คน · มีบัญชีเข้าใช้ ${nAcc} คน${mode === 'shared' && !sb ? ' · ผู้ดูแลหลักในไฟล์ตั้งค่าเข้าได้เสมอ' : ''}</p></div>
+    <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button></div></div>
+    <div class="seg mini stff"><button data-stff="" class="${F === '' ? 'on' : ''}">ทั้งหมด ${L.length}</button><button data-stff="acc" class="${F === 'acc' ? 'on' : ''}">มีบัญชีเข้าใช้ ${nAcc}</button>${['C', 'J', 'O', 'M', 'V'].map(k => `<button data-stff="${k}" class="${F === k ? 'on' : ''}"><b>${k}</b> ${esc(codeName(k))} ${n(k)}</button>`).join('')}</div>
+    ${shown.length ? `<div class="pselbar"><label class="ck"><input type="checkbox" data-stfall ${shown.every(p => sel.has(p.id)) ? 'checked' : ''}> เลือกทั้งหมด (${shown.length})</label><span class="muted sm">เลือกแล้ว ${nSel} คน</span>
+      <span class="pprint"><select id="stfstyle"><option value="badge">บัตรหน้า-หลัง</option><option value="badgef" ${UI.stfStyle === 'badgef' ? 'selected' : ''}>บัตรด้านหน้าอย่างเดียว</option></select><button class="btn sm" data-act="staffprint" ${nSel ? '' : 'disabled'}>พิมพ์บัตรที่เลือก ${nSel || ''}</button></span></div>
+    <div class="scroll"><table class="std stftab"><thead><tr><th></th><th>บัตร</th><th>ชื่อ-สกุล / ตำแหน่ง</th><th>หน้าที่ในงาน</th><th>บัญชีและสิทธิ์</th><th>ลงนาม</th><th></th></tr></thead><tbody>
+      ${shown.map(p => `<tr><td><input type="checkbox" data-stfk="${p.id}" ${sel.has(p.id) ? 'checked' : ''} ${p.code ? '' : 'disabled title="ยังไม่ได้กำหนดประเภทบัตร"'} aria-label="เลือก ${esc(p.name)}"></td><td>${p.code ? `<span class="bcode" style="--tc:${p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code]}">${p.code}</span>` : '<span class="muted">–</span>'}</td>
+        <td><b>${esc(p.name)}</b>${p.job ? `<br><small class="muted">${esc(p.job)}</small>` : ''}</td><td>${esc(p.pos || '')}${p.code === 'C' && p.c >= 0 ? ' ' + chip(p.c) : ''}${(p.sports || []).length && p.role !== 'scorer' ? '<br><small class="muted">' + p.sports.map(sportName).join(', ') + '</small>' : ''}</td><td class="sm">${acc(p)}</td><td class="num">${p.sign ? `ลำดับ ${p.sign}` : ''}</td>
+        <td class="nowrap"><button class="btn sm ghost" data-stfed="${p.id}">แก้ไข</button>${p.email && mode === 'shared' && !sb ? ` <button class="btn sm ghost" data-rmpin="${esc(p.email)}" title="ให้ตั้ง PIN ใหม่">ล้าง PIN</button>` : ''} <button class="x" data-stfrm="${p.id}" aria-label="ลบ">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted sm">ยังไม่มีรายชื่อในกลุ่มนี้</p>'}</section>`;
+}
 function openStaffEdit(id) {
-  const p = staffList().find(x => x.id === id) || { id: uid('st'), code: UI.stfF || 'O', name: '', pos: '', c: -1, sports: [] }; const isNew = !staffList().some(x => x.id === p.id);
-  modal(`<form class="dlg" id="stff"><h3>${isNew ? 'เพิ่มบุคลากร' : 'แก้ไขบุคลากร'}</h3>
+  const all = staffList(); const p0 = all.find(x => x.id === id); const p = p0 || { id: uid('st'), name: '', job: '', pos: '', code: ['C', 'J', 'O', 'M', 'V'].includes(UI.stfF) ? UI.stfF : 'O', c: -1, sports: [], email: '', uid: '', role: '', sign: 0 };
+  const isNew = !p0; const lu = Object.entries(localUsers());
+  modal(`<form class="dlg wide" id="stff"><h3>${isNew ? 'เพิ่มบุคลากร' : 'แก้ไขบุคลากร'}</h3>
     <div class="aphead"><div class="aphoto" id="sfph">${PH_SIL}</div><div class="apinfo">
-    <label class="fld">ประเภทบัตร<select id="sf_k">${BADGE_CODES.filter(x => x[0] !== 'A').map(([k, t]) => `<option value="${k}" ${k === p.code ? 'selected' : ''}>${k} · ${esc(t)}</option>`).join('')}</select></label>
-    <label class="fld">ชื่อ-สกุล<input id="sf_n" value="${esc(p.name)}" required placeholder="เช่น นายสมชาย ใจดี"></label>
-    <label class="fld">ตำแหน่ง / หน้าที่<input id="sf_p" value="${esc(p.pos || '')}" placeholder="เช่น ครูประธานคณะสี · กรรมการตัดสินฟุตบอล"></label></div></div>
-    <label class="fld" id="sf_cw">คณะสี<select id="sf_c"><option value="-1">— ไม่ระบุ —</option>${COLORS.map((k, i) => `<option value="${i}" ${i === p.c ? 'selected' : ''}>${k.n}</option>`).join('')}</select></label>
-    <fieldset class="bkmode"><legend>ชนิดกีฬาที่รับผิดชอบ (ไม่บังคับ)</legend><div class="spck">${sportsList().map(sp => `<label class="ck"><input type="checkbox" value="${sp.id}" ${(p.sports || []).includes(sp.id) ? 'checked' : ''}> ${sIcon(sp.id, 'sm')}${esc(sp.name)}</label>`).join('')}</div></fieldset>
-    <div class="actions m0"><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button></div>
+      <label class="fld">ชื่อ-สกุล (รวมคำนำหน้า)<input id="sf_n" value="${esc(p.name)}" required placeholder="เช่น นายสมชาย ใจดี"></label>
+      <div class="g2"><label class="fld">ตำแหน่ง<input id="sf_j" list="jobl" value="${esc(p.job || '')}" placeholder="เลือกหรือพิมพ์"></label><label class="fld">หน้าที่ในงาน <small class="muted">(ตัวเลือกตามประเภทบัตร)</small><input id="sf_p" list="dutyl" value="${esc(p.pos || '')}" placeholder="เลือกหรือพิมพ์"></label>
+      <datalist id="jobl">${JOB_LIST.map(x => `<option value="${x}">`).join('')}</datalist><datalist id="dutyl"></datalist></div>
+      <div class="actions m0"><label class="btn sm ghost"><span id="sfpl">📷 เพิ่มรูป</span><input type="file" id="sf_f" accept="image/*" hidden></label><button type="button" class="btn sm ghost danger-t" id="sf_x" hidden>🗑 ลบรูป</button></div></div></div>
+    <div class="g3"><label class="fld">ประเภทบัตร<select id="sf_k"><option value="">— ไม่พิมพ์บัตร —</option>${BADGE_CODES.filter(x => x[0] !== 'A').map(([k, t]) => `<option value="${k}" ${k === p.code ? 'selected' : ''}>${k} · ${esc(t)}</option>`).join('')}</select></label>
+      <label class="fld">คณะสี<select id="sf_c"><option value="-1">— ไม่ระบุ —</option>${COLORS.map((k, i) => `<option value="${i}" ${i === p.c ? 'selected' : ''}>${k.n}</option>`).join('')}</select></label>
+      <label class="fld">ลงนามในเกียรติบัตร<select id="sf_g"><option value="0">ไม่ลงนาม</option><option value="1" ${p.sign == 1 ? 'selected' : ''}>ผู้ลงนามลำดับ 1 (ซ้าย)</option><option value="2" ${p.sign == 2 ? 'selected' : ''}>ผู้ลงนามลำดับ 2 (ขวา)</option></select></label></div>
+    <fieldset class="bkmode"><legend>ชนิดกีฬาที่รับผิดชอบ <small class="muted">(กรรมการบันทึกผล: ไม่เลือก = บันทึกได้ทุกชนิด)</small></legend><div class="spck">${sportsList().map(sp => `<label class="ck"><input type="checkbox" value="${sp.id}" ${(p.sports || []).includes(sp.id) ? 'checked' : ''}> ${sIcon(sp.id, 'sm')}${esc(sp.name)}</label>`).join('')}</div></fieldset>
+    <fieldset class="bkmode"><legend>บัญชีเข้าใช้ระบบและสิทธิ์</legend>
+      ${mode === 'shared' ? `<label class="fld">${sb ? 'อีเมลที่ใช้สมัครเข้าระบบ' : 'อีเมล Google'}<input id="sf_e" type="email" value="${esc(p.email || '')}" placeholder="เว้นว่างถ้าไม่ต้องเข้าระบบ (แขก/สื่อ)" autocomplete="off"></label>`
+        : `<label class="fld">บัญชีในเครื่อง (โหมดทดลอง)<select id="sf_u"><option value="">— ไม่มีบัญชี —</option>${lu.map(([uid2, u]) => `<option value="${uid2}" ${uid2 === p.uid ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>`}
+      <div class="win" id="sf_rw">${[['', 'ไม่มีสิทธิ์แก้ไข'], ['admin', ROLE_N.admin], ['scorer', ROLE_N.scorer], ['color', ROLE_N.color + ' (แก้รายชื่อเฉพาะคณะที่เลือก)']].map(([k, t]) => `<label><input type="radio" name="sfr" value="${k}" ${String(p.role || '') === k ? 'checked' : ''}> ${t}</label>`).join('')}</div></fieldset>
+    ${!isNew ? updLine(S.meta.editBy, S.meta.editAt) : ''}
     <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+  const duty = () => { const k = $('#sf_k').value; $('#dutyl').innerHTML = (DUTY_BY_CODE[k] || []).map(x => `<option value="${x}">`).join(''); };
+  let lastK = p.code; duty();
+  $('#sf_k').addEventListener('change', () => { const k = $('#sf_k').value; duty(); const cur = $('#sf_p').value.trim();
+    if (!cur || (DUTY_BY_CODE[lastK] || []).includes(cur)) $('#sf_p').value = (DUTY_BY_CODE[k] || [])[0] || '';
+    const hasAcc = ($('#sf_e')?.value || $('#sf_u')?.value || '').trim(); const rr = document.querySelector('input[name=sfr]:checked'); if (hasAcc && (!rr || !rr.value) && ROLE_BY_CODE[k]) document.querySelector(`input[name=sfr][value="${ROLE_BY_CODE[k]}"]`).checked = true;
+    lastK = k; });
   const pid = 'st' + p.id; let newImg; const showPh = img => { $('#sfph').innerHTML = img ? `<img src="${img}" alt="">` : PH_SIL; $('#sf_x').hidden = !img; $('#sfpl').textContent = img ? '📷 เปลี่ยนรูป' : '📷 เพิ่มรูป'; };
   if (!isNew) getPhoto(pid).then(img => { if ($('#sfph') && newImg === undefined) showPh(img); });
-  const sync = () => { $('#sf_cw').hidden = $('#sf_k').value !== 'C'; }; sync(); $('#sf_k').onchange = sync;
   $('#sf_f').onchange = async e => { try { newImg = await fileToPhoto(e.target.files[0]); showPh(newImg); } catch (x) { $('#err').textContent = x.message; } };
   $('#sf_x').onclick = () => { newImg = null; showPh(null); };
   $('#stff').onsubmit = async e => { e.preventDefault(); const name = $('#sf_n').value.trim(); if (!name) { $('#err').textContent = 'ใส่ชื่อ'; return; }
-    const np = { id: p.id, code: $('#sf_k').value, name, pos: $('#sf_p').value.trim(), c: $('#sf_k').value === 'C' ? +$('#sf_c').value : -1, sports: [...document.querySelectorAll('.spck input:checked')].map(i => i.value) };
-    const L = staffList(); const i = L.findIndex(x => x.id === p.id); if (i >= 0) L[i] = np; else L.push(np);
+    const role = ($('#stff').sfr.value || ''); const email = ($('#sf_e')?.value || '').trim().toLowerCase(); const uidv = $('#sf_u')?.value || '';
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('#err').textContent = 'อีเมลไม่ถูกต้อง'; return; }
+    if (role && mode === 'shared' && !email) { $('#err').textContent = 'ใส่อีเมลก่อนกำหนดสิทธิ์'; return; }
+    if (role === 'color' && +$('#sf_c').value < 0) { $('#err').textContent = 'ครูคณะสีต้องเลือกคณะสี'; return; }
+    if (email && all.some(x => x.id !== p.id && x.email === email)) { $('#err').textContent = 'อีเมลนี้อยู่กับบุคลากรคนอื่นแล้ว'; return; }
+    if (p.email === ME.id && ME.id && role !== 'admin' && !ME.owner) { if (!confirm('คุณกำลังเอาสิทธิ์ผู้ดูแลของตัวเองออก ต่อไปจะเข้าหน้านี้ไม่ได้ ยืนยัน?')) return; }
+    const sign = +$('#sf_g').value;
+    const np = { id: p.id, name, job: $('#sf_j').value.trim(), pos: $('#sf_p').value.trim(), code: $('#sf_k').value, c: +$('#sf_c').value, sports: [...document.querySelectorAll('.spck input:checked')].map(i => i.value), email, uid: uidv, role: (mode === 'shared' ? email : uidv) ? role : '', sign };
+    let L = all.map(x => x.id === p.id ? np : x); if (isNew) L.push(np); if (sign) L = L.map(x => x.id !== np.id && x.sign === sign ? { ...x, sign: 0 } : x);
     try { if (newImg !== undefined) await setPhoto(pid, newImg); } catch (x) { $('#err').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); return; }
-    saveStaff(L, (isNew ? 'เพิ่มบุคลากร ' : 'แก้ไขบุคลากร ') + `${np.code} ${np.name}`); closeModal(); render(); };
-}
-function importStaff() {
-  const L = staffList(); const has = n => L.some(x => normName(x.name) === normName(n)); let add = 0;
-  const src = mode === 'shared' ? Object.entries(S.meta.roles || {}).map(([id, r]) => ({ ...r, id })) : Object.entries(localUsers()).map(([id, u]) => ({ ...u, id }));
-  src.forEach(r => { const n = r.name || ''; if (!n || n.includes('@') || has(n)) return; const code = r.role === 'color' ? 'C' : 'O';
-    L.push({ id: uid('st'), code, name: n, pos: r.role === 'color' ? 'ครูคณะสี' : ROLE_N[r.role] || '', c: r.role === 'color' ? (r.c ?? -1) : -1, sports: r.sports || [] }); add++; });
-  COLORS.forEach((k, c) => { const t = (S.meta.colorInfo?.[c] || {}).teacher; if (t && !has(t)) { L.push({ id: uid('st'), code: 'C', name: t, pos: 'ครูประธานคณะสี', c, sports: [] }); add++; } });
-  if (!add) { toast('ไม่มีรายชื่อใหม่ให้ดึง (ผู้ใช้ต้องตั้งชื่อไว้ในหน้าสิทธิ์ผู้ใช้)'); return; }
-  saveStaff(L, `ดึงรายชื่อบุคลากร ${add} คน`); toast(`เพิ่ม ${add} คน ตรวจประเภทบัตรและตำแหน่งก่อนพิมพ์`);
+    saveStaff(L, (isNew ? 'เพิ่มบุคลากร ' : 'แก้ไขบุคลากร ') + `${np.name}${np.role ? ' · ' + ROLE_N[np.role] : ''}`); closeModal(); render(); };
 }
 async function printStaffBadges(ids, style) {
-  const L = staffList().filter(p => ids.includes(p.id)); if (!L.length) { toast('ยังไม่ได้เลือก'); return; }
+  const L = staffList().filter(p => ids.includes(p.id) && p.code); if (!L.length) { toast('ยังไม่ได้เลือก'); return; }
   const both = style !== 'badgef'; toast('กำลังเตรียมบัตร…'); const ph = await getPhotos(L.map(p => 'st' + p.id)); const logo = logoSrc(); const icons = new Set();
   const colOf = p => p.code === 'C' && p.c >= 0 ? COLORS[p.c].c : STAFF_COL[p.code];
   const front = p => { const [fn, ln] = splitName(p.name); if (p.code === 'C' && p.c >= 0) { icons.add('gem-' + p.c); icons.add('gg' + p.c); } (p.sports || []).forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); const img = ph['st' + p.id];
@@ -3233,7 +3329,7 @@ async function printStaffBadges(ids, style) {
       ${(p.sports || []).length ? `<div class="bdt">ชนิดกีฬาที่รับผิดชอบ</div><div class="bds">${p.sports.slice(0, 8).map(s => { const ic = S.sports[s]?.icon || s; return `<span><svg viewBox="0 0 24 24"><use href="#sp-${SPORT_ICONS[ic] ? ic : 'medal'}"/></svg>${esc(sportName(s))}</span>`; }).join('')}</div>` : '<div class="bds"></div>'}
       <div class="bdf"><div class="qr">${qrSVG(pubURL(), 90)}</div><div><b>บัตรประจำตัว${esc(codeName(p.code))}</b><span>สแกน QR เพื่อเปิดโปรแกรมและผลการแข่งขัน</span><span>หมายเลขบัตร ${p.code}-${esc(p.id.slice(-5).toUpperCase())}</span></div></div><div class="bdbar"></div></div>`; };
   const back = p => { if (!p) return '<div class="bd blank"></div>'; const [fn, ln] = splitName(p.name); const vs = venuesList().filter(v => !(p.sports || []).length || allMatches().some(x => (p.sports || []).includes(x.ev.sport) && venueOf(x.ev, x.m) === v.name) || Object.values(S.events).some(e => (p.sports || []).includes(e.sport) && e.venue === v.name));
-    const pins = vs.map((v, i) => { const q = pinOf(v); return q ? `<i class="vp" style="left:${q[0]}%;top:${q[1]}%">${i + 1}</i>` : ''; }).join('');
+    const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(v) })).filter(x => x.p));
     return `<div class="bd bk" style="--tc:${colOf(p)}"><div class="bkh"><b>${esc(fn)} ${esc(ln)}</b><span>${p.code} · ${esc(codeName(p.code))}</span></div>
       <div class="bks"><div class="bkt">แผนที่สนามแข่งขัน${(p.sports || []).length ? 'ที่รับผิดชอบ' : ''}</div>${typeof SCHOOL_IMG === 'object' ? `<div class="bmap">${pins}</div>` : ''}<div class="bvl${vs.length > 6 ? ' two' : ''}">${vs.map((v, i) => `<span><i class="vn">${i + 1}</i>${esc(v.name)}</span>`).join('') || '<span>-</span>'}</div></div>
       <div class="bks"><div class="bkt">ความหมายของรหัสบนบัตร</div><div class="bcl">${BADGE_CODES.map(([c, t]) => `<span class="${c === p.code ? 'on' : ''}"><b>${c}</b>${esc(t)}</span>`).join('')}</div><div class="bkn">สีแถบบนบัตรบอกประเภทบัตร (ครูคณะสีใช้สีของคณะ)</div></div>
@@ -4835,8 +4931,8 @@ document.addEventListener('click', e => {
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
     const m = clone(S.meta); m.title = t; m.year = y; m.school = sc || DEF_SCHOOL; put('meta', 'config', m); logIt('แก้ข้อมูลงาน', t); toast('บันทึกข้อมูลงานแล้ว'); }
   else if (d.act === 'mypin') openMyPin();
+  else if (d.act === 'clashes') openClashes();
   else if (d.act === 'staffadd') openStaffEdit(null);
-  else if (d.act === 'staffimp') importStaff();
   else if (d.act === 'staffprint') printStaffBadges([...(UI.stfSel || [])], $('#stfstyle')?.value || 'badge');
   else if (d.act === 'qrcards') printQRCards(UI.regColor);
   else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); printBadges(sel, $('#cardstyle')?.value || 'badge'); }
