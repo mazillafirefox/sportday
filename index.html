@@ -944,8 +944,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.29.0', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.29.1', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.29.1', 'ช่องเลือกนักเรียน: ชั้น/ห้องเริ่มที่ “ทุกชั้น” ทุกครั้งที่เปิดรายการ · เปลี่ยนหน้าแล้วล้างคำค้น ตัวกรองชั้น/ห้อง/สถานะ และการเลือกที่ค้าง'],
   ['1.29.0', 'มือถือ: แถบบนกะทัดรัด (เมนูบัญชี ☰) · ไม่ซูม/เลื่อนซ้าย-ขวาเมื่อแตะช่องพิมพ์ · หน้าต่างแบบแผ่นจากด้านล่าง ปุ่มบันทึกอยู่ล่างจอเสมอและหดตามคีย์บอร์ด · ปุ่ม +/− คะแนน · ปุ่มใหญ่ขึ้น'],
   ['1.28.1', 'เมนู “ตรวจบัตร” (สำหรับครู/กรรมการ): สแกนด้วยกล้องหรือพิมพ์หมายเลขบัตร · สแกนบัตรถัดไปต่อเนื่องได้'],
   ['1.28.0', 'QR บนบัตรเป็นลิงก์ประจำตัว: หน้าตรวจบัตร (ถูกต้อง/ไม่พบ/ตัดสิทธิ์ + พื้นที่ที่เข้าได้) · ลงชื่อกรรมการประจำนัดจากบัตร (หน้าตรวจบัตรหรือสแกนในหน้ารายงานตัว) ชื่อขึ้นในผลและใบบันทึก · หน้าส่วนตัวของนักกีฬา/บุคลากร · ล้างช่องค้นหาหลังเลือก และล้างการเลือกหลังพิมพ์'],
@@ -4266,7 +4267,7 @@ function openRound(eid, i) {
 
 /* ---- roster editor ---- */
 function openRoster(eid, focusKey) {
-  const ev = evById(eid); const c = UI.regColor; const r = clone(rosterOf(eid, c)); r.players = r.players || []; UI.pickq = '';
+  const ev = evById(eid); const c = UI.regColor; const r = clone(rosterOf(eid, c)); r.players = r.players || []; UI.pickq = UI.pickG = UI.pickR = '';
   const sched = athleteSchedule(c); const ro = !canRoster(c); const gendered = ev.gender === 'ชาย' || ev.gender === 'หญิง';
   const draw = () => {
     const lock = r.submitted || ro;
@@ -5387,7 +5388,8 @@ function route() { const raw = location.hash.slice(1); const [h, arg] = raw.spli
   if (nv === 'badge') UI.badge = raw.slice(6);
   if (nv === 'tv' && UI.view && UI.view !== 'tv') UI.prevView = UI.view;
   if (nv === 'venues' && arg) { UI.vFocus = decodeURIComponent(arg); UI.vScroll = true; }
-  if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = ''; UI.q = ''; UI.pickq = ''; }
+  /* เปลี่ยนหน้า: ล้างคำค้น ตัวกรองชั้น/ห้อง/สถานะ และการเลือกที่ค้างไว้ (คงไว้: คณะที่เลือก ชนิดกีฬาที่กำลังดู และรูปแบบการแสดงผล) */
+  if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = UI.q = UI.pickq = UI.regQ = UI.pickG = UI.pickR = UI.stRoom = ''; UI.regSel = new Set(); UI.stfSel = new Set(); UI.onlyClash = false; UI.regSt = null; UI.regPF = false; }
   UI.view = nv; $('#main').dataset.view = ''; window.scrollTo(0, 0); render(); }
 document.addEventListener('submit', e => { if (e.target.id !== 'bvform') return; e.preventDefault(); const el = $('#bvq'); const v = el.value; el.value = ''; if (!goBadge(v)) { beep(false); toast('อ่านหมายเลขบัตรไม่ได้ ตัวอย่าง: A-41308 หรือ J-9K2M7'); el.focus(); } });
 /* ===== มือถือ ===== */
