@@ -860,8 +860,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.18', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.19', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.19', 'หน้าบันทึกผลแสดงผู้กดเริ่มแข่งและเวลา · แก้การตั้งค่ารายการล้างเวลาเริ่มของรายการที่ไม่มีคู่'],
   ['1.22.18', 'แสดง “อัปเดตล่าสุดโดย … เวลา …” ในรายงานตัว ส่งรายชื่อ คะแนนรอบ ผลอันดับ ตั้งค่ากีฬา/รายการ/ระบบ และนำเข้ารายชื่อนักเรียน'],
   ['1.22.17', 'PIN ยืนยันในโหมดข้อมูลกลาง: ตั้ง/เปลี่ยน PIN ของตัวเอง · ผู้ดูแลล้าง PIN ได้ · ใส่ผิด 5 ครั้งรอ 1 นาที'],
   ['1.22.16', 'ตรวจสนามชนนับรอบของรายการสะสมคะแนน · หน้ารายงานตัวบนมือถือไม่ล้นจอ'],
@@ -1389,12 +1390,14 @@ async function flush() {
 /* แก้ทั้งรายการ (ตั้งค่า/ตารางคู่) โดยคงผลการแข่งขันล่าสุดจากเซิร์ฟเวอร์ไว้ ไม่ทับผลที่กรรมการคนอื่นเพิ่งบันทึก */
 /* ข้อความ “อัปเดตล่าสุดโดย …” ใช้ร่วมกันทุกหน้าต่าง */
 function whoName(by) { if (!by) return 'ไม่ทราบชื่อ'; const n = nameOf(by); return n === by && !String(by).includes('@') ? 'ผู้ใช้ในโหมดทดลอง' : n; }
+function startLine(x) { if (!x || !x.startedAt) return ''; const t = new Date(x.startedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+  return `<p class="muted sm updline startl">▶ เริ่มแข่งโดย <b>${esc(whoName(x.startedBy))}</b> · ${t} น.${x.skipQ ? ' · <span class="warnt">เริ่มก่อนคู่ก่อนหน้า (ผู้ดูแลยืนยัน)</span>' : ''}${x.ciOk && Object.values(x.ciOk).some(Boolean) ? ' · <span class="warnt">ยืนยันเริ่มแม้รายงานตัวไม่ครบ</span>' : ''}${x.ciBy ? ` · รายงานตัวโดย ${esc(whoName(x.ciBy))}` : ''}</p>`; }
 function updLine(by, at, verb = 'อัปเดตล่าสุดโดย') { if (!by && !at) return ''; return `<p class="muted sm updline">${verb} ${esc(whoName(by))}${at ? ' · ' + new Date(at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) + ' น.' : ''}</p>`; }
 const stampMe = () => ({ by: ME.id || '', at: Date.now() });
 function keepResults(d, fresh) {
   if (!fresh) return d;
   (d.matches || []).forEach(m => { const f = (fresh.matches || []).find(x => x.id === m.id); if (!f) return; RES_KEYS.forEach(k => { if (k in f) m[k] = clone(f[k]); else delete m[k]; }); });
-  ['res', 'ci', 'ciBy', 'ciAt'].forEach(k => { if (k in fresh) d[k] = clone(fresh[k]); else delete d[k]; });
+  ['res', 'ci', 'ciBy', 'ciAt', 'startedAt', 'startedBy'].forEach(k => { if (k in fresh) d[k] = clone(fresh[k]); else delete d[k]; });
   return d;
 }
 async function saveEventKeep(eid, d) {
@@ -2987,7 +2990,7 @@ function openReset() {
   };
 }
 function stripResults(e) {
-  (e.matches || []).forEach(m => ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit', 'skipQ'].forEach(k => delete m[k]));
+  (e.matches || []).forEach(m => ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'ciBy', 'ciAt', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit', 'skipQ', 'roundBy'].forEach(k => delete m[k]));
   delete e.res; delete e.ci; return e;
 }
 async function resetData(what, students) {
@@ -3209,7 +3212,7 @@ function openResult(eid, mid) {
       <label><input type="radio" name="w" value="a" ${m.w === 'a' && !m.auto ? 'checked' : ''}> ฝั่งซ้ายชนะ</label><label><input type="radio" name="w" value="b" ${m.w === 'b' && !m.auto ? 'checked' : ''}> ฝั่งขวาชนะ</label>
       ${m.stage === 'rr' && drawOk(ev) ? `<label><input type="radio" name="w" value="d" ${m.w === 'd' && !m.auto ? 'checked' : ''}> เสมอ</label>` : ''}</fieldset>
     <label class="fld">หมายเหตุ<input id="note" value="${esc(m.note ?? '')}" placeholder="เช่น 25-20, 22-25, 15-11 / ชนะจุดโทษ 4-3"></label>
-    ${!sideWin(m) ? (started(m) ? `<div class="ck livetoggle">${LIVEB} เริ่มแข่งเมื่อ ${m.startedAt ? toTime(tsMin(m.startedAt)) + ' น.' : '–'} · กรอกคะแนนระหว่างแข่งได้โดยยังไม่ต้องเลือกผู้ชนะ <button type="button" class="btn sm ghost" id="unstart">ยกเลิกการเริ่ม</button></div>`
+    ${!sideWin(m) ? (started(m) ? `<div class="ck livetoggle">${LIVEB} เริ่มแข่งเมื่อ ${m.startedAt ? toTime(tsMin(m.startedAt)) + ' น.' : '–'}${m.startedBy ? ` โดย <b>${esc(whoName(m.startedBy))}</b>` : ''} · กรอกคะแนนระหว่างแข่งได้โดยยังไม่ต้องเลือกผู้ชนะ <button type="button" class="btn sm ghost" id="unstart">ยกเลิกการเริ่ม</button></div>`
       : `<div class="ck livetoggle idle">${statePill(ev, m)} ยังไม่เริ่มแข่ง <button type="button" class="btn sm" id="gostart">เริ่มการแข่งขัน</button><button type="button" class="btn sm ghost" id="goforf">ปรับแพ้</button></div>`) : ''}
     <details class="mt" ${cards.length || m.protest?.status ? 'open' : ''}><summary>วินัยและการประท้วง</summary>
       <div id="cdl">${cardList()}</div>
@@ -3219,7 +3222,7 @@ function openResult(eid, mid) {
       <h4 class="sub">การประท้วง</h4><div id="protbox"></div>
     </details>
     ${(() => { const l = LOG.find(x => x.undo?.eid === eid && x.undo?.mid === mid); return l && canUndo(l) ? `<p class="sm undoln">ล่าสุด: ${esc(l.what)} · ${new Date(l.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. <button type="button" class="btn sm ghost" data-undo="${esc(l.id)}">ย้อนกลับ</button></p>` : ''; })()}
-    ${m.by || m.at ? `<p class="muted sm">บันทึกล่าสุดโดย ${esc(nameOf(m.by))}${m.at ? ' · ' + new Date(m.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''}</p>` : ''}
+    ${sideWin(m) ? startLine(m) : ''}${m.by || m.at ? `<p class="muted sm">บันทึกล่าสุดโดย ${esc(nameOf(m.by))}${m.at ? ' · ' + new Date(m.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''}</p>` : ''}
     <p class="err" id="err"></p><div class="actions">${sideWin(m) ? '<button class="btn">บันทึกการแก้ไขผล</button>' : started(m) ? '<button class="btn" title="สรุปผู้ชนะและปิดเกม">จบเกม · ยืนยันผล</button><button type="button" class="btn ghost" id="savelive" title="บันทึกคะแนน/วินัยระหว่างแข่ง เกมยังไม่จบ">บันทึกคะแนนระหว่างแข่ง</button>' : ''}<button type="button" class="btn ghost" data-close>${sideWin(m) || started(m) ? 'ยกเลิก' : 'ปิด'}</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div>
     ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
@@ -3411,7 +3414,7 @@ function openEvResult(eid) {
     const p = ev.res?.p || [], pf = ev.res?.perf || [];
     const sel = i => `<select id="p${i}">${colorOpts(p[i], '–')}</select>`;
     modal(`<form class="dlg" id="af"><h3>${esc(evTitle(ev))}</h3>${['ที่ 1 · ทอง', 'ที่ 2 · เงิน', 'ที่ 3 · ทองแดง'].map((l, i) => `<div class="ov"><label class="fld">${l}${sel(i)}</label><label class="fld">สถิติ<input id="f${i}" value="${esc(pf[i] ?? '')}" placeholder="เช่น 12.45 วิ / 5.20 ม."></label></div>`).join('')}
-      ${updLine(ev.res?.by, ev.res?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+      ${startLine(ev)}${updLine(ev.res?.by, ev.res?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
     $('#af').onsubmit = e => {
       e.preventDefault(); const pp = [0, 1, 2].map(i => $('#p' + i).value === '' ? -1 : +$('#p' + i).value); const s = pp.filter(x => x >= 0);
       if (new Set(s).size !== s.length) { $('#err').textContent = 'คณะสีเดียวกันได้อันดับเดียวต่อรายการ'; return; }
@@ -3465,7 +3468,7 @@ function openRound(eid, i) {
   if (needStart(eid, () => openRound(eid, i))) return;
   const ev = evById(eid); const row = ev.res?.rounds?.[i] || [];
   modal(`<form class="dlg" id="rf"><h3>${esc(evTitle(ev))} · ${esc(ev.rounds[i].label)}</h3><div class="ffin">${(ev.teams || []).map(c => `<label class="side">${chip(c)}<input id="r${c}" class="num" inputmode="decimal" value="${esc(row[c] ?? '')}"></label>`).join('')}</div>
-    ${updLine(ev.res?.roundBy?.[i]?.by, ev.res?.roundBy?.[i]?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${row.length ? '<button type="button" class="btn danger" id="clr">ลบรอบนี้</button>' : ''}</div></form>`);
+    ${startLine(ev)}${updLine(ev.res?.roundBy?.[i]?.by, ev.res?.roundBy?.[i]?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${row.length ? '<button type="button" class="btn danger" id="clr">ลบรอบนี้</button>' : ''}</div></form>`);
   const save = v => { closeModal(); recUndo(v ? 'บันทึกคะแนนรอบ' : 'ลบคะแนนรอบ', `${evTitle(ev)} ${ev.rounds[i].label}`, patchEv(v ? { eid, sub: ['res', 'rounds'], set: { [i]: v } } : { eid, sub: ['res', 'rounds'], unset: [String(i)] })); patchEv({ eid, sub: ['res', 'roundBy'], set: { [i]: stampMe() } }); };
   $('#rf').onsubmit = e => { e.preventDefault(); const v = COLORS.map((_, c) => $('#r' + c) ? $('#r' + c).value.trim() : ''); if ((ev.teams || []).some(c => v[c] === '' || isNaN(+v[c]))) { $('#err').textContent = 'กรอกตัวเลขให้ครบทุกคณะสี'; return; } save(v.map(x => x === '' ? '' : +x)); };
   $('#clr')?.addEventListener('click', () => save(null));
