@@ -760,6 +760,7 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .clrow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:6px 0;border-top:1px solid #F1D9A8}.clrow>small:last-child{flex-basis:100%;color:#7A4B00}
 .pfilt{margin:0 0 8px;display:inline-flex;width:auto}
 @media(max-width:600px){.mrow.g2.ci .ta,.mrow.g2.ci .tb{min-width:0;max-width:100%}.mrow.g2.ci .cis{gap:3px;padding-right:6px;max-width:100%}.mrow.g2.ci .cis b{font-size:12px}.mrow.g2.ci .cis .tm{padding-left:8px;padding-right:8px}.mrow.g2.ci .cis .tm svg,.mrow.g2.ci .cis .tm img,.mrow.g2.ci .cis .tm .gem{display:none}}
+.rby{display:block;font-size:11.5px;margin-top:1px}.updline{margin:6px 0 0}
 </style>
 </head>
 <body>
@@ -859,8 +860,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.22.17', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.22.18', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.22.18', 'แสดง “อัปเดตล่าสุดโดย … เวลา …” ในรายงานตัว ส่งรายชื่อ คะแนนรอบ ผลอันดับ ตั้งค่ากีฬา/รายการ/ระบบ และนำเข้ารายชื่อนักเรียน'],
   ['1.22.17', 'PIN ยืนยันในโหมดข้อมูลกลาง: ตั้ง/เปลี่ยน PIN ของตัวเอง · ผู้ดูแลล้าง PIN ได้ · ใส่ผิด 5 ครั้งรอ 1 นาที'],
   ['1.22.16', 'ตรวจสนามชนนับรอบของรายการสะสมคะแนน · หน้ารายงานตัวบนมือถือไม่ล้นจอ'],
   ['1.22.15', 'ตัวเลือกนักเรียนตรวจเวลาชนด้วยเงื่อนไขเดียวกับคำเตือน (รวมรอบของรายการสะสมคะแนน) คนที่ชนเลือกไม่ได้ตั้งแต่ในตาราง'],
@@ -1317,6 +1319,7 @@ const fsEnc = v => Array.isArray(v) ? v.map(x => Array.isArray(x) ? { _arr: fsEn
 const fsDec = v => Array.isArray(v) ? v.map(fsDec) : (v && typeof v === 'object') ? (Array.isArray(v._arr) && Object.keys(v).length === 1 ? fsDec(v._arr) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fsDec(x)]))) : v;
 async function put(col, id, data) {
   mDirty = false;
+  if (data && typeof data === 'object' && ['sports', 'meta', 'students'].includes(col) && !data._noStamp) { data.editBy = ME.id || ''; data.editAt = Date.now(); }
   if (col === 'meta') { S.meta = data || {}; } else if (data === null) delete S[col][id]; else S[col][id] = data;
   render();
   if (mode !== 'shared') { saveLocal(); return; }
@@ -1338,7 +1341,7 @@ const putEvent = ev => { const { id, ...d } = ev; d.at = Date.now(); d.ub = ME.i
 /* ===================== บันทึกเฉพาะส่วน: กันผลทับกันเมื่อหลายเครื่องบันทึกพร้อมกัน =====================
    ผลการแข่งขัน/เริ่มแข่ง/รายงานตัว เขียนเป็น "op" แก้เฉพาะคู่นั้น แล้วส่งผ่าน transaction ของ Firestore
    (อ่านเอกสารล่าสุดจากเซิร์ฟเวอร์ → แก้เฉพาะส่วน → เขียน) op ที่ยังส่งไม่ได้ (ออฟไลน์) เก็บในเครื่องและส่งต่อเมื่อออนไลน์ */
-const RES_KEYS = ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit', 'skipQ'];
+const RES_KEYS = ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'protest', 'live', 'liveAt', 'ci', 'ciBy', 'ciAt', 'by', 'at', 'startedAt', 'startedBy', 'ciOk', 'endedAt', 'forfeit', 'skipQ'];
 const OBX_KEY = 'gem-outbox';
 let OUTBOX = (() => { try { const x = JSON.parse(localStorage.getItem(OBX_KEY) || '[]'); return Array.isArray(x) ? x : []; } catch (e) { return []; } })();
 let inflight = 0, flushing = false, lastSync = 0; const RECENT = [];
@@ -1384,14 +1387,18 @@ async function flush() {
   } finally { flushing = false; renderStatus(); }
 }
 /* แก้ทั้งรายการ (ตั้งค่า/ตารางคู่) โดยคงผลการแข่งขันล่าสุดจากเซิร์ฟเวอร์ไว้ ไม่ทับผลที่กรรมการคนอื่นเพิ่งบันทึก */
+/* ข้อความ “อัปเดตล่าสุดโดย …” ใช้ร่วมกันทุกหน้าต่าง */
+function whoName(by) { if (!by) return 'ไม่ทราบชื่อ'; const n = nameOf(by); return n === by && !String(by).includes('@') ? 'ผู้ใช้ในโหมดทดลอง' : n; }
+function updLine(by, at, verb = 'อัปเดตล่าสุดโดย') { if (!by && !at) return ''; return `<p class="muted sm updline">${verb} ${esc(whoName(by))}${at ? ' · ' + new Date(at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) + ' น.' : ''}</p>`; }
+const stampMe = () => ({ by: ME.id || '', at: Date.now() });
 function keepResults(d, fresh) {
   if (!fresh) return d;
   (d.matches || []).forEach(m => { const f = (fresh.matches || []).find(x => x.id === m.id); if (!f) return; RES_KEYS.forEach(k => { if (k in f) m[k] = clone(f[k]); else delete m[k]; }); });
-  ['res', 'ci'].forEach(k => { if (k in fresh) d[k] = clone(fresh[k]); else delete d[k]; });
+  ['res', 'ci', 'ciBy', 'ciAt'].forEach(k => { if (k in fresh) d[k] = clone(fresh[k]); else delete d[k]; });
   return d;
 }
 async function saveEventKeep(eid, d) {
-  keepResults(d, S.events[eid]); d.at = Date.now();
+  keepResults(d, S.events[eid]); d.at = Date.now(); d.editBy = ME.id || ''; d.editAt = Date.now();
   if (mode !== 'shared' || !navigator.onLine) { put('events', eid, d); return; }
   S.events[eid] = d; mDirty = false; render(); inflight++; renderStatus();
   if (sb) { try { const r = await withTimeout(sb.from('docs').select('data').eq('col', 'events').eq('id', eid).maybeSingle(), 15000); if (r.error) throw sbErr(r.error); const nd = keepResults(clone(d), r.data?.data || null); nd.at = Date.now(); S.events[eid] = nd; await sbWrite('events', eid, nd); }
@@ -2366,7 +2373,7 @@ function vRegister() {
     const F = mapFacets(evAll, sp.id); const evs = F.evs.filter(e => !SF || stOf[e.id].k === SF); if (SF && !evs.length) return '';
     const nd = evAll.filter(e => stOf[e.id].k !== 'na'), dn = nd.filter(e => stOf[e.id].k === 'done').length, bad = nd.filter(e => ['bad', 'none'].includes(stOf[e.id].k)).length, mid = nd.filter(e => ['draft', 'short'].includes(stOf[e.id].k)).length;
     return `<details ${sp.id === UI.regOpen || SF ? 'open' : ''} data-regsp="${sp.id}"><summary><span class="sumi">${sIcon(sp.id)}${esc(sp.name)}</span><span class="regsum">${bad ? `<span class="pill bad">ยังไม่ส่ง ${bad}</span>` : ''}${mid ? `<span class="pill live">ค้าง ${mid}</span>` : ''}<span class="num ${dn === nd.length ? 'okt' : 'muted'}">${dn === nd.length && nd.length ? '✓ ' : ''}${dn}/${nd.length}</span></span></summary>
-    ${F.html}${evs.map(e => { const s = stOf[e.id]; return `<div class="rrow click${s.k === 'na' ? ' na' : ''}" data-roster="${e.id}" tabindex="0"><span>${esc(e.label)}</span><span class="num muted">${s.k === 'na' ? '' : `${s.n}/${rosterMax(e)} คน`}</span>${stPill(e)}</div>`; }).join('') || '<p class="muted sm">ไม่มีรายการตามตัวกรอง</p>'}</details>`;
+    ${F.html}${evs.map(e => { const s = stOf[e.id]; return `<div class="rrow click${s.k === 'na' ? ' na' : ''}" data-roster="${e.id}" tabindex="0"><span>${esc(e.label)}${(() => { const r = rosterOf(e.id, c); return r.by ? `<small class="muted rby">${esc(whoName(r.by))} · ${new Date(r.at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>` : ''; })()}</span><span class="num muted">${s.k === 'na' ? '' : `${s.n}/${rosterMax(e)} คน`}</span>${stPill(e)}</div>`; }).join('') || '<p class="muted sm">ไม่มีรายการตามตัวกรอง</p>'}</details>`;
   }).join('') || '<p class="muted">ไม่มีรายการในสถานะนี้</p>';
   const people = Object.values(idx).sort((a, b) => String(a.cls).localeCompare(String(b.cls), 'th', { numeric: true }));
   const sched = athleteSchedule(c); const B = bannedSet();
@@ -2461,7 +2468,7 @@ function vTeams() {
   const q = (UI.stq || '').trim(); const room = UI.stRoom || '';
   const list = studs.filter(st => (!room || st.cls === room) && (!q || stName(st).includes(q) || String(st.sid).includes(q))).sort((a, b) => clsSort(a.cls, b.cls) || a.no - b.no);
   const used = usedMap();
-  return head + `<section class="card"><div class="maphead"><div><h2>รายชื่อนักเรียน</h2><p class="muted sm">${studs.length.toLocaleString()} คน · ${rooms.length} ห้อง · ใช้เป็นข้อมูลให้ครูคณะสีเลือกนักกีฬา (เห็นได้เฉพาะผู้มีสิทธิ์)</p></div>
+  return head + `<section class="card"><div class="maphead"><div><h2>รายชื่อนักเรียน</h2>${(() => { const l = Object.values(S.students || {}).filter(d => d && d.editAt).sort((a, b) => b.editAt - a.editAt)[0]; return l ? updLine(l.editBy, l.editAt, 'นำเข้า/แก้ล่าสุดโดย') : ''; })()}<p class="muted sm">${studs.length.toLocaleString()} คน · ${rooms.length} ห้อง · ใช้เป็นข้อมูลให้ครูคณะสีเลือกนักกีฬา (เห็นได้เฉพาะผู้มีสิทธิ์)</p></div>
     ${ed ? `<div class="actions m0"><label class="btn sm">นำเข้าไฟล์ Excel/CSV<input type="file" id="stfile" accept=".xlsx,.xls,.csv" hidden></label><button class="btn sm ghost" data-act="addstudent">+ เพิ่มนักเรียน</button>${studs.length ? '<button class="btn sm danger" data-act="clearstudents">ลบรายชื่อทั้งหมด</button>' : ''}</div>` : ''}</div>
     <div class="filters"><label class="fld grow"><span class="vh">ค้นหานักเรียน</span>${qbox('stq', q, 'ค้นหาชื่อ หรือเลขประจำตัว')}</label>
       <label class="sel"><span class="vh">ห้อง</span><select id="stroom"><option value="">ทุกห้อง</option>${rooms.map(r => `<option value="${r}" ${r === room ? 'selected' : ''}>ม.${r}${colorOfRoom(r) >= 0 ? ' · ' + COLORS[colorOfRoom(r)].n : ''}</option>`).join('')}</select></label></div>
@@ -2882,7 +2889,7 @@ function vAdmin() {
   ${!Object.keys(S.events).length ? startCard() : ''}
   <section class="card"><h2>ข้อมูลงาน</h2><p class="muted sm">แสดงที่หัวเว็บ แท็บเบราว์เซอร์ จอประกาศผล และไฟล์ส่งออก</p>
     <div class="g3"><label class="fld">ชื่องาน<input id="mtitle" maxlength="60" value="${esc(evName())}" placeholder="${DEF_TITLE}"></label><label class="fld">ปีการศึกษา<input id="myear" inputmode="numeric" maxlength="4" value="${esc(evYear())}" placeholder="เช่น 2569"></label><label class="fld">โรงเรียน<input id="mschool" maxlength="80" value="${esc(evSchool())}"></label></div>
-    <div class="actions"><button class="btn sm" data-act="saveinfo">บันทึกข้อมูลงาน</button></div></section>
+    <div class="actions"><button class="btn sm" data-act="saveinfo">บันทึกข้อมูลงาน</button></div>${updLine(S.meta.editBy, S.meta.editAt, 'ตั้งค่าระบบแก้ล่าสุดโดย')}</section>
   <section class="card"><h2>วันแข่งขันและกติกาทั่วไป</h2><div class="dayed">${days().map(d => `<span class="dchip">${fmtDate(d, true)}<button class="x" data-rmday="${d}" aria-label="ลบวัน ${fmtDate(d)}">×</button></span>`).join('')}
     <label class="fld inline"><span class="vh">เพิ่มวัน</span><input type="date" id="newday"></label><button class="btn sm" data-act="addday">เพิ่มวัน</button></div>
     <div class="rules">
@@ -3404,7 +3411,7 @@ function openEvResult(eid) {
     const p = ev.res?.p || [], pf = ev.res?.perf || [];
     const sel = i => `<select id="p${i}">${colorOpts(p[i], '–')}</select>`;
     modal(`<form class="dlg" id="af"><h3>${esc(evTitle(ev))}</h3>${['ที่ 1 · ทอง', 'ที่ 2 · เงิน', 'ที่ 3 · ทองแดง'].map((l, i) => `<div class="ov"><label class="fld">${l}${sel(i)}</label><label class="fld">สถิติ<input id="f${i}" value="${esc(pf[i] ?? '')}" placeholder="เช่น 12.45 วิ / 5.20 ม."></label></div>`).join('')}
-      <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+      ${updLine(ev.res?.by, ev.res?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
     $('#af').onsubmit = e => {
       e.preventDefault(); const pp = [0, 1, 2].map(i => $('#p' + i).value === '' ? -1 : +$('#p' + i).value); const s = pp.filter(x => x >= 0);
       if (new Set(s).size !== s.length) { $('#err').textContent = 'คณะสีเดียวกันได้อันดับเดียวต่อรายการ'; return; }
@@ -3458,8 +3465,8 @@ function openRound(eid, i) {
   if (needStart(eid, () => openRound(eid, i))) return;
   const ev = evById(eid); const row = ev.res?.rounds?.[i] || [];
   modal(`<form class="dlg" id="rf"><h3>${esc(evTitle(ev))} · ${esc(ev.rounds[i].label)}</h3><div class="ffin">${(ev.teams || []).map(c => `<label class="side">${chip(c)}<input id="r${c}" class="num" inputmode="decimal" value="${esc(row[c] ?? '')}"></label>`).join('')}</div>
-    <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${row.length ? '<button type="button" class="btn danger" id="clr">ลบรอบนี้</button>' : ''}</div></form>`);
-  const save = v => { closeModal(); recUndo(v ? 'บันทึกคะแนนรอบ' : 'ลบคะแนนรอบ', `${evTitle(ev)} ${ev.rounds[i].label}`, patchEv(v ? { eid, sub: ['res', 'rounds'], set: { [i]: v } } : { eid, sub: ['res', 'rounds'], unset: [String(i)] })); };
+    ${updLine(ev.res?.roundBy?.[i]?.by, ev.res?.roundBy?.[i]?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${row.length ? '<button type="button" class="btn danger" id="clr">ลบรอบนี้</button>' : ''}</div></form>`);
+  const save = v => { closeModal(); recUndo(v ? 'บันทึกคะแนนรอบ' : 'ลบคะแนนรอบ', `${evTitle(ev)} ${ev.rounds[i].label}`, patchEv(v ? { eid, sub: ['res', 'rounds'], set: { [i]: v } } : { eid, sub: ['res', 'rounds'], unset: [String(i)] })); patchEv({ eid, sub: ['res', 'roundBy'], set: { [i]: stampMe() } }); };
   $('#rf').onsubmit = e => { e.preventDefault(); const v = COLORS.map((_, c) => $('#r' + c) ? $('#r' + c).value.trim() : ''); if ((ev.teams || []).some(c => v[c] === '' || isNaN(+v[c]))) { $('#err').textContent = 'กรอกตัวเลขให้ครบทุกคณะสี'; return; } save(v.map(x => x === '' ? '' : +x)); };
   $('#clr')?.addEventListener('click', () => save(null));
 }
@@ -3488,6 +3495,7 @@ function openRoster(eid, focusKey) {
       ${lock ? '' : `<div class="actions"><button class="btn sm ghost" id="addp">+ เพิ่มแถวพิมพ์เอง</button></div>
       <details class="mt"><summary>วางรายชื่อจาก Excel</summary><p class="muted sm">คอลัมน์: ชื่อ-สกุล · ชั้น · เบอร์เสื้อ · เพศ (คั่นด้วยแท็บหรือจุลภาค) หนึ่งคนต่อบรรทัด ถ้าชื่อมีคำนำหน้า (ด.ช./ด.ญ./นาย/นางสาว) ระบบเติมเพศให้</p><textarea id="paste" rows="5"></textarea><button class="btn sm" id="dopaste">เพิ่มจากข้อความ</button></details>`}
       <p class="err" id="err"></p>
+      ${updLine(rosterOf(eid, c).by, rosterOf(eid, c).at)}
       <div class="actions">${ro ? '' : r.submitted ? `<button class="btn ghost" id="unsub">ยกเลิกการส่ง (แก้ไข)</button>` : `<button class="btn ghost" id="draft">บันทึกร่าง</button><button class="btn" id="submit" ${blockSend || !r.players.length ? 'disabled' : ''}>ส่งรายชื่อ</button>`}<button class="btn ghost" data-close>ปิด</button></div>
       ${!lock && nErr ? `<p class="muted sm">${blockSend ? 'แก้ข้อผิดพลาดให้ครบก่อนส่ง' : 'ยังมีคำเตือน ส่งได้แต่ควรตรวจอีกครั้ง'}</p>` : ''}</div>`;
     $('#addp')?.addEventListener('click', () => { r.players.push({ id: uid('p'), name: '', cls: '', num: '', sex: gendered ? ev.gender : '' }); draw(); $('#modal .rline:last-child input')?.focus(); });
@@ -3580,7 +3588,7 @@ function openCheckin(eid, mid) {
   };
   const draw = () => {
     $('#modal').innerHTML = `<div class="dlg wide"><h3>รายงานตัว · ${esc(evTitle(ev))}${m ? ` · คู่ ${m.no} ${esc(m.time || '')}` : ''}</h3><div class="cigrid">${sides.map(col).join('')}</div>
-      <p class="err" id="cierr">${ciErr}</p><div class="actions"><button class="btn" id="saveci">บันทึกการรายงานตัว</button><button class="btn ghost" data-close>ปิด</button></div></div>`;
+      ${updLine((m || ev).ciBy, (m || ev).ciAt, 'รายงานตัวล่าสุดโดย')}<p class="err" id="cierr">${ciErr}</p><div class="actions"><button class="btn" id="saveci">บันทึกการรายงานตัว</button><button class="btn ghost" data-close>ปิด</button></div></div>`;
   };
   $('#modal').hidden = false; draw();
   $('#modal').onchange = e => {
@@ -3592,8 +3600,8 @@ function openCheckin(eid, mid) {
   $('#modal').onclick = e => {
     if (e.target.id === 'saveci') { const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
       if (!n && !ci0) { ciErr = sides.some(([k, c]) => c >= 0 && (rosterOf(eid, c).players || []).length) ? 'ยังไม่ได้เลือกนักกีฬา: ติ๊กชื่อนักกีฬาที่มารายงานตัว (หรือ “ทั้งทีม”) ก่อนกดบันทึก' : 'ยังบันทึกไม่ได้: ยังไม่มีคณะสีไหนส่งรายชื่อนักกีฬา'; draw(); $('#cierr')?.scrollIntoView({ block: 'nearest' }); return; }
-      if (!n && ci0) { ask('ไม่ได้เลือกนักกีฬาเลย ยืนยันล้างการรายงานตัวของคู่นี้ทั้งหมด?', () => { recUndo('ล้างรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci } } : { eid, set: { ci } })); }, 'ล้างการรายงานตัว'); return; }
-      closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci } } : { eid, set: { ci } })); return; }
+      if (!n && ci0) { ask('ไม่ได้เลือกนักกีฬาเลย ยืนยันล้างการรายงานตัวของคู่นี้ทั้งหมด?', () => { recUndo('ล้างรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } })); }, 'ล้างการรายงานตัว'); return; }
+      closeModal(); resetModalHandlers(); recUndo('บันทึกรายงานตัว', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''}`, patchEv(m ? { eid, mid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } } : { eid, set: { ci, ciBy: ME.id || '', ciAt: Date.now() } })); return; }
     const f = e.target.closest('[data-forfeit]'); if (f) { const loser = f.dataset.forfeit; const lc = sides.find(s => s[0] === loser)[1], wc = sides.find(s => s[0] !== loser)[1];
       askFinal(`<b>ปรับแพ้: ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${chip(lc)} สละสิทธิ์ · ${chip(wc)} ชนะ</div>`, () => { closeModal(); resetModalHandlers(); recUndo('ปรับแพ้ (สละสิทธิ์)', `${evTitle(ev)} คู่ ${m.no} · ${COLORS[lc]?.n || ''}`, patchEv({ eid, mid, set: { w: loser === 'a' ? 'b' : 'a', auto: false, sa: '', sb: '', note: 'ชนะเพราะคู่แข่งสละสิทธิ์', at: Date.now(), by: ME.id || '', forfeit: loser, endedAt: Date.now(), ci }, unset: ['live'] }), 'ปรับแพ้แล้ว · ยกเลิกได้ที่ “แก้ผล” ของคู่นี้'); }, 'ยืนยันปรับแพ้', { forcePin: true, word: COLORS[lc]?.n }); }
   };
@@ -3677,6 +3685,7 @@ function openSport(id) {
     <fieldset class="win icpick"><legend>ไอคอน</legend>${Object.entries(SPORT_ICONS).map(([k, n]) => `<label title="${n}"><input type="radio" name="ic" value="${k}" ${(s.icon || (id && SPORT_ICONS[id] ? id : 'medal')) === k ? 'checked' : ''}><svg class="sic" viewBox="0 0 24 24" aria-hidden="true"><use href="#sp-${k}"/></svg><small>${n}</small></label>`).join('')}</fieldset>
     <label class="ck"><input type="checkbox" id="sa" ${s.isAthletics ? 'checked' : ''}> เป็นกรีฑา (นับโควตากรีฑาแยกจากชนิดกีฬา)</label>
     <label class="ck"><input type="checkbox" id="sx" ${s.isActivity ? 'checked' : ''}> เป็นกิจกรรมคณะสี (ไม่นับเป็นชนิดกีฬาของนักกีฬา)</label>
+    ${id ? updLine(S.sports[id]?.editBy, S.sports[id]?.editAt) : ''}
     <p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
   const sync = () => { const md = $('#spf').smode.value; document.querySelectorAll('#spf [data-sm]').forEach(x => x.hidden = x.dataset.sm !== md);
     const n = +$('#sst').value; $('#smsum').textContent = md === 'set' ? `ตัวอย่าง: ทีมที่ชนะ ${Math.floor(n / 2) + 1} เซตก่อนเป็นผู้ชนะ เซตเสมอไม่ได้ ผลแสดงเป็นจำนวนเซต เช่น 2–1` : `ตัวอย่าง: ทีมที่ได้${$('#su').value || 'คะแนน'}มากกว่าชนะ${$('#sdraw').checked ? ' เท่ากันในรอบพบกันหมดถือว่าเสมอ' : ''}`; };
@@ -3740,6 +3749,7 @@ function openEvent(id, sportId) {
       <label class="fld">เกณฑ์:คะแนนเต็ม <small>คั่นด้วยจุลภาค</small><input id="ejc" value="${esc((e.criteria || []).map(k => `${k.n}:${k.max}`).join(', '))}" placeholder="เช่น ความพร้อมเพรียง:20, การแต่งกาย:20"></label></fieldset>
     <label class="ck"><input type="checkbox" id="em" ${e.medal ? 'checked' : ''}> นับเหรียญรางวัล</label>
     <label class="fld">หมายเหตุ<input id="en" maxlength="300" value="${esc(e.note || '')}"></label>
+    ${id ? updLine(S.events[id]?.editBy, S.events[id]?.editAt) : ''}
     <p class="err" id="err"></p><div class="actions"><button class="btn" id="evsave">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
   const teamsNow = () => [...document.querySelectorAll('.et:checked')].map(x => +x.value);
   const changed = () => !!id && ($('#ef').value !== e.format || teamsNow().join() !== (e.teams || []).join());
