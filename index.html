@@ -781,6 +781,7 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .athev2{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 0 8px}.athev2.clash{border-color:#F5B971;background:#FFF8EE}.athev2 .ah{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.athev2 .ah>b{flex:1 1 220px}
 .athm{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.athm td{padding:4px 6px;border-top:1px solid #EEF1F6;white-space:nowrap}.athm td:nth-child(3){white-space:normal}
 /* หน้าตรวจบัตร */
+.bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
 .bvst{display:flex;flex-direction:column;gap:2px;padding:14px 18px;border-radius:14px;color:#fff}.bvst b{font-size:22px}.bvst span{font-size:14px;opacity:.95}
 .bvst.ok{background:#15803D}.bvst.bad{background:#B91C1C}.bvst.unk{background:#475569}
@@ -904,8 +905,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.28.0', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.28.1', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.28.1', 'เมนู “ตรวจบัตร” (สำหรับครู/กรรมการ): สแกนด้วยกล้องหรือพิมพ์หมายเลขบัตร · สแกนบัตรถัดไปต่อเนื่องได้'],
   ['1.28.0', 'QR บนบัตรเป็นลิงก์ประจำตัว: หน้าตรวจบัตร (ถูกต้อง/ไม่พบ/ตัดสิทธิ์ + พื้นที่ที่เข้าได้) · ลงชื่อกรรมการประจำนัดจากบัตร (หน้าตรวจบัตรหรือสแกนในหน้ารายงานตัว) ชื่อขึ้นในผลและใบบันทึก · หน้าส่วนตัวของนักกีฬา/บุคลากร · ล้างช่องค้นหาหลังเลือก และล้างการเลือกหลังพิมพ์'],
   ['1.27.0', 'บัตรห้อยคอแบบสากล: ลายอัญมณี 6 ชนิด · รหัสประเภทบัตรขนาดใหญ่ · ช่องพื้นที่ที่เข้าได้ (ACCESS 1–6) · หมายเลขบัตร · แถบคณะ/ประเภท · ด้านหลังโครงเดียวกันทุกบัตร · ตั้งชื่องานภาษาอังกฤษได้ · กันล้นอัตโนมัติหลังโหลดฟอนต์ · ช่องพิมพ์รหัสรายงานตัวรับ A-xxxxx'],
   ['1.26.10', 'โปรแกรม & ผล: กลุ่ม “จบแล้ว” ย่อ/ขยายได้ทุกวัน (วันที่ผ่านมาเปิดไว้ให้ก่อน)'],
@@ -2025,8 +2027,8 @@ function parseStudentRows(rowsBySheet) {
 
 /* ===================== มุมมอง ===================== */
 const VIEWS = [['medals', 'ตารางเหรียญ'], ['schedule', 'โปรแกรม & ผล'], ['map', 'ผังการแข่งขัน'], ['fieldmap', 'แผนที่สนาม'], ['venues', 'สนามแข่งขัน'], ['tv', 'จอประกาศผล'],
-  ['checkin', 'รายงานตัว'], ['register', 'ส่งรายชื่อนักกีฬา'], ['athletes', 'ค้นหานักกีฬา'], ['teams', 'คณะสีและนักเรียน'], ['admin', 'จัดการการแข่งขัน']];
-const STAFF_VIEWS = ['checkin', 'register', 'athletes', 'teams', 'admin'];
+  ['checkin', 'รายงานตัว'], ['badge', 'ตรวจบัตร'], ['register', 'ส่งรายชื่อนักกีฬา'], ['athletes', 'ค้นหานักกีฬา'], ['teams', 'คณะสีและนักเรียน'], ['admin', 'จัดการการแข่งขัน']];
+const STAFF_VIEWS = ['checkin', 'badge', 'register', 'athletes', 'teams', 'admin'];
 function todayISO() { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; }
 /* วันเริ่มต้น: วันนี้ถ้าเป็นวันแข่ง · ถ้ายังไม่ถึงใช้วันแข่งถัดไปที่ใกล้ที่สุด · ถ้าผ่านไปหมดแล้วใช้วันสุดท้าย */
 function defaultDay() { const ds = days(), s = todayISO(); if (!ds.length) return ''; if (ds.includes(s)) return s; return ds.find(d => d > s) || ds[ds.length - 1]; }
@@ -2971,7 +2973,10 @@ function dutyItems(p, d) { const sp = p.sports || []; if (!sp.length) return [];
 function vBadge() {
   const b = parseBadge(UI.badge); const today = todayISO(); const d = days().includes(today) ? today : defaultDay(); const priv = mode === 'shared' && !canWrite;
   const zones = code => `<div class="bvz"><span class="lab">พื้นที่ที่เข้าได้ · ACCESS</span><div class="bvzl">${ZONES.map(([n, t]) => `<span class="${ZONE_BY[code].includes(n) ? 'on' : 'off'}"><i>${n}</i>${esc(t)}</span>`).join('')}</div></div>`;
-  const page = (st, inner) => `<section class="hero"><h1>ตรวจบัตร</h1><p class="muted">สแกน QR บนบัตรห้อยคอเพื่อตรวจสอบสิทธิ์เข้าพื้นที่และข้อมูลของเจ้าของบัตร</p></section><div class="bv">${st}${inner}</div>`;
+  const tool = `<form class="bvtool" id="bvform" autocomplete="off"><button type="button" class="btn" data-act="bvscan">📷 ${UI.badge ? 'สแกนบัตรถัดไป' : 'สแกนบัตร'}</button><span class="muted sm">หรือ</span><input id="bvq" placeholder="พิมพ์หมายเลขบัตร เช่น A-41308 หรือ J-9K2M7" enterkeyhint="go"><button class="btn ghost">ตรวจ</button></form>`;
+  const page = (st, inner) => `<section class="hero"><h1>ตรวจบัตร</h1><p class="muted">สแกน QR บนบัตรห้อยคอเพื่อตรวจสอบสิทธิ์เข้าพื้นที่และข้อมูลของเจ้าของบัตร · สแกนด้วยกล้องมือถือทั่วไปก็เปิดหน้านี้ได้</p></section><div class="bv">${tool}${st}${inner}</div>`;
+  if (!String(UI.badge || '').trim()) return page('', `<section class="card"><p class="muted">ยังไม่ได้เลือกบัตร กด “สแกนบัตร” แล้วเล็งกล้องไปที่ QR บนบัตรห้อยคอ หรือพิมพ์หมายเลขบัตรใต้ QR</p>
+    <ul class="muted sm"><li>บัตรนักกีฬา: ตรวจว่าลงแข่งจริงและไม่ถูกตัดสิทธิ์ ดูนัดที่จะแข่งและผล</li><li>บัตรบุคลากร: ตรวจว่ายังอยู่ในทะเบียน ลงชื่อกรรมการประจำนัดได้จากหน้านี้</li><li>ช่องพื้นที่ 1–6 บอกว่าผู้ถือบัตรเข้าพื้นที่ใดได้บ้าง</li></ul></section>`);
   const status = (k, t, sub) => `<div class="bvst ${k}"><b>${k === 'ok' ? '✓' : k === 'bad' ? '✕' : '?'} ${t}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
   const card = (o) => `<div class="card bvcard" style="--tc:${o.tc}"><div class="bvcat"><b>${o.code}</b><span>${CODE_EN[o.code]}</span></div><div class="bvph" id="bvph" data-pid="${esc(o.pid || '')}">${PH_SIL}</div>
     <div class="bvwho"><small class="muted">${esc(o.no)}</small><h2>${esc(o.name)}</h2>${o.l1 ? `<p>${o.l1}</p>` : ''}${o.l2 ? `<p class="muted sm">${o.l2}</p>` : ''}</div></div>`;
@@ -3010,6 +3015,14 @@ function vBadge() {
      <h3 class="sub">ผลการแข่งขัน</h3>${R.map(({ ev, r }) => `<div class="feed sm"><span class="fl">${sIcon(ev.sport, 'sm')}${esc(evTitle(ev))}</span><span>${r.medal ? `<span class="medp ${r.medal}">${MED_N[r.medal]}</span> ` : ''}${r.place ? esc(r.place) + ' ' : ''}${r.rows.map(x => `<small class="${x.res === 'ชนะ' ? 'okt' : x.res === 'แพ้' ? 'badt' : 'muted'}">${esc(x.res)}</small>`).join(' ') || '<small class="muted">ยังไม่มีผล</small>'}</span></div>`).join('')}</section>`);
 }
 /* ใส่รูปหลังวาดหน้า (รูปเก็บแยก เฉพาะผู้มีสิทธิ์) */
+/* เปิดผลตรวจบัตรจากค่าที่สแกน/พิมพ์ */
+function goBadge(raw) { const b = parseBadge(raw); if (!b) return false; location.hash = 'badge~' + (b.k === 'A' ? 'A-' + b.sid + (b.c != null ? '~' + b.c : '') : b.no); if (UI.view === 'badge') setTimeout(() => window.scrollTo(0, 0), 30); return true; }
+function openBadgeScan() {
+  modal(`<div class="dlg"><h3>สแกนบัตรห้อยคอ</h3><div class="ciscan"><video id="bvv" playsinline muted></video><p id="cistat" class="sm"></p></div><div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`);
+  let busy = false;
+  startScan($('#bvv'), code => { if (busy) return; if (parseBadge(code)) { busy = true; beep(true); stopScan(); closeModal(); goBadge(code); } else { const st = $('#cistat'); if (st) { st.textContent = 'QR นี้ไม่ใช่บัตรของการแข่งขัน'; st.className = 'sm err'; } } },
+    (t, bad) => { const st = $('#cistat'); if (st) { st.textContent = t; st.className = 'sm' + (bad ? ' err' : ''); } });
+}
 function fillBadgePhoto() { const el = $('#bvph'); const pid = el?.dataset.pid; if (!pid) return; getPhoto(pid).then(img => { if (img && $('#bvph')?.dataset.pid === pid) $('#bvph').innerHTML = `<img src="${img}" alt="">`; }).catch(() => { }); }
 
 async function printBadges(list, style = 'badge') {
@@ -5192,6 +5205,7 @@ document.addEventListener('click', e => {
   else if (d.regc) { const nc = myColor() ?? +d.regc; if (nc !== UI.regColor) { UI.regSel = new Set(); UI.regQ = ''; } UI.regColor = nc; render(); }
   else if (d.roster) openRoster(d.roster);
   else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); if (UI.view === 'athletes') resetQ('aq'); else if (UI.view === 'register') resetQ('rq'); }
+  else if (d.act === 'bvscan') openBadgeScan();
   else if (d.jd) { const [eid, mid, pid, on] = d.jd.split('|'); const p = staffList().find(x => x.id === pid); if (p) { const r = setJudge(eid, mid || null, p, on === '1'); if (r && r !== 'dup') toast(on === '1' ? `ลงชื่อ ${stripPre(p.name)} เป็นกรรมการแล้ว` : 'ยกเลิกแล้ว'); render(); } }
   else if (d.jdall) { const p = staffList().find(x => x.id === d.jdall); if (p) { const dd = days().includes(todayISO()) ? todayISO() : defaultDay(); let n = 0; dutyItems(p, dd).filter(i => !i.done && editOn && canScore(i.ev.sport)).forEach(i => { const r = setJudge(i.eid, i.mid, p, true); if (r && r !== 'dup') n++; }); toast(`ลงชื่อ ${stripPre(p.name)} เป็นกรรมการ ${n} นัด`); render(); } }
   else if (d.ci) { const [a, b] = d.ci.split('|'); openCheckin(a, b); }
@@ -5329,12 +5343,13 @@ let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTime
 document.addEventListener('fullscreenchange', () => { if (UI.view === 'map') render(); });
 setInterval(() => { if (['medals', 'tv', 'schedule', 'map', 'checkin'].includes(UI.view) && $('#modal').hidden && mode !== 'connecting' && !document.activeElement?.matches('input,select,textarea')) { hideTip(); render(); } }, 60000);
 function exitTV() { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => { }); location.hash = UI.prevView && UI.prevView !== 'tv' ? UI.prevView : 'medals'; }
-function route() { const raw = location.hash.slice(1); const [h, arg] = raw.split('~'); const nv = VIEWS.some(v => v[0] === h) || h === 'badge' ? h : 'medals';
+function route() { const raw = location.hash.slice(1); const [h, arg] = raw.split('~'); const nv = VIEWS.some(v => v[0] === h) ? h : 'medals';
   if (nv === 'badge') UI.badge = raw.slice(6);
   if (nv === 'tv' && UI.view && UI.view !== 'tv') UI.prevView = UI.view;
   if (nv === 'venues' && arg) { UI.vFocus = decodeURIComponent(arg); UI.vScroll = true; }
   if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = ''; UI.q = ''; UI.pickq = ''; }
   UI.view = nv; $('#main').dataset.view = ''; window.scrollTo(0, 0); render(); }
+document.addEventListener('submit', e => { if (e.target.id !== 'bvform') return; e.preventDefault(); const el = $('#bvq'); const v = el.value; el.value = ''; if (!goBadge(v)) { beep(false); toast('อ่านหมายเลขบัตรไม่ได้ ตัวอย่าง: A-41308 หรือ J-9K2M7'); el.focus(); } });
 window.addEventListener('hashchange', route);
 route(); initData();
 
