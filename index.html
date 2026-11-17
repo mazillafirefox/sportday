@@ -780,6 +780,18 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .apinfo{flex:1;min-width:0}.apinfo h3{margin:0}.apstat{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.apstat span{display:flex;flex-direction:column;align-items:center;background:#F4F7FD;border-radius:10px;padding:4px 12px;font-size:12px;color:var(--muted);min-width:58px}.apstat b{font-size:18px;color:var(--ink)}
 .athev2{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 0 8px}.athev2.clash{border-color:#F5B971;background:#FFF8EE}.athev2 .ah{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.athev2 .ah>b{flex:1 1 220px}
 .athm{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.athm td{padding:4px 6px;border-top:1px solid #EEF1F6;white-space:nowrap}.athm td:nth-child(3){white-space:normal}
+/* หน้าตรวจบัตร */
+.bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
+.bvst{display:flex;flex-direction:column;gap:2px;padding:14px 18px;border-radius:14px;color:#fff}.bvst b{font-size:22px}.bvst span{font-size:14px;opacity:.95}
+.bvst.ok{background:#15803D}.bvst.bad{background:#B91C1C}.bvst.unk{background:#475569}
+.bvcard{display:flex;gap:16px;align-items:center;border-left:8px solid var(--tc)}.bvcat{width:84px;height:96px;flex:none;border-radius:12px;background:var(--tc);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}.bvcat b{font-size:52px;line-height:1}.bvcat span{font-size:10px;font-weight:700;letter-spacing:1px}
+.bvph{width:84px;height:112px;flex:none;border-radius:10px;overflow:hidden;background:#E6EBF3}.bvph img,.bvph svg{width:100%;height:100%;object-fit:cover;display:block}
+.bvwho{min-width:0;display:flex;flex-direction:column;gap:2px}.bvwho h2{margin:0;font-size:24px}.bvwho p{margin:0}
+.bvz{display:flex;flex-direction:column;gap:6px}.bvz .lab{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px}.bvzl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.bvzl span{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);font-size:14px;color:var(--muted)}.bvzl i{width:28px;height:28px;flex:none;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;border:1px solid var(--line)}
+.bvzl .on{color:var(--ink,#0B1F4D);font-weight:700;border-color:#0B1F4D}.bvzl .on i{background:#0B1F4D;color:#fff;border-color:#0B1F4D}.bvzl .off{opacity:.55;text-decoration:line-through}
+.bvrow .bvj{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:600px){.bvcard{flex-wrap:wrap}.bvcat{width:64px;height:76px}.bvcat b{font-size:38px}.bvph{width:64px;height:86px}.bvwho{flex-basis:100%}.bvzl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .okt{color:#15803D;font-weight:600}.badt{color:#B91C1C;font-weight:600}.medp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;color:#fff}.medp.g{background:#C79A0B}.medp.s{background:#8A94A6}.medp.b{background:#A0612F}
 @media(max-width:600px){.athprof .aphead{flex-direction:column;align-items:center;text-align:center}.athprof .maphead{justify-content:center}.apstat{justify-content:center}.athm td:first-child{display:none}.pselbar .pprint{margin-left:0;width:100%}.pselbar .pprint select{flex:1}}
 .btn.danger-t{color:#B91C1C}
@@ -892,8 +904,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.27.0', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.28.0', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.28.0', 'QR บนบัตรเป็นลิงก์ประจำตัว: หน้าตรวจบัตร (ถูกต้อง/ไม่พบ/ตัดสิทธิ์ + พื้นที่ที่เข้าได้) · ลงชื่อกรรมการประจำนัดจากบัตร (หน้าตรวจบัตรหรือสแกนในหน้ารายงานตัว) ชื่อขึ้นในผลและใบบันทึก · หน้าส่วนตัวของนักกีฬา/บุคลากร · ล้างช่องค้นหาหลังเลือก และล้างการเลือกหลังพิมพ์'],
   ['1.27.0', 'บัตรห้อยคอแบบสากล: ลายอัญมณี 6 ชนิด · รหัสประเภทบัตรขนาดใหญ่ · ช่องพื้นที่ที่เข้าได้ (ACCESS 1–6) · หมายเลขบัตร · แถบคณะ/ประเภท · ด้านหลังโครงเดียวกันทุกบัตร · ตั้งชื่องานภาษาอังกฤษได้ · กันล้นอัตโนมัติหลังโหลดฟอนต์ · ช่องพิมพ์รหัสรายงานตัวรับ A-xxxxx'],
   ['1.26.10', 'โปรแกรม & ผล: กลุ่ม “จบแล้ว” ย่อ/ขยายได้ทุกวัน (วันที่ผ่านมาเปิดไว้ให้ก่อน)'],
   ['1.26.9', 'รายงานตัว: รายการแข่งพร้อมกัน (เช่น Free Fire) ที่จบแล้วย้ายไปกลุ่ม “จบแล้ว” · รายงานตัวแยกรายวัน · แสดงเวลารอบ'],
@@ -2042,10 +2055,11 @@ function render() { DATA_TICK++;
   if (mode === 'connecting' && !Object.keys(S.events).length) { $('#main').innerHTML = '<p class="muted">กำลังโหลดข้อมูลการแข่งขัน…</p>'; return; }
   if (!Object.keys(S.events).length && !['admin', 'teams'].includes(UI.view)) { $('#main').innerHTML = emptyState(); return; }
   const bk = UI.view !== 'tv' && backupDue() ? `<div class="bkbar" role="status"><span><b>จบการแข่งของวันนี้แล้ว</b> ดาวน์โหลดไฟล์สำรองข้อมูลเก็บไว้ (เก็บในคอมพิวเตอร์หรือ Google Drive)</span><button class="btn sm" data-act="bknow">ดาวน์โหลดไฟล์สำรอง</button><button class="btn sm ghost" data-act="bklater">ภายหลัง</button></div>` : '';
-  const fn = { fieldmap: vFieldMap, medals: vMedals, schedule: vSchedule, map: vMap, register: vRegister, checkin: vCheckin, athletes: vAthletes, venues: vVenues, teams: vTeams, admin: vAdmin, tv: vTV }[UI.view];
+  const fn = { fieldmap: vFieldMap, medals: vMedals, schedule: vSchedule, map: vMap, register: vRegister, checkin: vCheckin, athletes: vAthletes, venues: vVenues, teams: vTeams, admin: vAdmin, tv: vTV, badge: vBadge }[UI.view];
   const keepScroll = $('#main').dataset.view === UI.view;
   $('#main').innerHTML = bk + fn(); $('#main').dataset.view = UI.view;
   if (UI.view === 'map') { drawLinks(); fitMaps(); }
+  if (UI.view === 'badge') fillBadgePhoto();
   if (UI.view === 'venues' && UI.vScroll) { UI.vScroll = false; setTimeout(() => $('.venue.focus')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); }
   if (keepScroll) window.scrollTo(sx, sy);
 }
@@ -2921,6 +2935,83 @@ const IB_CSS = `
 .ibk.fit3 .bmap{width:80%;margin:0 auto}.ibk.fit4 .bmap{width:66%}.ibk.fit4 .bvl.two,.ibk.fit4 .bvl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.2mm 1.5mm}.ibk.fit4 .bvl span{font-size:6.6px}.ibk.fit3 .ikf{margin-top:.6mm;padding:.8mm 3.5mm}
 .bd.blank{border:0}`;
 
+/* ===================== QR ประจำตัวบนบัตร + หน้าตรวจบัตร ===================== */
+/* หมายเลขบัตร: นักกีฬา A-<เลขประจำตัว> · บุคลากร <รหัส>-<5 ตัวท้ายของรหัสในทะเบียน> */
+const staffNo = p => `${p.code}-${String(p.id).slice(-5).toUpperCase()}`;
+/* ลิงก์ประจำตัว: #badge~A-41308~0 (ตัวเลขท้าย = คณะ ใช้แสดงตารางคณะให้ผู้ชมทั่วไป) · เปิดจากไฟล์ในเครื่องจะได้แค่หมายเลขบัตร */
+function badgeLink(no, c) { const u = pubURL('badge~' + encodeURIComponent(no) + (c != null && c >= 0 ? '~' + c : '')); return /^https?:/.test(u) ? u : no; }
+/* อ่านค่าจาก QR / ช่องพิมพ์: ลิงก์ประจำตัว, A-41308, 41308 หรือหมายเลขบัตรบุคลากร J-9K2M7 */
+function parseBadge(raw) {
+  let s = String(raw || '').trim(); try { s = decodeURIComponent(s); } catch (e) { }
+  const m = s.match(/badge~([^#&?\s]+)/); if (m) s = m[1];
+  const [no0, cc] = s.split('~'); const c = /^[0-5]$/.test(cc || '') ? +cc : null; s = String(no0 || '').replace(/\s+/g, '').toUpperCase();
+  let x = s.match(/^A-?(\d+)$/); if (x) return { k: 'A', sid: x[1].replace(/^0+(?=\d)/, ''), c };
+  if (/^\d+$/.test(s)) return { k: 'A', sid: s.replace(/^0+(?=\d)/, ''), c };
+  x = s.match(/^([CJOMV])-([0-9A-Z]{3,})$/); if (x) return { k: 'S', no: s, code: x[1] };
+  return null;
+}
+const findStaffNo = no => staffList().find(p => p.code && staffNo(p) === no);
+function findAthSid(sid) { for (let c = 0; c < COLORS.length; c++) { const idx = athleteIndex(c); for (const key of Object.keys(idx)) if (String(athSid(c, key) || '') === sid) return { c, key, a: idx[key] }; } return null; }
+/* กรรมการประจำนัด: m.jd / ev.jd = [{ id: รหัสบุคลากร, at, by }] (บันทึกในข้อมูลการแข่งขัน ผู้มีสิทธิ์บันทึกผลเขียนได้) */
+function judgesOf(x) { const L = staffList(); return (x?.jd || []).map(j => ({ ...j, p: L.find(p => p.id === j.id) })).filter(j => j.p); }
+const hhmm = t => new Date(t).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+function judgeLine(x) { const L = judgesOf(x); return L.length ? `<p class="muted sm updline">⚖ กรรมการประจำนัด: ${L.map(j => `<b>${esc(stripPre(j.p.name))}</b> <small>(${STAFF_EN[j.p.code] ? codeName(j.p.code) + ' · ' : ''}ลงชื่อ ${hhmm(j.at)} น.)</small>`).join(', ')}</p>` : ''; }
+function setJudge(eid, mid, p, on) {
+  const ev = S.events[eid]; if (!ev) return null; const x = mid ? (ev.matches || []).find(m => m.id === mid) : ev; if (!x) return null;
+  const jd = clone(x.jd || []); const i = jd.findIndex(j => j.id === p.id); if (on && i >= 0) return 'dup'; if (!on && i < 0) return null;
+  if (on) jd.push({ id: p.id, at: Date.now(), by: ME.id || '' }); else jd.splice(i, 1);
+  const r = patchEv(mid ? { eid, mid, set: { jd } } : { eid, set: { jd } }); if (r) logIt(on ? 'ลงชื่อกรรมการ' : 'ยกเลิกกรรมการ', `${stripPre(p.name)} · ${evTitle(evById(eid))}${mid ? ' คู่ ' + x.no : ''}`); return r;
+}
+/* นัดที่บุคลากรรับผิดชอบในวัน d (ตามชนิดกีฬาในทะเบียน) */
+function dutyItems(p, d) { const sp = p.sports || []; if (!sp.length) return [];
+  const ms = allMatches().filter(x => sp.includes(x.ev.sport) && x.m.date === d).map(x => ({ eid: x.ev.id, mid: x.m.id, ev: x.ev, x: x.m, time: x.m.time || '', label: `${evTitle(x.ev)} · คู่ ${x.m.no}`, venue: venueOf(x.ev, x.m), done: !!sideWin(x.m), live: isLive(x.m) }));
+  const es = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(e => !(e.matches || []).length && sp.includes(e.sport) && (e.date === d || (e.rounds || []).some(r => r.date === d)))
+    .map(e => ({ eid: e.id, mid: null, ev: e, x: S.events[e.id], time: evDayTime(e, d) || '', label: evTitle(e), venue: e.venue || '', done: evDayDone(e, d), live: evDayLive(e, d) }));
+  return [...ms, ...es].sort((a, b) => a.time.localeCompare(b.time)); }
+function vBadge() {
+  const b = parseBadge(UI.badge); const today = todayISO(); const d = days().includes(today) ? today : defaultDay(); const priv = mode === 'shared' && !canWrite;
+  const zones = code => `<div class="bvz"><span class="lab">พื้นที่ที่เข้าได้ · ACCESS</span><div class="bvzl">${ZONES.map(([n, t]) => `<span class="${ZONE_BY[code].includes(n) ? 'on' : 'off'}"><i>${n}</i>${esc(t)}</span>`).join('')}</div></div>`;
+  const page = (st, inner) => `<section class="hero"><h1>ตรวจบัตร</h1><p class="muted">สแกน QR บนบัตรห้อยคอเพื่อตรวจสอบสิทธิ์เข้าพื้นที่และข้อมูลของเจ้าของบัตร</p></section><div class="bv">${st}${inner}</div>`;
+  const status = (k, t, sub) => `<div class="bvst ${k}"><b>${k === 'ok' ? '✓' : k === 'bad' ? '✕' : '?'} ${t}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
+  const card = (o) => `<div class="card bvcard" style="--tc:${o.tc}"><div class="bvcat"><b>${o.code}</b><span>${CODE_EN[o.code]}</span></div><div class="bvph" id="bvph" data-pid="${esc(o.pid || '')}">${PH_SIL}</div>
+    <div class="bvwho"><small class="muted">${esc(o.no)}</small><h2>${esc(o.name)}</h2>${o.l1 ? `<p>${o.l1}</p>` : ''}${o.l2 ? `<p class="muted sm">${o.l2}</p>` : ''}</div></div>`;
+  if (!b) return page(status('bad', 'อ่านบัตรไม่ได้', 'QR นี้ไม่ใช่บัตรของการแข่งขัน'), '');
+  if (b.k === 'S') {
+    const p = findStaffNo(b.no); if (!p) return page(status('bad', 'ไม่พบบัตรนี้', `หมายเลขบัตร ${esc(b.no)} ไม่อยู่ในทะเบียนบุคลากร อาจถูกยกเลิกแล้ว · ไม่อนุญาตให้เข้าพื้นที่`), '');
+    const isC = p.code === 'C' && p.c >= 0; const tc = isC ? COLORS[p.c].c : STAFF_COL[p.code];
+    const items = dutyItems(p, d); const mine = items.filter(i => (i.x?.jd || []).some(j => j.id === p.id)); const first = mine.map(i => i.x.jd.find(j => j.id === p.id).at).sort()[0];
+    const canJ = i => editOn && canScore(i.ev.sport);
+    const row = i => { const j = (i.x?.jd || []).find(y => y.id === p.id); const others = judgesOf(i.x).filter(y => y.id !== p.id);
+      return `<div class="mrow g2 bvrow${i.done ? ' isdone' : i.live ? ' islive' : ''}"><span class="tcol"><b class="tt num">${esc(i.time || '–')}</b>${i.done ? '<span class="tst done">✓ จบแล้ว</span>' : i.live ? '<span class="tst live"><i></i>กำลังแข่ง</span>' : ''}</span>
+        <span class="ml">${sIcon(i.ev.sport, 'sm')}<b class="elab">${esc(i.label)}</b>${i.venue ? `<small>${esc(i.venue)}</small>` : ''}${others.length ? `<small>กรรมการอื่น: ${others.map(y => esc(stripPre(y.p.name))).join(', ')}</small>` : ''}</span>
+        <span class="bvj">${j ? `<span class="pill ok">✓ ลงชื่อแล้ว ${hhmm(j.at)} น.</span>` : ''}${canJ(i) ? `<button class="btn sm ${j ? 'ghost' : ''}" data-jd="${i.eid}|${i.mid || ''}|${p.id}|${j ? 0 : 1}">${j ? 'ยกเลิก' : 'ลงชื่อเป็นกรรมการ'}</button>` : ''}</span></div>`; };
+    const pend = items.filter(i => !i.done && !(i.x?.jd || []).some(j => j.id === p.id) && canJ(i));
+    const duty = `<section class="card"><div class="maphead"><div><h2>หน้าที่${d === today ? 'วันนี้' : ' ' + fmtDate(d, true)}</h2><p class="muted sm">${(p.sports || []).length ? (p.sports || []).map(sportName).join(', ') : 'ไม่ได้ระบุชนิดกีฬาในทะเบียนบุคลากร'}${first ? ` · <b class="okt">ลงเวลามาปฏิบัติหน้าที่ ${hhmm(first)} น.</b>` : ''}</p></div>
+      ${pend.length > 1 ? `<button class="btn sm" data-jdall="${p.id}">ลงชื่อทุกนัดที่ยังไม่จบ (${pend.length})</button>` : ''}</div>
+      ${items.length ? items.map(row).join('') : `<p class="muted">ไม่มีนัดที่รับผิดชอบ${d === today ? 'วันนี้' : 'ในวันนั้น'}</p>`}
+      ${anyEdit() && !editOn && items.length ? '<p class="muted sm">เปิดโหมดแก้ไขเพื่อลงชื่อกรรมการประจำนัด</p>' : ''}${!anyEdit() && items.length ? '<p class="muted sm">กรรมการบันทึกผลหรือผู้ดูแลเป็นผู้ลงชื่อกรรมการประจำนัด (สแกนบัตรนี้ในเครื่องที่เข้าสู่ระบบ)</p>' : ''}</section>`;
+    return page(status('ok', 'บัตรถูกต้อง · VALID', `${codeName(p.code)} · หมายเลขบัตร ${esc(b.no)}`),
+      card({ tc, code: p.code, no: b.no, name: stripPre(p.name), l1: esc(p.job || codeName(p.code)) + (isC ? ` · ${chip(p.c)}` : ''), l2: esc(p.pos || ''), pid: priv ? '' : 'st' + p.id }) + zones(p.code) + duty);
+  }
+  /* นักกีฬา */
+  if (priv) { const c = b.c; const ms = c != null ? allMatches().filter(x => x.m.date === d && (() => { const t = teamsOf(x.ev, x.m); return t.a === c || t.b === c; })()).sort((p, q) => (p.m.time || '').localeCompare(q.m.time || '')) : [];
+    return page(status('unk', 'บัตรนักกีฬา', `เลขประจำตัว ${esc(b.sid)}${c != null ? ' · คณะ' + esc(COLORS[c].n) : ''} · ครู/กรรมการเข้าสู่ระบบเพื่อยืนยันตัวตน ชื่อ และรูปถ่าย`),
+      card({ tc: c != null ? COLORS[c].c : '#64748B', code: 'A', no: 'A-' + b.sid, name: 'นักกีฬา', l1: c != null ? chip(c) : '', l2: 'ชื่อและรูปนักเรียนแสดงเฉพาะครู/กรรมการ' }) + zones('A') +
+      (c != null ? `<section class="card"><h2>โปรแกรมของคณะ${esc(COLORS[c].n)}${d === today ? 'วันนี้' : ' ' + fmtDate(d, true)}</h2>${ms.length ? ms.map(x => matchRow(x.ev, x.m)).join('') : '<p class="muted">ไม่มีนัดแข่งของคณะในวันนี้</p>'}<div class="actions"><a class="btn sm ghost" href="#schedule">ดูโปรแกรมทั้งหมด</a></div></section>` : ''));
+  }
+  const f = findAthSid(b.sid);
+  if (!f) return page(status('bad', 'ไม่พบนักกีฬา', `เลขประจำตัว ${esc(b.sid)} ไม่ได้ลงชื่อแข่งขันในรายการใด บัตรนี้ใช้เข้าพื้นที่นักกีฬาไม่ได้`), '');
+  const { c, key, a } = f; const B = bannedSet(); const ban = isBanned(c, a, B);
+  const items = (athleteSchedule(c)[key] || []).filter(i => i.date >= d).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
+  const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)); const R = evs.map(ev => ({ ev, r: athEvResult(ev, c, key) }));
+  return page(ban ? status('bad', 'ถูกตัดสิทธิ์', 'นักกีฬาคนนี้ถูกตัดสิทธิ์การแข่งขันทุกรายการ') : status('ok', 'บัตรถูกต้อง · VALID', `นักกีฬาคณะ${esc(COLORS[c].n)} · ลงแข่ง ${evs.length} รายการ`),
+    card({ tc: COLORS[c].c, code: 'A', no: 'A-' + b.sid, name: stripPre(a.name), l1: `ชั้น ม.${esc(a.cls)} · ${chip(c)}`, l2: [...a.sports].map(sportName).map(esc).join(', '), pid: photoId(c, key) }) + zones('A') +
+    `<section class="card"><div class="maphead"><h2>นัดที่จะแข่ง</h2><button class="btn sm ghost" data-ath="${c}~${esc(key)}">ดูประวัตินักกีฬาเต็ม</button></div>${items.length ? items.map(i => `<div class="feed sm"><span class="fl num">${fmtDate(i.date)} ${esc(i.time)}</span><span>${esc(i.label)}${i.venue ? ' <small class="muted">· ' + esc(i.venue) + '</small>' : ''}</span></div>`).join('') : '<p class="muted">ไม่มีนัดที่รอแข่ง</p>'}
+     <h3 class="sub">ผลการแข่งขัน</h3>${R.map(({ ev, r }) => `<div class="feed sm"><span class="fl">${sIcon(ev.sport, 'sm')}${esc(evTitle(ev))}</span><span>${r.medal ? `<span class="medp ${r.medal}">${MED_N[r.medal]}</span> ` : ''}${r.place ? esc(r.place) + ' ' : ''}${r.rows.map(x => `<small class="${x.res === 'ชนะ' ? 'okt' : x.res === 'แพ้' ? 'badt' : 'muted'}">${esc(x.res)}</small>`).join(' ') || '<small class="muted">ยังไม่มีผล</small>'}</span></div>`).join('')}</section>`);
+}
+/* ใส่รูปหลังวาดหน้า (รูปเก็บแยก เฉพาะผู้มีสิทธิ์) */
+function fillBadgePhoto() { const el = $('#bvph'); const pid = el?.dataset.pid; if (!pid) return; getPhoto(pid).then(img => { if (img && $('#bvph')?.dataset.pid === pid) $('#bvph').innerHTML = `<img src="${img}" alt="">`; }).catch(() => { }); }
+
 async function printBadges(list, style = 'badge') {
   list = list.filter(x => athleteIndex(x.c)[x.key]); if (!list.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; }
   if (style === 'qr') { printQRList(list); return; }
@@ -2929,7 +3020,7 @@ async function printBadges(list, style = 'badge') {
   const vIdx = name => venuesList().find(v => v.name === name);
   const front = (x, i) => { const a = athleteIndex(x.c)[x.key]; const sid = athSid(x.c, x.key); const k = COLORS[x.c]; const [fn, ln] = splitName(a.name);
     const sps = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean))]; sps.forEach(s => { const ic = S.sports[s]?.icon || s; icons.add('sp-' + (SPORT_ICONS[ic] ? ic : 'medal')); }); icons.add('gem-' + x.c); icons.add('gg' + x.c);
-    return ibFront({ code: 'A', c: x.c, tc: k.c, img: ph[ids[i]], fn, ln, line1: `นักกีฬา · ชั้น ม.${a.cls}`, line2: sid ? `เลขประจำตัว ${sid}` : '', cardNo: sid ? `A-${sid}` : 'A', qr: sid ? qrSVG(sid, 90) : '', sports: sportsBlock(sps), team: 'คณะ' + k.n, teamEn: COLOR_EN[x.c] || '' }); };
+    return ibFront({ code: 'A', c: x.c, tc: k.c, img: ph[ids[i]], fn, ln, line1: `นักกีฬา · ชั้น ม.${a.cls}`, line2: sid ? `เลขประจำตัว ${sid}` : '', cardNo: sid ? `A-${sid}` : 'A', qr: sid ? qrSVG(badgeLink('A-' + sid, x.c), 90) : '', sports: sportsBlock(sps), team: 'คณะ' + k.n, teamEn: COLOR_EN[x.c] || '' }); };
   const back = x => { if (!x) return '<div class="bd blank"></div>'; const a = athleteIndex(x.c)[x.key]; const k = COLORS[x.c]; const [fn, ln] = splitName(a.name); const sid = athSid(x.c, x.key);
     const evs = [...new Set(a.evs)].filter(id => S.events[id]).map(id => evById(id)).sort((p, q) => (p.date || '').localeCompare(q.date || ''));
     const vs = []; const vNo = n => { if (!n) return 0; let i = vs.findIndex(v => v.name === n); if (i < 0) { vs.push({ name: n, sp: new Set() }); i = vs.length - 1; } return i + 1; };
@@ -2971,7 +3062,7 @@ const BADGE_CSS = `.bsheet{padding:4mm 2.5mm}.bgrid{display:grid;grid-template-c
 function printQRList(list) {
   const cards = list.map(x => { const a = athleteIndex(x.c)[x.key]; const ev = [...new Set(a.evs.map(id => S.events[id]?.sport).filter(Boolean).map(sportName))]; return { c: x.c, sid: athSid(x.c, x.key), name: a.name, cls: a.cls, evs: ev }; }).filter(x => x.sid);
   if (!cards.length) { toast('นักกีฬาที่เลือกยังไม่มีรหัสประจำตัว'); return; }
-  const card = x => `<div class="qc" style="--tc:${COLORS[x.c].c}"><div class="qq">${qrSVG(x.sid, 86)}</div><div class="qi"><b class="qn">${esc(x.name)}</b><span>ม.${esc(x.cls)} · ${esc(x.sid)}</span><span class="qcol">คณะ${esc(COLORS[x.c].n)}</span><small>${esc(x.evs.slice(0, 4).join(', '))}</small></div></div>`;
+  const card = x => `<div class="qc" style="--tc:${COLORS[x.c].c}"><div class="qq">${qrSVG(badgeLink('A-' + x.sid, x.c), 86)}</div><div class="qi"><b class="qn">${esc(x.name)}</b><span>ม.${esc(x.cls)} · ${esc(x.sid)}</span><span class="qcol">คณะ${esc(COLORS[x.c].n)}</span><small>${esc(x.evs.slice(0, 4).join(', '))}</small></div></div>`;
   const pages = []; for (let i = 0; i < cards.length; i += 24) pages.push(cards.slice(i, i + 24));
   printDoc(`บัตร QR ${cards.length} ใบ`, pages.map((pg, i) => `<section class="sheet qs">${phead('บัตร QR รายงานตัวนักกีฬา', `แผ่น ${i + 1}/${pages.length} · ${cards.length} คน`)}<div class="qgrid">${pg.map(card).join('')}</div><p class="small">ตัดตามเส้น · QR เก็บรหัสประจำตัวนักเรียน</p></section>`).join(''),
     `.qs{padding:8mm}.qgrid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:3mm}.qc{display:flex;gap:2.5mm;align-items:center;border:1px dashed #999;border-left:3mm solid var(--tc);padding:2mm 2.5mm;height:30.5mm;box-sizing:border-box;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}.qq svg{width:24mm;height:24mm;display:block}.qi{display:flex;flex-direction:column;gap:.6mm;min-width:0;font-size:11px;line-height:1.25}.qn{font-size:12.5px}.qcol{font-weight:600}.qi small{color:#555;font-size:9.5px}`);
@@ -3048,7 +3139,7 @@ function vAthletes() {
   <div id="athres">${athleteResults()}</div>`;
 }
 function athleteResults() {
-  const q = String(UI.q || '').trim().toLowerCase(); const B = bannedSet(); const out = [];
+  let q = String(UI.q || '').trim().toLowerCase(); if (/badge~|^a\s*-\s*\d/.test(q)) { const b = parseBadge(q); if (b && b.k === 'A') q = b.sid; } const B = bannedSet(); const out = [];
   colorsVisible().forEach(c => {
     const idx = athleteIndex(c); const sched = athleteSchedule(c);
     Object.entries(idx).forEach(([k, a]) => {
@@ -3110,8 +3201,8 @@ function printDoc(title, body, css = '', noAuto = false) {
 const phead = (t, r) => `<header class="ph"><div><b>${esc(evName() + (evYear() ? ' ' + evYear() : ''))}</b> · ${esc(t)}</div><div>${r}</div></header>`;
 const SIGN2 = `<div class="sign"><span>ลงชื่อกรรมการผู้ตัดสิน ____________________</span><span>ลงชื่อกรรมการบันทึกผล ____________________</span></div>`;
 /* ช่องลงชื่อใส่ชื่อกรรมการจากทะเบียนบุคลากร (J = ตัดสิน, O/กรรมการบันทึกผล ของชนิดกีฬานั้น) */
-function signFor(ev) { const L = S.meta.staff || []; const has = p => (p.sports || []).includes(ev.sport);
-  const j = L.filter(p => p.code === 'J' && has(p)).map(p => p.name); const o = L.filter(p => (p.role === 'scorer' || p.code === 'O') && has(p)).map(p => p.name);
+function signFor(ev, m) { const L = S.meta.staff || []; const has = p => (p.sports || []).includes(ev.sport); const jx = judgesOf(m || ev);
+  const j = jx.length ? jx.map(x => x.p.name) : L.filter(p => p.code === 'J' && has(p)).map(p => p.name); const o = L.filter(p => (p.role === 'scorer' || p.code === 'O') && has(p)).map(p => p.name);
   const ln = (t, n) => `<span>ลงชื่อ${t} ____________________${n.length ? `<br><small>(${esc(n.slice(0, 2).join(' / '))})</small>` : ''}</span>`;
   return `<div class="sign">${ln('กรรมการผู้ตัดสิน', j)}${ln('กรรมการบันทึกผล', o)}</div>`; }
 function sheetMatch({ ev, m }) {
@@ -3123,7 +3214,7 @@ function sheetMatch({ ev, m }) {
     <h2>${esc(evTitle(ev))} · คู่ที่ ${m.no} ${esc(m.round || '')}</h2><p class="small">หน่วยคะแนน: ${esc(sp.unit || '')} · รายงานตัวก่อนแข่ง ${S.meta.checkinMin ?? 20} นาที ไม่มาภายใน ${S.meta.forfeitMin ?? 10} นาทีถือว่าสละสิทธิ์ · ประท้วงภายใน 15 นาทีหลังจบเกม${sp.rule || SPORT_RULES[ev.sport] ? ' · ' + esc(sp.rule || SPORT_RULES[ev.sport]) : ''}</p>
     <div class="cols">${side('a')}${side('b')}</div>
     ${setsOf(ev) ? (() => { const SET = setsOf(ev); return `<table class="settbl"><tr><th>เซต</th>${Array.from({ length: SET.n }, (_, i) => `<th>#${i + 1}${SET.pts[i] ? ` (${SET.pts[i]})` : ''}</th>`).join('')}<th>เซตที่ชนะ</th></tr>${['a', 'b'].map(sd => `<tr><td>${t[sd] >= 0 ? 'คณะ' + esc(COLORS[t[sd]].n) : esc(slotLabel(ev, m[sd]))}</td>${Array.from({ length: SET.n }, () => '<td></td>').join('')}<td></td></tr>`).join('')}</table><p class="small">ชนะ ${Math.floor(SET.n / 2) + 1} ใน ${SET.n} เซต${SET.deuce ? ' · ดิวซ์ ชนะห่าง 2 แต้ม' + (SET.cap ? ` (สูงสุด ${SET.cap})` : '') : ''}</p>`; })() : '<p>ผลการแข่งขัน (รายละเอียดครึ่ง/ช่วง): ________________________________________________</p>'}
-    <p>ผู้ชนะ: คณะ __________________ &nbsp; การประท้วง: <span class="box"></span> ไม่มี <span class="box"></span> มี (เวลา ______ น.)</p>${signFor(ev)}</section>`;
+    <p>ผู้ชนะ: คณะ __________________ &nbsp; การประท้วง: <span class="box"></span> ไม่มี <span class="box"></span> มี (เวลา ______ น.)</p>${signFor(ev, m)}</section>`;
 }
 function sheetEvent(ev) {
   const teams = ev.teams || []; const head = phead('ใบบันทึกผลการแข่งขัน', `${ev.date ? fmtDate(ev.date, true) : ''} ${ev.time ? 'เวลา ' + esc(ev.time) + ' น.' : ''} · ${esc(ev.venue || '')}`);
@@ -3561,8 +3652,7 @@ async function printStaffBadges(ids, style) {
   const allSp = sportsList().filter(sp => !sp.isActivity).map(sp => sp.id);
   const spIcon = s => { const ic = S.sports[s]?.icon || s; const id = 'sp-' + (SPORT_ICONS[ic] ? ic : 'medal'); icons.add(id); return id; };
   const front = p => { const [fn, ln] = splitName(p.name); if (isC(p)) { icons.add('gem-' + p.c); icons.add('gg' + p.c); } (p.sports || []).forEach(spIcon);
-    return ibFront({ code: p.code, c: isC(p) ? p.c : null, tc: colOf(p), img: ph['st' + p.id], fn, ln, line1: p.job || codeName(p.code), line2: p.pos || '', cardNo: `${p.code}-${p.id.slice(-5).toUpperCase()}`, qr: qrSVG(pubURL(), 90),
-      note: 'สแกน QR เพื่อดูโปรแกรมและผล · Non-transferable', sports: (p.sports || []).length ? sportsBlock(p.sports) : '', team: isC(p) ? 'คณะ' + COLORS[p.c].n : codeName(p.code), teamEn: isC(p) ? COLOR_EN[p.c] || '' : STAFF_EN[p.code] }); };
+    return ibFront({ code: p.code, c: isC(p) ? p.c : null, tc: colOf(p), img: ph['st' + p.id], fn, ln, line1: p.job || codeName(p.code), line2: p.pos || '', cardNo: staffNo(p), qr: qrSVG(badgeLink(staffNo(p)), 90), sports: (p.sports || []).length ? sportsBlock(p.sports) : '', team: isC(p) ? 'คณะ' + COLORS[p.c].n : codeName(p.code), teamEn: isC(p) ? COLOR_EN[p.c] || '' : STAFF_EN[p.code] }); };
   const back = p => { if (!p) return '<div class="bd blank"></div>'; const [fn, ln] = splitName(p.name); const vs = venuesList().filter(v => !(p.sports || []).length || allMatches().some(x => (p.sports || []).includes(x.ev.sport) && venueOf(x.ev, x.m) === v.name) || Object.values(S.events).some(e => (p.sports || []).includes(e.sport) && e.venue === v.name));
     const pins = pinsNoOverlap(vs.map((v, i) => ({ n: i + 1, p: pinOf(v) })).filter(x => x.p)); const sp = p.sports || [];
     const spList = !sp.length ? '<span>ทุกพื้นที่ / ไม่ระบุชนิดกีฬา</span>' : allSp.length >= 6 && allSp.every(id => sp.includes(id)) ? `<span>ทุกชนิดกีฬา (${sp.length})</span>` : sp.length > 6 ? `<em class="spl">${sp.map(s => esc(sportName(s))).join(' · ')}</em>` : sp.map(s => `<span><svg viewBox="0 0 24 24"><use href="#${spIcon(s)}"/></svg>${esc(sportName(s))}</span>`).join('');
@@ -3869,7 +3959,7 @@ function openResult(eid, mid) {
       <h4 class="sub">การประท้วง</h4><div id="protbox"></div>
     </details>
     ${(() => { const l = LOG.find(x => x.undo?.eid === eid && x.undo?.mid === mid); return l && canUndo(l) ? `<p class="sm undoln">ล่าสุด: ${esc(l.what)} · ${new Date(l.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. <button type="button" class="btn sm ghost" data-undo="${esc(l.id)}">ย้อนกลับ</button></p>` : ''; })()}
-    ${sideWin(m) ? startLine(m) : ''}${m.by || m.at ? `<p class="muted sm">บันทึกล่าสุดโดย ${esc(nameOf(m.by))}${m.at ? ' · ' + new Date(m.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''}</p>` : ''}
+    ${sideWin(m) ? startLine(m) : ''}${judgeLine(m)}${m.by || m.at ? `<p class="muted sm">บันทึกล่าสุดโดย ${esc(nameOf(m.by))}${m.at ? ' · ' + new Date(m.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''}</p>` : ''}
     <p class="err" id="err"></p><div class="actions">${sideWin(m) ? '<button class="btn">บันทึกการแก้ไขผล</button>' : started(m) ? '<button class="btn" title="สรุปผู้ชนะและปิดเกม">จบเกม · ยืนยันผล</button><button type="button" class="btn ghost" id="savelive" title="บันทึกคะแนน/วินัยระหว่างแข่ง เกมยังไม่จบ">บันทึกคะแนนระหว่างแข่ง</button>' : ''}<button type="button" class="btn ghost" data-close>${sideWin(m) || started(m) ? 'ยกเลิก' : 'ปิด'}</button>${m.w ? '<button type="button" class="btn danger" id="clr">ล้างผล</button>' : ''}</div>
     ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
@@ -4061,7 +4151,7 @@ function openEvResult(eid) {
     const p = ev.res?.p || [], pf = ev.res?.perf || [];
     const sel = i => `<select id="p${i}">${colorOpts(p[i], '–')}</select>`;
     modal(`<form class="dlg" id="af"><h3>${esc(evTitle(ev))}</h3>${['ที่ 1 · ทอง', 'ที่ 2 · เงิน', 'ที่ 3 · ทองแดง'].map((l, i) => `<div class="ov"><label class="fld">${l}${sel(i)}</label><label class="fld">สถิติ<input id="f${i}" value="${esc(pf[i] ?? '')}" placeholder="เช่น 12.45 วิ / 5.20 ม."></label></div>`).join('')}
-      ${startLine(ev)}${updLine(ev.res?.by, ev.res?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+      ${startLine(ev)}${judgeLine(ev)}${updLine(ev.res?.by, ev.res?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
     $('#af').onsubmit = e => {
       e.preventDefault(); const pp = [0, 1, 2].map(i => $('#p' + i).value === '' ? -1 : +$('#p' + i).value); const s = pp.filter(x => x >= 0);
       if (new Set(s).size !== s.length) { $('#err').textContent = 'คณะสีเดียวกันได้อันดับเดียวต่อรายการ'; return; }
@@ -4115,7 +4205,7 @@ function openRound(eid, i) {
   if (needStart(eid, () => openRound(eid, i))) return;
   const ev = evById(eid); const row = ev.res?.rounds?.[i] || [];
   modal(`<form class="dlg" id="rf"><h3>${esc(evTitle(ev))} · ${esc(ev.rounds[i].label)}</h3><div class="ffin">${(ev.teams || []).map(c => `<label class="side">${chip(c)}<input id="r${c}" class="num" inputmode="decimal" value="${esc(row[c] ?? '')}"></label>`).join('')}</div>
-    ${startLine(ev)}${updLine(ev.res?.roundBy?.[i]?.by, ev.res?.roundBy?.[i]?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${row.length ? '<button type="button" class="btn danger" id="clr">ลบรอบนี้</button>' : ''}</div></form>`);
+    ${startLine(ev)}${judgeLine(ev)}${updLine(ev.res?.roundBy?.[i]?.by, ev.res?.roundBy?.[i]?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button>${row.length ? '<button type="button" class="btn danger" id="clr">ลบรอบนี้</button>' : ''}</div></form>`);
   const save = v => { closeModal(); recUndo(v ? 'บันทึกคะแนนรอบ' : 'ลบคะแนนรอบ', `${evTitle(ev)} ${ev.rounds[i].label}`, patchEv(v ? { eid, sub: ['res', 'rounds'], set: { [i]: v } } : { eid, sub: ['res', 'rounds'], unset: [String(i)] })); patchEv({ eid, sub: ['res', 'roundBy'], set: { [i]: stampMe() } }); };
   $('#rf').onsubmit = e => { e.preventDefault(); const v = COLORS.map((_, c) => $('#r' + c) ? $('#r' + c).value.trim() : ''); if ((ev.teams || []).some(c => v[c] === '' || isNaN(+v[c]))) { $('#err').textContent = 'กรอกตัวเลขให้ครบทุกคณะสี'; return; } save(v.map(x => x === '' ? '' : +x)); };
   $('#clr')?.addEventListener('click', () => save(null));
@@ -4231,7 +4321,7 @@ const CI_METHODS = [['tick', '☑ ติ๊กรายชื่อ'], ['scan', 
 function ciMethod() { try { const v = localStorage.getItem('gem-cim'); return CI_METHODS.some(m => m[0] === v) ? v : 'tick'; } catch (e) { return 'tick'; } }
 function setCiMethod(v) { try { localStorage.setItem('gem-cim', v); } catch (e) { } }
 const clsKey = c => { const [g, r] = String(c || '').split('/').map(x => parseInt(x, 10) || 0); return g * 100 + r; };
-const normSid = v => String(v || '').trim().replace(/^[A-Za-z]\s*-\s*(?=\d)/, '').replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
+const normSid = v => { const b = /badge~|^\s*[Aa]\s*-/.test(String(v || '')) ? parseBadge(v) : null; return b && b.k === 'A' ? b.sid : String(v || '').trim().replace(/\s+/g, '').replace(/^0+(?=\d)/, ''); };
 let SCAN = null; /* { stream, timer, video, det, onCode } */
 function stopScan() { if (!SCAN) return; try { clearTimeout(SCAN.timer); SCAN.stream?.getTracks().forEach(t => t.stop()); } catch (e) { } SCAN = null; }
 let JSQR_P = null;
@@ -4294,7 +4384,12 @@ function openCheckin(eid, mid) {
   let meth = ciMethod(); let dirty = 0; const last = new Map(); let fb = null;
   /* หา sid ในรายชื่อทุกฝั่งของคู่นี้ */
   const findSid = code => { const sid = normSid(code); if (!sid) return null; for (const [k, c] of sides) { if (c < 0) continue; const p = (rosterOf(eid, c).players || []).find(p => normSid(p.sid) === sid || (p.num && normSid(p.num) === sid && false)); if (p) return { k, c, p }; } return { sid }; };
-  const onCode = raw => { const sid = normSid(raw); const now = Date.now(); if (last.get(sid) > now - 2500) return; last.set(sid, now);
+  const onCode = raw => { const bb = parseBadge(raw);
+    if (bb && bb.k === 'S') { const now = Date.now(); if (last.get(bb.no) > now - 2500) return; last.set(bb.no, now); const p = findStaffNo(bb.no);
+      if (!p) { fb = { ok: false, t: `ไม่พบบัตร ${bb.no} ในทะเบียนบุคลากร` }; beep(false); drawFb(); return; }
+      if (!canScore(ev.sport)) { fb = { ok: false, t: 'บัญชีนี้ลงชื่อกรรมการรายการนี้ไม่ได้' }; beep(false); drawFb(); return; }
+      const r = setJudge(eid, m ? mid : null, p, true); fb = { ok: true, t: `⚖ ${r === 'dup' ? 'ลงชื่อแล้ว: ' : 'ลงชื่อกรรมการ: '}${stripPre(p.name)} · ${codeName(p.code)}` }; beep(true); drawFb(); return; }
+    const sid = normSid(raw); const now = Date.now(); if (last.get(sid) > now - 2500) return; last.set(sid, now);
     const f = findSid(sid); if (!f) return;
     if (!f.p) { const st = allStudents().find(x => normSid(x.sid) === sid); fb = { ok: false, t: st ? `${st.name || ((st.pre || '') + (st.fn || '') + ' ' + (st.ln || '')).trim()} (ม.${st.cls}) ไม่อยู่ในรายชื่อ${m ? 'คู่นี้' : 'รายการนี้'}` : `ไม่พบรหัส ${sid} ในรายชื่อ` }; beep(false); drawFb(); return; }
     if (isBanned(f.c, f.p, bannedSet())) { fb = { ok: false, t: `${f.p.name} ถูกตัดสิทธิ์ รายงานตัวไม่ได้` }; beep(false); drawFb(); return; }
@@ -5067,7 +5162,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-jd],[data-jdall],[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -5086,7 +5181,7 @@ document.addEventListener('click', e => {
     const st = (UI.mapF = UI.mapF || {})[key] = UI.mapF[key] || {};
     if (k === '*') UI.mapF[key] = {}; else if (!v || st[k] === v) delete st[k]; else st[k] = v; if (key === UI.mapSport) UI.mapEv = null; render(); }
   else if (d.regst != null) { UI.regSt = d.regst || null; render(); }
-  else if (d.stedit) { const [sid, cls, ...nm] = d.stedit.split('|'); openStudentEdit(sid, cls, nm.join('|')); }
+  else if (d.stedit) { const [sid, cls, ...nm] = d.stedit.split('|'); openStudentEdit(sid, cls, nm.join('|')); resetQ('stq'); }
   else if (d.stff != null) { UI.stfF = d.stff; render(); }
   else if (d.stfed) openStaffEdit(d.stfed);
   else if (d.stfrm) { const p = staffList().find(x => x.id === d.stfrm); if (p) ask(`ลบ ${p.name} ออกจากรายชื่อบุคลากร?`, () => { saveStaff(staffList().filter(x => x.id !== p.id), 'ลบบุคลากร ' + p.name); setPhoto('st' + p.id, null).catch(() => { }); }, 'ลบ'); }
@@ -5094,9 +5189,11 @@ document.addEventListener('click', e => {
   else if (d.pselclr != null) { e.preventDefault(); UI.regSel = new Set(); $('#plistbox').innerHTML = regPlist(UI.regColor); }
   else if (d.regpf != null) { UI.regPF = !!d.regpf; render(); }
   else if (d.schv) { UI.schView = d.schv; render(); }
-  else if (d.regc) { UI.regColor = myColor() ?? +d.regc; render(); }
+  else if (d.regc) { const nc = myColor() ?? +d.regc; if (nc !== UI.regColor) { UI.regSel = new Set(); UI.regQ = ''; } UI.regColor = nc; render(); }
   else if (d.roster) openRoster(d.roster);
-  else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); }
+  else if (d.ath) { e.preventDefault(); const i = d.ath.indexOf('~'); openAthlete(+d.ath.slice(0, i), d.ath.slice(i + 1)); if (UI.view === 'athletes') resetQ('aq'); else if (UI.view === 'register') resetQ('rq'); }
+  else if (d.jd) { const [eid, mid, pid, on] = d.jd.split('|'); const p = staffList().find(x => x.id === pid); if (p) { const r = setJudge(eid, mid || null, p, on === '1'); if (r && r !== 'dup') toast(on === '1' ? `ลงชื่อ ${stripPre(p.name)} เป็นกรรมการแล้ว` : 'ยกเลิกแล้ว'); render(); } }
+  else if (d.jdall) { const p = staffList().find(x => x.id === d.jdall); if (p) { const dd = days().includes(todayISO()) ? todayISO() : defaultDay(); let n = 0; dutyItems(p, dd).filter(i => !i.done && editOn && canScore(i.ev.sport)).forEach(i => { const r = setJudge(i.eid, i.mid, p, true); if (r && r !== 'dup') n++; }); toast(`ลงชื่อ ${stripPre(p.name)} เป็นกรรมการ ${n} นัด`); render(); } }
   else if (d.ci) { const [a, b] = d.ci.split('|'); openCheckin(a, b); }
   else if (d.cie) openCheckin(d.cie);
   else if (d.adsport) { setSport(d.adsport); render(); }
@@ -5173,9 +5270,9 @@ document.addEventListener('click', e => {
   else if (d.act === 'clashes') openClashes();
   else if (d.act === 'staffadd') openStaffEdit(null);
   else if (d.act === 'stafftpl') staffTemplate();
-  else if (d.act === 'staffprint') printStaffBadges([...(UI.stfSel || [])], $('#stfstyle')?.value || 'badge');
+  else if (d.act === 'staffprint') { const ids = [...(UI.stfSel || [])]; if (ids.length) { printStaffBadges(ids, $('#stfstyle')?.value || 'badge'); UI.stfSel = new Set(); render(); } else toast('ยังไม่ได้เลือก'); }
   else if (d.act === 'qrcards') printQRCards(UI.regColor);
-  else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); printBadges(sel, $('#cardstyle')?.value || 'badge'); }
+  else if (d.act === 'printsel') { const sel = [...(UI.regSel || [])].map(k => { const i = k.indexOf('~'); return { c: +k.slice(0, i), key: k.slice(i + 1) }; }).filter(x => x.c === UI.regColor); if (!sel.length) { toast('ยังไม่ได้เลือกนักกีฬา'); return; } printBadges(sel, $('#cardstyle')?.value || 'badge'); UI.regSel = new Set(); resetQ('rq'); if ($('#plistbox')) $('#plistbox').innerHTML = regPlist(UI.regColor); }
   else if (d.act === 'qrcardsall') printQRCards(myColor());
   else if (d.act === 'bknow') { takeSnap(true); downloadBackup(); }
   else if (d.act === 'bklater') { try { sessionStorage.setItem('gem-bklater', todayISO()); } catch (e) { } render(); }
@@ -5203,8 +5300,8 @@ document.addEventListener('change', e => {
   if (e.target.dataset.stfk != null) { const sel = UI.stfSel || (UI.stfSel = new Set()); e.target.checked ? sel.add(e.target.dataset.stfk) : sel.delete(e.target.dataset.stfk); render(); return; }
   if (e.target.dataset.stfall != null) { const sel = UI.stfSel || (UI.stfSel = new Set()); document.querySelectorAll('[data-stfk]').forEach(i => e.target.checked ? sel.add(i.dataset.stfk) : sel.delete(i.dataset.stfk)); render(); return; }
   if (e.target.id === 'stfstyle') { UI.stfStyle = e.target.value; return; }
-  if (e.target.dataset.pk != null) { const sel = UI.regSel || (UI.regSel = new Set()); e.target.checked ? sel.add(e.target.dataset.pk) : sel.delete(e.target.dataset.pk); $('#plistbox').innerHTML = regPlist(UI.regColor); return; }
-  if (e.target.dataset.pselall != null) { const sel = UI.regSel || (UI.regSel = new Set()); const box = $('#plistbox'); box.querySelectorAll('[data-pk]').forEach(i => e.target.checked ? sel.add(i.dataset.pk) : sel.delete(i.dataset.pk)); box.innerHTML = regPlist(UI.regColor); return; }
+  if (e.target.dataset.pk != null) { const sel = UI.regSel || (UI.regSel = new Set()); e.target.checked ? sel.add(e.target.dataset.pk) : sel.delete(e.target.dataset.pk); if (UI.regQ) resetQ('rq', true); else $('#plistbox').innerHTML = regPlist(UI.regColor); return; }
+  if (e.target.dataset.pselall != null) { const sel = UI.regSel || (UI.regSel = new Set()); const box = $('#plistbox'); box.querySelectorAll('[data-pk]').forEach(i => e.target.checked ? sel.add(i.dataset.pk) : sel.delete(i.dataset.pk)); if (UI.regQ) resetQ('rq', true); else box.innerHTML = regPlist(UI.regColor); return; }
   if (e.target.id === 'cardstyle') { UI.cardStyle = e.target.value; return; }
   const tg = e.target;
   if (tg.dataset.room) { const r = tg.dataset.room; const m = clone(S.meta); m.classes = m.classes || {}; Object.keys(m.classes).forEach(k => m.classes[k] = (m.classes[k] || []).filter(x => x !== r)); for (let i = 0; i < 6; i++) m.classes[i] = m.classes[i] || []; if (tg.value !== '') m.classes[tg.value].push(r); put('meta', 'config', m); logIt('กำหนดห้องให้คณะสี', `ม.${r} → ${tg.value === '' ? 'ไม่กำหนด' : COLORS[+tg.value].n}`); }
@@ -5217,6 +5314,9 @@ document.addEventListener('change', e => {
   if (e.target.id === 'sportF') { if (e.target.value === 'all') UI.sportF = 'all'; else setSport(e.target.value); render(); }
   if (e.target.id === 'aclash') { UI.onlyClash = e.target.checked; $('#athres').innerHTML = athleteResults(); }
 });
+/* ล้างช่องค้นหาหลังเลือก/ทำรายการเสร็จ (ไม่ย้ายเคอร์เซอร์) */
+const Q_KEY = { aq: 'q', rq: 'regQ', stq: 'stq', stpick: 'pickq' };
+function resetQ(id, focus) { const el = document.getElementById(id); if (Q_KEY[id]) UI[Q_KEY[id]] = ''; if (el && el.value) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); } if (focus && el) el.focus(); }
 function clearQ(id) { const el = document.getElementById(id); if (!el) return; el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); }
 document.addEventListener('click', e => { const x = e.target.closest('[data-qx]'); if (x) { e.stopPropagation(); clearQ(x.dataset.qx); } }, true);
 document.addEventListener('input', e => {
@@ -5229,7 +5329,8 @@ let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTime
 document.addEventListener('fullscreenchange', () => { if (UI.view === 'map') render(); });
 setInterval(() => { if (['medals', 'tv', 'schedule', 'map', 'checkin'].includes(UI.view) && $('#modal').hidden && mode !== 'connecting' && !document.activeElement?.matches('input,select,textarea')) { hideTip(); render(); } }, 60000);
 function exitTV() { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => { }); location.hash = UI.prevView && UI.prevView !== 'tv' ? UI.prevView : 'medals'; }
-function route() { const raw = location.hash.slice(1); const [h, arg] = raw.split('~'); const nv = VIEWS.some(v => v[0] === h) ? h : 'medals';
+function route() { const raw = location.hash.slice(1); const [h, arg] = raw.split('~'); const nv = VIEWS.some(v => v[0] === h) || h === 'badge' ? h : 'medals';
+  if (nv === 'badge') UI.badge = raw.slice(6);
   if (nv === 'tv' && UI.view && UI.view !== 'tv') UI.prevView = UI.view;
   if (nv === 'venues' && arg) { UI.vFocus = decodeURIComponent(arg); UI.vScroll = true; }
   if (nv !== UI.view) { UI.day = UI.ciDay = UI.vDay = null; UI.stq = ''; UI.q = ''; UI.pickq = ''; }
