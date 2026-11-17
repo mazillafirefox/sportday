@@ -869,6 +869,7 @@ body.scovopen{overflow:hidden}
 .scnow .ciwin{margin:6px 0 0}
 .ciflag{display:inline-block;padding:0 6px;border-radius:6px;background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700}.ciflag.post{background:#FEE2E2;color:#991B1B}
 .scr.warn{background:#FEF3C7;border-color:#D97706}.scr.warn .scrh b{color:#92400E}.scli.warn b{color:#92400E}
+.ownerrow{background:#EEF2FF;border-radius:10px;padding:8px 10px;flex-wrap:wrap;gap:8px}.ownerrow .owsel{min-width:240px;flex:1 1 240px;margin:0}
 /* หน้าตรวจบัตร */
 .bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
@@ -994,8 +995,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.1', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.2', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.2', 'ตั้งค่า “ผู้ดูแลระบบรายงานตัวล่วงหน้าได้” (ปิดไว้เป็นค่าเริ่มต้น) · ผู้ใช้และสิทธิ์: แสดงผู้ดูแลหลัก (ซ่อนอีเมล) และผูกชื่อกับทะเบียนบุคลากร · เพิ่มผู้ใช้ด้วยอีเมลเชื่อมกับรายชื่อในทะเบียนได้ ชื่อผู้บันทึกใช้ชื่อจากทะเบียน ไม่ใช้ชื่อจากอีเมล'],
   ['1.33.1', 'รายงานตัว: ก่อนเปิดรับติ๊ก/บันทึกไม่ได้ทุกบทบาท (รวมผู้ดูแล) · แอปสแกน: ออกจากหน้าแล้วล้างนัดที่เลือก ไม่จำข้ามการเปิดแอป'],
   ['1.33.0', 'ช่วงรับรายงานตัว: เปิดรับ 60 นาทีก่อนแข่ง (ตั้งได้) · ถึงกำหนด 20 นาทีก่อนแข่ง · เลยกำหนดรับได้จนกดเริ่มแข่งแต่บันทึกว่า “มาช้า” · หลังเริ่มแข่งสแกนไม่ได้ ติ๊กเองได้โดยบันทึกว่า “หลังเริ่มแข่ง” · ใช้ทั้งหน้ารายงานตัวและแอปสแกน'],
   ['1.32.0', 'แอปสแกน (รายงานตัว): ต้องเลือกนัดก่อนสแกน · ไม่อยู่ในรายชื่อนัดนี้แจ้งนัดอื่นวันนี้/นัดถัดไป · แสดงจำนวนที่มาแล้ว · เมนูบาร์ด้านบนพอดีจอ (รายการที่ล้นย้ายไปที่ “เพิ่มเติม ▾”)'],
@@ -1145,9 +1147,12 @@ const anyEdit = () => myRole().role !== 'viewer';
 /* ครูคณะสีเห็น/จัดการได้เฉพาะคณะของตัวเอง (null = เห็นทุกคณะ) */
 const myColor = () => { const r = myRole(); return r.role === 'color' && r.c >= 0 ? +r.c : null; };
 const colorsVisible = () => { const m = myColor(); return m == null ? COLORS.map((_, i) => i) : [m]; };
+/* ชื่อของผู้ใช้ปัจจุบัน: ทะเบียนบุคลากร (อีเมลตรงกัน) → ชื่อในสิทธิ์ผู้ใช้ → ผู้ดูแลหลักที่ผูกกับทะเบียน → ชื่อจากบัญชีที่เข้าสู่ระบบ */
+function syncMyName() { if (!ME.id || mode === 'local') return; const st = staffOf(ME.id); const r = (S.meta.roles || {})[ME.id]; const ow = ME.owner && S.meta.ownerStaff ? (S.meta.staff || []).find(p => p.id === S.meta.ownerStaff) : null;
+  const n = st?.name || r?.name || ow?.name; if (n && n !== ME.name) { ME.name = n; NAMES[ME.id] = n; } }
 function nameOf(id) {
   if (!id) return 'ไม่ทราบผู้บันทึก';
-  const st = staffOf(id); const u = localUsers()[id] || (S.meta.roles || {})[id]; const n = st?.name || u?.name || (id === ME.id && ME.name) || NAMES[id] || id;
+  const st = staffOf(id) || (id === ME.id && ME.owner && S.meta.ownerStaff ? (S.meta.staff || []).find(p => p.id === S.meta.ownerStaff) : null); const u = localUsers()[id] || (S.meta.roles || {})[id]; const n = st?.name || u?.name || (id === ME.id && ME.name) || NAMES[id] || id;
   return id === ME.id ? n + ' (คุณ)' : n;
 }
 /* ---------- ผู้ใช้ในโหมดทดลอง (ข้อมูลในเครื่อง): ชื่อ + PIN ---------- */
@@ -2156,7 +2161,7 @@ function todayISO() { const t = new Date(); return `${t.getFullYear()}-${String(
 function defaultDay() { const ds = days(), s = todayISO(); if (!ds.length) return ''; if (ds.includes(s)) return s; return ds.find(d => d > s) || ds[ds.length - 1]; }
 
 function render() { DATA_TICK++;
-  hideTip(); applyColorNames();
+  hideTip(); applyColorNames(); syncMyName();
   if (mode === 'local' && ME.id && !localUsers()[ME.id]) { ME.id = null; ME.name = ''; editOn = false; }
   const ds = days(); ['day', 'ciDay', 'vDay'].forEach(k => { if (!UI[k] || !ds.includes(UI[k])) UI[k] = defaultDay(); });
   $('#apptitle').textContent = evName() + (evYear() ? ' ' + evYear() : ''); $('#appsub').textContent = `ระบบจัดการและรายงานผลการแข่งขัน · ${evSchool()}`; document.title = `${evName()}${evYear() ? ' ' + evYear() : ''} · ${evSchool()}`;
@@ -3741,7 +3746,7 @@ function vAdmin() {
       <label class="fld" data-tip="text|เปิดรับรายงานตัวก่อนเวลาแข่งกี่นาที ก่อนหน้านั้นสแกน/ติ๊กไม่ได้">เปิดรับก่อนแข่ง<span class="unit"><input id="ciOpen" type="number" min="1" value="${ciOpenMin()}"><i>นาที</i></span></label><label class="fld" data-tip="text|นักกีฬารายงานตัวก่อนเวลาแข่งอย่างน้อยกี่นาที (สูจิบัตร: 20 นาที) เลยกำหนดยังรับได้จนกว่าจะกดเริ่มแข่ง แต่บันทึกว่ามาช้า">รายงานตัวก่อน<span class="unit"><input id="ciMin" type="number" min="0" value="${S.meta.checkinMin ?? 20}"><i>นาที</i></span></label>
       <label class="fld" data-tip="text|ไม่ลงแข่งภายในกี่นาทีหลังคู่ก่อนหน้าจบ ถือว่าสละสิทธิ์ (ข้อ 4: 10 นาที)">ผ่อนผันก่อนปรับแพ้<span class="unit"><input id="fMin" type="number" min="1" value="${S.meta.forfeitMin ?? 10}"><i>นาที</i></span></label>
       <label class="fld" data-tip="text|นักกีฬาคนเดียวกันต้องมีเวลาระหว่างเวลาเริ่มของสองนัดอย่างน้อยเท่านี้ และนัดถัดไปต้องไม่เริ่มก่อนนัดก่อนหน้าจบ (คิดจากเวลาต่อนัดของกีฬา) ถ้าน้อยกว่าถือว่าเวลาชน ส่งรายชื่อไม่ได้">ระยะห่างขั้นต่ำระหว่างนัด<span class="unit"><input id="clMin" type="number" min="0" value="${S.meta.clashMin ?? 30}"><i>นาที</i></span></label>
-      <label class="ck cbx"><input type="checkbox" id="reqCi" ${S.meta.requireCheckin === false ? '' : 'checked'}> ต้องรายงานตัวครบก่อนเริ่มแข่ง</label>
+      <label class="ck cbx"><input type="checkbox" id="reqCi" ${S.meta.requireCheckin === false ? '' : 'checked'}> ต้องรายงานตัวครบก่อนเริ่มแข่ง</label><label class="ck cbx" data-tip="text|ปิดไว้ (ค่าเริ่มต้น): ทุกบทบาทรายงานตัวได้เมื่อถึงเวลาเปิดรับเท่านั้น · เปิด: ผู้ดูแลระบบติ๊กในหน้ารายงานตัวก่อนเวลาได้ (แอปสแกนยังปิดรับตามเวลาเสมอ)"><input type="checkbox" id="ciAdmEarly" ${S.meta.ciAdminEarly ? 'checked' : ''}> ผู้ดูแลระบบรายงานตัวล่วงหน้าได้ (ก่อนเวลาเปิดรับ)</label>
       ${mode === 'local' || (mode === 'shared' && !sb) ? `<label class="ck cbx"><input type="checkbox" id="pinCf" ${S.meta.pinConfirm === false ? '' : 'checked'}> ใส่ PIN ยืนยันเมื่อจบเกม/ยืนยันผล</label>` : ''}
     </div>
     <div class="actions"><button class="btn sm" data-act="savemeta">บันทึกกติกา</button><button class="btn sm ghost" data-act="gorules">กติกานักกีฬา (รุ่นอายุ · จำนวนรายการต่อคน)</button></div></section>
@@ -3843,7 +3848,7 @@ function staffOf(id) { if (!id) return null; const L = S.meta.staff || []; retur
 function mergedStaff() {
   const L = staffList(); const byName = n => L.find(x => normName(stripPre(x.name)) === normName(stripPre(n)));
   if (mode === 'shared') Object.entries(S.meta.roles || {}).forEach(([em, r]) => { let p = L.find(x => x.email === em) || (r.name && byName(r.name));
-    if (!p) { p = { id: uid('st'), name: r.name || em.split('@')[0], job: '', pos: ROLE_N[r.role] || '', code: roleCode(r.role), c: r.role === 'color' ? (r.c ?? -1) : -1, sports: r.sports || [], sign: 0 }; L.push(p); }
+    if (!p) { p = { id: uid('st'), name: r.name || em, job: '', pos: ROLE_N[r.role] || '', code: roleCode(r.role), c: r.role === 'color' ? (r.c ?? -1) : -1, sports: r.sports || [], sign: 0 }; L.push(p); }
     if (!p.email) { p.email = em; p.role = r.role; if (r.role === 'color' && p.c == null) p.c = r.c; } });
   else Object.entries(localUsers()).forEach(([id, u]) => { let p = L.find(x => x.uid === id) || byName(u.name || '');
     if (!p) { p = { id: uid('st'), name: u.name || id, job: '', pos: ROLE_N[u.role] || '', code: roleCode(u.role), c: u.role === 'color' ? (u.c ?? -1) : -1, sports: u.sports || [], sign: 0 }; L.push(p); }
@@ -3856,6 +3861,7 @@ function staffNeedsMerge() { const a = mergedStaff(), b = S.meta.staff || []; re
 function staffMeta(L, m = clone(S.meta)) {
   m.staff = L;
   if (mode === 'shared') { const R = { ...(m.roles || {}) }; const linked = new Set();
+    if (ME.owner && ME.id) { L.forEach(p => { if (p.email && p.email.toLowerCase() === ME.id) { m.ownerStaff = p.id; delete p.email; delete p.role; } }); delete R[ME.id]; }
     L.forEach(p => { if (!p.email) return; const em = p.email.toLowerCase(); linked.add(em);
       if (p.role) R[em] = { name: p.name, role: p.role, ...(p.role === 'color' ? { c: p.c >= 0 ? p.c : 0 } : {}), ...(p.role === 'scorer' ? { sports: p.sports || [] } : {}) }; else delete R[em]; });
     Object.keys(R).forEach(em => { if (!linked.has(em)) delete R[em]; }); m.roles = R; }
@@ -3864,12 +3870,13 @@ function staffMeta(L, m = clone(S.meta)) {
 }
 function saveStaff(L, what) { put('meta', 'config', staffMeta(L)); if (what) logIt(what, ''); }
 function staffCard() {
+  if (ME.owner && ME.id && !UI.owClean && ((S.meta.staff || []).some(p => (p.email || '').toLowerCase() === ME.id) || (S.meta.roles || {})[ME.id])) { UI.owClean = 1; setTimeout(() => { saveStaff(staffList(), 'ซ่อนอีเมลผู้ดูแลหลักจากข้อมูลสาธารณะ'); toast('ย้ายอีเมลของคุณ (ผู้ดูแลหลัก) ออกจากทะเบียนแล้ว ผูกชื่อไว้แทน'); }, 0); }
   if (isAdmin() && !UI.stfMig && staffNeedsMerge()) { UI.stfMig = 1; setTimeout(() => saveStaff(mergedStaff(), 'ย้ายผู้ใช้และครูประธานคณะสีเข้าทะเบียนบุคลากร'), 0); }
   const L = staffList(); const F = UI.stfF ?? ''; const sel = UI.stfSel || (UI.stfSel = new Set());
   const ord = { admin: 0, scorer: 1, color: 2 }; const shown = L.filter(p => F === '' || (F === 'acc' ? !!(p.email || p.uid) && p.role : p.code === F)).sort((a, b) => (a.code || 'Z').localeCompare(b.code || 'Z') || (a.c ?? 9) - (b.c ?? 9) || a.name.localeCompare(b.name, 'th'));
   const n = k => L.filter(p => p.code === k).length; const nSel = shown.filter(p => sel.has(p.id)).length; const nAcc = L.filter(p => (p.email || p.uid) && p.role).length;
-  const acc = p => p.email || p.uid ? `${p.role ? `<b>${ROLE_N[p.role]}</b>` : '<span class="muted">ไม่มีสิทธิ์</span>'}${p.role === 'color' ? ' ' + esc(COLORS[p.c]?.n || '') : ''}${p.role === 'scorer' ? ' · ' + ((p.sports || []).length ? p.sports.map(sportName).join(', ') : 'ทุกชนิด') : ''}<br><small class="muted">${esc(p.email || ('บัญชีในเครื่อง: ' + (localUsers()[p.uid]?.name || p.uid)))}</small>` : '<span class="muted sm">ไม่มีบัญชี</span>';
-  return `<section class="card" id="staffcard"><div class="maphead"><div><h2>บุคลากร ผู้ใช้ และสิทธิ์</h2><p class="muted sm">ทะเบียนเดียวสำหรับบัญชีเข้าใช้ สิทธิ์ ครูประธานคณะสี บัตรบุคลากร และผู้ลงนามเกียรติบัตร · ${L.length} คน · มีบัญชีเข้าใช้ ${nAcc} คน${mode === 'shared' && !sb ? ' · ผู้ดูแลหลักในไฟล์ตั้งค่าเข้าได้เสมอ' : ''}</p></div>
+  const acc = p => p.id === S.meta.ownerStaff && mode === 'shared' ? '<b>ผู้ดูแลหลัก</b><br><small class="muted">บัญชีในไฟล์ตั้งค่า (ซ่อนอีเมล)</small>' : p.email || p.uid ? `${p.role ? `<b>${ROLE_N[p.role]}</b>` : '<span class="muted">ไม่มีสิทธิ์</span>'}${p.role === 'color' ? ' ' + esc(COLORS[p.c]?.n || '') : ''}${p.role === 'scorer' ? ' · ' + ((p.sports || []).length ? p.sports.map(sportName).join(', ') : 'ทุกชนิด') : ''}<br><small class="muted">${esc(p.email || ('บัญชีในเครื่อง: ' + (localUsers()[p.uid]?.name || p.uid)))}</small>` : '<span class="muted sm">ไม่มีบัญชี</span>';
+  return `<section class="card" id="staffcard">${mode === 'shared' ? ownerRow() : ''}<div class="maphead"><div><h2>บุคลากร ผู้ใช้ และสิทธิ์</h2><p class="muted sm">ทะเบียนเดียวสำหรับบัญชีเข้าใช้ สิทธิ์ ครูประธานคณะสี บัตรบุคลากร และผู้ลงนามเกียรติบัตร · ${L.length} คน · มีบัญชีเข้าใช้ ${nAcc} คน${mode === 'shared' && !sb ? ' · ผู้ดูแลหลักในไฟล์ตั้งค่าเข้าได้เสมอ' : ''}</p></div>
     <div class="actions m0"><button class="btn sm" data-act="staffadd">+ เพิ่มบุคลากร</button><label class="btn sm ghost">นำเข้า Excel/CSV<input type="file" id="sfimpf" accept=".xlsx,.xls,.csv" hidden></label><button class="btn sm ghost" data-act="stafftpl">แม่แบบนำเข้า</button></div></div>
     <div class="seg mini stff"><button data-stff="" class="${F === '' ? 'on' : ''}">ทั้งหมด ${L.length}</button><button data-stff="acc" class="${F === 'acc' ? 'on' : ''}">มีบัญชีเข้าใช้ ${nAcc}</button>${['C', 'J', 'O', 'M', 'V'].map(k => `<button data-stff="${k}" class="${F === k ? 'on' : ''}"><b>${k}</b> ${esc(codeName(k))} ${n(k)}</button>`).join('')}</div>
     ${shown.length ? `<div class="pselbar"><label class="ck"><input type="checkbox" data-stfall ${shown.every(p => sel.has(p.id)) ? 'checked' : ''}> เลือกทั้งหมด (${shown.length})</label><span class="muted sm">เลือกแล้ว ${nSel} คน</span>
@@ -3993,6 +4000,9 @@ async function printStaffBadges(ids, style) {
   openBadgeDoc(`บัตรบุคลากร ${L.length} ใบ${style === 'sticker' ? ' (สติ๊กเกอร์ CARD014)' : ''}`, spriteDefs([...icons]) + body, typeof SCHOOL_IMG === 'object' ? `.bmap{background-image:url(${SCHOOL_IMG.src})}` : '', style);
 }
 
+/* ผู้ดูแลหลัก (กำหนดในไฟล์ตั้งค่าด้วยรหัสอีเมล) ไม่เก็บอีเมลในข้อมูลสาธารณะ · ผูกชื่อกับทะเบียนบุคลากรผ่าน meta.ownerStaff */
+function ownerRow() { const L = staffList().filter(p => p.name && !p.email).sort((a, b) => stripPre(a.name).localeCompare(stripPre(b.name), 'th')); const ow = (S.meta.staff || []).find(p => p.id === S.meta.ownerStaff);
+      return `<div class="evrow ownerrow"><span><b>${ME.owner ? esc(ME.name || ME.id) : esc(ow?.name || 'ผู้ดูแลหลัก')}</b>${ME.owner ? ' <small class="okt">(คุณ)</small>' : ''} <small class="muted">ผู้ดูแลหลัก (เจ้าของระบบ) · กำหนดในไฟล์ตั้งค่า${ME.owner ? '' : ' · อีเมลถูกซ่อนไว้'}</small></span>${ME.owner ? `<label class="fld m0 owsel">ชื่อของคุณในทะเบียนบุคลากร<select id="ownst"><option value="">— ไม่ผูก (ใช้ชื่อจากบัญชี Google) —</option>${L.concat(ow && !L.some(x => x.id === ow.id) ? [ow] : []).map(p => `<option value="${esc(p.id)}" ${p.id === S.meta.ownerStaff ? 'selected' : ''}>${esc(p.name)}${p.job || p.pos ? ' · ' + esc(p.job || p.pos) : ''}</option>`).join('')}</select></label>` : ''}</div>`; }
 function rolesCard() {
   if (mode !== 'shared') { const us = Object.entries(localUsers()).sort((a, b) => a[1].name.localeCompare(b[1].name, 'th'));
     return `<section class="card"><h2>ผู้ใช้และสิทธิ์</h2><p class="muted sm">โหมดทดลอง: ผู้ใช้เข้าสู่ระบบด้วยชื่อและ PIN บนเครื่องนี้ ทุกการบันทึกมีชื่อผู้ทำกำกับ · เมื่อเปิดใช้ Firebase ผู้ใช้จะเข้าสู่ระบบด้วยบัญชี Google แทน (ดู README.md)</p>
@@ -4003,7 +4013,7 @@ function rolesCard() {
   return `<section class="card"><h2>ผู้ใช้และสิทธิ์</h2>
     ${sb ? '<p class="muted sm"><b>วิธีให้ครู/กรรมการเข้าใช้:</b> ให้แต่ละคนกด “เข้าสู่ระบบ › สมัครบัญชีใหม่” ด้วยอีเมลของตัวเอง (หรือผู้ดูแลสร้างบัญชีให้ที่ Supabase › Authentication › Users) แล้วเพิ่มอีเมลนั้นในรายการนี้พร้อมบทบาท</p>' : ''}
     <p class="muted sm">เฉพาะอีเมลในรายการนี้ (และผู้ดูแลหลักในไฟล์ตั้งค่า) ที่บันทึกข้อมูลได้ ผู้ชมทั่วไปดูผลได้โดยไม่ต้องเข้าสู่ระบบ ส่วนรายชื่อนักกีฬาเห็นได้เฉพาะผู้ที่มีสิทธิ์</p>
-    <div class="rolelist">${ids.map(id => { const r = roles[id]; return `<div class="evrow"><span><b>${esc(r.name || id)}</b>${r.name ? ` <small class="muted">${esc(id)}</small>` : ''} <small class="muted">${ROLE_N[r.role]}${r.role === 'color' ? ' ' + COLORS[r.c]?.n : ''}${r.role === 'scorer' && r.sports?.length ? ' · ' + r.sports.map(sportName).join(', ') : r.role === 'scorer' ? ' · ทุกชนิดกีฬา' : ''}</small></span>
+    <div class="rolelist">${ownerRow()}${ids.map(id => { const r = roles[id]; return `<div class="evrow"><span><b>${esc(r.name || id)}</b>${r.name ? ` <small class="muted">${esc(id)}</small>` : ''} <small class="muted">${ROLE_N[r.role]}${r.role === 'color' ? ' ' + COLORS[r.c]?.n : ''}${r.role === 'scorer' && r.sports?.length ? ' · ' + r.sports.map(sportName).join(', ') : r.role === 'scorer' ? ' · ทุกชนิดกีฬา' : ''}</small></span>
       <span class="actions m0"><button class="btn sm ghost" data-role="${esc(id)}">แก้สิทธิ์</button>${mode === 'shared' && !sb ? `<button class="btn sm ghost" data-rmpin="${esc(id)}">ล้าง PIN</button>` : ''}<button class="btn sm danger" data-rmrole="${esc(id)}">ลบ</button></span></div>`; }).join('') || '<p class="muted sm">ยังไม่ได้เพิ่มผู้ใช้</p>'}</div>
     <div class="ov"><label class="fld">${sb ? 'อีเมลที่ครู/กรรมการใช้สมัครเข้าระบบ' : 'อีเมล Google ของครู/กรรมการ'}<input id="uemail" type="email" autocomplete="off" placeholder="name@gmail.com"></label><button class="btn sm self-end" data-act="addrole">เพิ่มผู้ใช้</button></div></section>`;
 }
@@ -4025,13 +4035,18 @@ function logCard() {
 function openRole(id) {
   const r = (S.meta.roles || {})[id] || { role: 'scorer' };
   modal(`<form class="dlg" id="rlf"><h3>สิทธิ์ของ ${esc(id)}</h3>
-    <label class="fld">ชื่อที่แสดงเป็นผู้บันทึก<input id="rln" maxlength="60" value="${esc(r.name || '')}" placeholder="เช่น ครูสมศรี ใจดี"></label>
+    ${(() => { const L = staffList().filter(p => p.name).sort((a, b) => stripPre(a.name).localeCompare(stripPre(b.name), 'th')); const cur = L.find(p => p.email === id);
+      return `<label class="fld">เชื่อมกับรายชื่อในทะเบียนบุคลากร<select id="rlst"><option value="">— ไม่เชื่อม (ใช้ชื่อด้านล่าง) —</option>${L.map(p => `<option value="${esc(p.id)}" ${cur?.id === p.id ? 'selected' : ''} ${p.email && p.email !== id ? 'disabled' : ''}>${esc(p.name)}${p.job || p.pos ? ' · ' + esc(p.job || p.pos) : ''}${p.email && p.email !== id ? ' (ผูกกับอีเมลอื่นแล้ว)' : ''}</option>`).join('')}</select></label>`; })()}
+    <label class="fld">ชื่อที่แสดงเป็นผู้บันทึก<input id="rln" maxlength="60" value="${esc(r.name || staffOf(id)?.name || '')}" placeholder="เช่น ครูสมศรี ใจดี"></label>
     <fieldset class="win"><legend>บทบาท</legend>${['admin', 'scorer', 'color'].map(k => `<label><input type="radio" name="rl" value="${k}" ${r.role === k ? 'checked' : ''}> ${ROLE_N[k]}</label>`).join('')}</fieldset>
     <label class="fld">คณะสี (สำหรับครูคณะสี: แก้รายชื่อได้เฉพาะสีนี้)<select id="rlc">${COLORS.map((k, i) => `<option value="${i}" ${r.c === i ? 'selected' : ''}>${k.n}</option>`).join('')}</select></label>
     <fieldset class="win"><legend>ชนิดกีฬาที่บันทึกผลได้ (กรรมการ · ไม่เลือก = ทุกชนิด)</legend>${sportsList().map(sp => `<label><input type="checkbox" class="rls" value="${sp.id}" ${(r.sports || []).includes(sp.id) ? 'checked' : ''}> ${esc(sp.name)}</label>`).join('')}</fieldset>
     <div class="actions"><button class="btn">บันทึก</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+  $('#rlst')?.addEventListener('change', e => { const p = staffList().find(x => x.id === e.target.value); if (p) $('#rln').value = p.name; });
   $('#rlf').onsubmit = e => {
     e.preventDefault(); const m = clone(S.meta); m.roles = m.roles || {}; const role = $('#rlf').rl.value;
+    /* ผูกอีเมลกับรายชื่อในทะเบียน (อีเมลหนึ่งผูกได้คนเดียว) */
+    const sid = $('#rlst')?.value || ''; if (Array.isArray(m.staff)) { m.staff.forEach(p => { if (p.email === id && p.id !== sid) delete p.email; }); const p = m.staff.find(x => x.id === sid); if (p) { p.email = id; if (!$('#rln').value.trim()) $('#rln').value = p.name; } }
     m.roles[id] = { ...($('#rln').value.trim() ? { name: $('#rln').value.trim() } : {}), role, ...(role === 'color' ? { c: +$('#rlc').value } : {}), ...(role === 'scorer' ? { sports: [...document.querySelectorAll('.rls:checked')].map(x => x.value) } : {}) };
     put('meta', 'config', m); logIt('กำหนดสิทธิ์ผู้ใช้', `${id} → ${ROLE_N[role]}`); closeModal();
   };
@@ -4707,7 +4722,7 @@ function openCheckin(eid, mid) {
   const ciD = m ? '' : (UI.view === 'checkin' && UI.ciDay) || todayStr(); if (!m && ciD > todayISO()) { toast(`ยังรายงานตัวไม่ได้ รายการนี้แข่ง ${fmtDate(ciD, true)} เปิดให้รายงานตัวในวันแข่ง`); return; }
   const ci = clone(m ? (m.ci || {}) : evCi(ev, ciD)); const ci0 = Object.values(ci).some(l => (l || []).length); let ciErr = '';
   /* ช่วงรับรายงานตัว: ก่อนเปิด ผู้ดูแลเท่านั้นที่ติ๊กได้ · เลยกำหนด = มาช้า · เริ่มแข่งแล้ว = มาหลังเริ่มแข่ง (ติ๊กเองได้ สแกนไม่ได้) */
-  const W = ciWin(ev, m, ciD); const ro = W.k === 'early'; /* ยังไม่เปิดรับ: ติ๊ก/สแกน/บันทึกไม่ได้ ทุกบทบาท */ const ci00 = clone(ci);
+  const W = ciWin(ev, m, ciD); const admEarly = W.k === 'early' && isAdmin() && !!S.meta.ciAdminEarly; const ro = W.k === 'early' && !admEarly; /* ยังไม่เปิดรับ: ติ๊ก/สแกน/บันทึกไม่ได้ (ยกเว้นผู้ดูแลเมื่อเปิดการตั้งค่าไว้) */ const ci00 = clone(ci);
   const sameDay = m || evCi(ev, ciD) === ev.ci; const fl0 = k => clone(sameDay ? ((m || ev)[k] || {}) : {}); const late0 = fl0('ciLate'), post0 = fl0('ciPost');
   const flagOf = (k, id) => (post0[k] || []).includes(id) ? 'หลังเริ่มแข่ง' : (late0[k] || []).includes(id) ? 'มาช้า' : !(ci00[k] || []).includes(id) && (ci[k] || []).includes(id) ? (W.k === 'closed' ? 'หลังเริ่มแข่ง' : W.k === 'late' ? 'มาช้า' : '') : '';
   /* รวมธงมาช้า/หลังเริ่ม สำหรับบันทึก (เฉพาะคนที่ยังอยู่ในรายชื่อ) */
@@ -4729,7 +4744,7 @@ function openCheckin(eid, mid) {
       if (!canScore(ev.sport)) { fb = { ok: false, t: 'บัญชีนี้ลงชื่อกรรมการรายการนี้ไม่ได้' }; beep(false); drawFb(); return; }
       const r = setJudge(eid, m ? mid : null, p, true); fb = { ok: true, t: `⚖ ${r === 'dup' ? 'ลงชื่อแล้ว: ' : 'ลงชื่อกรรมการ: '}${stripPre(p.name)} · ${codeName(p.code)}` }; beep(true); drawFb(); return; }
     const sid = normSid(raw); const now = Date.now(); if (last.get(sid) > now - 2500) return; last.set(sid, now);
-    if (ro || W.k === 'closed' || W.k === 'past') { fb = { ok: false, t: W.k === 'closed' ? `${W.t}: ปิดรับการสแกน · กรณีจำเป็นให้ติ๊กชื่อเอง (บันทึกว่ามาหลังเริ่มแข่ง)` : ciWinText(W) }; beep(false); drawFb(); return; }
+    if (W.k === 'early' || W.k === 'closed' || W.k === 'past') { fb = { ok: false, t: W.k === 'closed' ? `${W.t}: ปิดรับการสแกน · กรณีจำเป็นให้ติ๊กชื่อเอง (บันทึกว่ามาหลังเริ่มแข่ง)` : ciWinText(W) }; beep(false); drawFb(); return; }
     const f = findSid(sid); if (!f) return;
     if (!f.p) { const st = allStudents().find(x => normSid(x.sid) === sid); fb = { ok: false, t: st ? `${st.name || ((st.pre || '') + (st.fn || '') + ' ' + (st.ln || '')).trim()} (ม.${st.cls}) ไม่อยู่ในรายชื่อ${m ? 'คู่นี้' : 'รายการนี้'}` : `ไม่พบรหัส ${sid} ในรายชื่อ` }; beep(false); drawFb(); return; }
     if (isBanned(f.c, f.p, bannedSet())) { fb = { ok: false, t: `${f.p.name} ถูกตัดสิทธิ์ รายงานตัวไม่ได้` }; beep(false); drawFb(); return; }
@@ -4743,7 +4758,7 @@ function openCheckin(eid, mid) {
   const drawFb = () => { const el = $('#cifb'); if (!el) return; el.className = 'cifb ' + (fb ? (fb.ok ? 'ok' : 'no') : ''); el.innerHTML = fb ? `${fb.c != null ? chip(fb.c) + ' ' : ''}${esc(fb.t)}` : ''; };
   const shell = () => {
     $('#modal').innerHTML = `<div class="dlg wide cidlg"><h3>รายงานตัว · ${esc(evTitle(ev))}${m ? ` · คู่ ${m.no} ${esc(m.time || '')}` : ''}</h3>
-      <p class="ciwin ${W.k}">${esc(ciWinText(W))}</p>
+      <p class="ciwin ${W.k}">${esc(ciWinText(W))}${admEarly ? ' · ผู้ดูแลติ๊กล่วงหน้าได้ (ตามการตั้งค่า)' : ''}</p>
       <div class="seg mini cimeth">${CI_METHODS.map(([k, n]) => `<button type="button" data-cim="${k}" class="${meth === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       ${meth === 'scan' ? `<div class="ciscan"><video id="civ" playsinline muted></video><div class="ciaim"></div><p class="muted sm" id="cistat">กำลังเปิดกล้อง…</p></div>` : meth === 'type' ? `<form class="citype" id="citf" data-nobusy><label class="fld">รหัสประจำตัวนักเรียน<input id="cit" inputmode="numeric" autocomplete="off" placeholder="พิมพ์หรือใช้เครื่องอ่านบาร์โค้ด แล้วกด Enter"></label><button class="btn">รายงานตัว</button></form>` : ''}
       ${meth !== 'tick' ? '<div class="cifb" id="cifb" aria-live="polite"></div>' : ''}
@@ -5565,7 +5580,7 @@ document.addEventListener('click', e => {
   else if (d.role) openRole(d.role);
   else if (d.rmpin) ask(`ล้าง PIN ของ ${nameOf(d.rmpin)}? ผู้ใช้จะต้องตั้ง PIN ใหม่เมื่อบันทึกผลครั้งถัดไป`, async () => { try { await db.collection('pins').doc(d.rmpin).delete(); toast('ล้าง PIN แล้ว'); logIt('ล้าง PIN', nameOf(d.rmpin)); } catch (e) { toast('ล้าง PIN ไม่ได้ (' + (e?.code || e) + ')'); } }, 'ล้าง PIN');
   else if (d.rmrole) ask(`ลบสิทธิ์ของ ${nameOf(d.rmrole)}?`, () => { const m = clone(S.meta); delete m.roles[d.rmrole]; put('meta', 'config', m); logIt('ลบสิทธิ์ผู้ใช้', nameOf(d.rmrole)); }, 'ลบ');
-  else if (d.act === 'addrole') { const em = ($('#uemail').value || '').trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('กรอกอีเมลให้ถูกต้อง'); return; } const m = clone(S.meta); m.roles = m.roles || {}; if (!m.roles[em]) m.roles[em] = { role: 'scorer' }; put('meta', 'config', m); openRole(em); }
+  else if (d.act === 'addrole') { const em = ($('#uemail').value || '').trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('กรอกอีเมลให้ถูกต้อง'); return; } const m = clone(S.meta); m.roles = m.roles || {}; if (!m.roles[em]) { const st = staffOf(em); m.roles[em] = { role: 'scorer', ...(st?.name ? { name: st.name } : {}) }; } put('meta', 'config', m); openRole(em); }
   else if (d.act === 'login') { if (mode === 'local') openLogin(); else signIn(); }
   else if (d.act === 'logout') { if (mode === 'local') { logIt('ออกจากระบบ', ME.name); setMe(null); } else signOut(); }
   else if (d.act === 'adduser') openUser();
@@ -5615,7 +5630,7 @@ document.addEventListener('click', e => {
     const v = { ci: +$('#ciMin').value, f: +$('#fMin').value, cl: +$('#clMin').value, op: +($('#ciOpen')?.value ?? 60) };
     if (!(v.op > v.ci)) { toast('เวลาเปิดรับต้องมากกว่ากำหนดรายงานตัว (เช่น เปิด 60 นาที กำหนด 20 นาทีก่อนแข่ง)'); return; }
     if ([v.ci, v.cl].some(x => !Number.isFinite(x) || x < 0) || !(v.f >= 1)) { toast('ตรวจตัวเลขกติกา: ต้องเป็นจำนวนไม่ติดลบ (ผ่อนผันอย่างน้อย 1 นาที)'); return; }
-    const m = clone(S.meta); m.checkinMin = v.ci; m.ciOpenMin = v.op; m.forfeitMin = v.f; m.requireCheckin = $('#reqCi').checked; if ($('#pinCf')) m.pinConfirm = $('#pinCf').checked; m.clashMin = v.cl; put('meta', 'config', m); logIt('แก้กติกาทั่วไป', ''); toast('บันทึกกติกาแล้ว'); }
+    const m = clone(S.meta); m.checkinMin = v.ci; m.ciOpenMin = v.op; m.forfeitMin = v.f; m.requireCheckin = $('#reqCi').checked; if ($('#ciAdmEarly')) m.ciAdminEarly = $('#ciAdmEarly').checked; if ($('#pinCf')) m.pinConfirm = $('#pinCf').checked; m.clashMin = v.cl; put('meta', 'config', m); logIt('แก้กติกาทั่วไป', ''); toast('บันทึกกติกาแล้ว'); }
   else if (d.act === 'saveinfo') {
     const t = $('#mtitle').value.trim(), y = $('#myear').value.trim(), sc = $('#mschool').value.trim();
     if (!t) { toast('ใส่ชื่องาน'); return; } if (y && !/^25\d\d$/.test(y)) { toast('ปีการศึกษาเป็นเลข พ.ศ. 4 หลัก เช่น 2569'); return; }
@@ -5656,6 +5671,7 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stfstyle') { UI.stfStyle = e.target.value; return; }
   if (e.target.dataset.pk != null) { const sel = UI.regSel || (UI.regSel = new Set()); e.target.checked ? sel.add(e.target.dataset.pk) : sel.delete(e.target.dataset.pk); if (UI.regQ) resetQ('rq', true); else $('#plistbox').innerHTML = regPlist(UI.regColor); return; }
   if (e.target.dataset.pselall != null) { const sel = UI.regSel || (UI.regSel = new Set()); const box = $('#plistbox'); box.querySelectorAll('[data-pk]').forEach(i => e.target.checked ? sel.add(i.dataset.pk) : sel.delete(i.dataset.pk)); if (UI.regQ) resetQ('rq', true); else box.innerHTML = regPlist(UI.regColor); return; }
+  if (e.target.id === 'ownst') { if (!ME.owner) return; const m = clone(S.meta); if (e.target.value) m.ownerStaff = e.target.value; else delete m.ownerStaff; put('meta', 'config', m); logIt('ผูกชื่อผู้ดูแลหลัก', e.target.selectedOptions[0]?.text || '-'); toast('บันทึกแล้ว'); return; }
   if (e.target.id === 'cardstyle' || e.target.id === 'rgstyle') { UI.cardStyle = e.target.value; return; }
   if (['scven', 'sclock', 'scjlock', 'scauto'].includes(e.target.id)) { const id = e.target.id; if (id === 'scven') { SC.venue = e.target.value; SC.lock = SC.jlock = ''; } else if (id === 'sclock') SC.lock = e.target.value; else if (id === 'scjlock') SC.jlock = e.target.value; else SC.auto = e.target.checked; SC.res = null; scSave(); e.target.blur(); scRefresh(); return; }
   const tg = e.target;
