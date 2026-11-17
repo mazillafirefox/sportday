@@ -845,6 +845,16 @@ body.scanmode #main{padding:0;max-width:640px;margin:0 auto}
 .scl{display:flex;flex-direction:column;gap:6px}.sct{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.7)}.sct small{display:block;color:var(--muted)}.sct.done{opacity:.75}
 .scundo{align-self:flex-start}.sclog .scli{display:grid;grid-template-columns:48px minmax(0,1fr);gap:0 8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.sclog .scli span:last-child{grid-column:2;color:var(--muted)}
 .scli.ok b{color:#166534}.scli.bad b{color:#991B1B}.scinst{text-align:center}
+.scsrc{display:grid;grid-template-columns:1fr 1fr;gap:6px}.scsrc button{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font:inherit;font-size:14px;color:var(--muted);cursor:pointer}.scsrc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.scahw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:26vh;padding:18px;border:2px dashed var(--line);border-radius:16px;background:var(--panel);text-align:center;cursor:text}
+.scahw b{font-size:24px;color:var(--ink)}.scahw span{font-size:15px;color:var(--muted)}.scahw:focus-within{border-color:#16A34A;box-shadow:0 0 0 4px rgba(22,163,74,.15)}
+.scahw input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.scov{position:fixed;inset:0;z-index:60;overflow-y:auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));background:rgba(15,23,42,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);cursor:pointer;animation:scovin .18s ease}
+@keyframes scovin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.scov>.scr{max-width:560px;margin:0 auto;box-shadow:0 20px 50px rgba(0,0,0,.35)}.scov .scr.html{background:var(--bg,#F4F6FB);border-radius:18px;padding:12px}
+.scov .bvst{padding:20px 18px}.scov .bvst b{font-size:30px}.scov .bvst span{font-size:16px}
+.scovtap{position:sticky;bottom:0;max-width:max-content;margin:14px auto 0;padding:10px 18px;border-radius:99px;background:rgba(15,23,42,.85);text-align:center;color:#fff;font-size:15px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+body.scovopen{overflow:hidden}
 /* หน้าตรวจบัตร */
 .bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
@@ -970,8 +980,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.31.0', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.31.1', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.31.1', 'แอปสแกน: ตรวจบัตรแสดงผลเป็นการ์ดเต็มจอ แตะ 1 ครั้งเพื่อปิดแล้วสแกนต่อ (กล้องหยุดอ่านระหว่างเปิดการ์ด) · รองรับเครื่องสแกนแบบปุ่มกด (Sunmi ฯลฯ) ที่ส่งค่าแบบคีย์บอร์ด ไม่ต้องเปิดกล้อง'],
   ['1.31.0', 'แอปสแกน (PWA ติดตั้งลงมือถือได้): รายงานตัวที่จุดกลางหานัดให้อัตโนมัติ/ล็อกนัด · ตรวจบัตร · ลงชื่อกรรมการ · กล้องเปิดค้างสแกนต่อเนื่อง · บันทึกแบบรวมไม่ทับเครื่องอื่น · ค้างส่งเมื่อออฟไลน์แล้วส่งให้เอง'],
   ['1.30.0', 'ส่งรายชื่อนักกีฬา: พิมพ์ใบรายชื่อและบัตรคล้องคอได้ทั้งรายประเภท (ในหน้าต่างส่งรายชื่อ) รายชนิดกีฬา และทั้งคณะ · ผู้ดูแลพิมพ์ทุกคณะของรายการได้'],
   ['1.29.3', 'เอกสารพิมพ์: ระยะขอบ 12 มม. ทุกหน้า (รวมหน้าที่ต่อจากหน้าแรก) · ตารางขึ้นหน้าใหม่พิมพ์หัวตารางซ้ำ · ไม่ตัดแถวกลางหน้า · ตารางสั้นไม่ขาดกลางตาราง · หัวข้อไม่ค้างท้ายหน้า'],
@@ -2135,7 +2146,7 @@ function render() { DATA_TICK++;
   if (!anyEdit()) editOn = false;
   $('#editbtn').hidden = !anyEdit(); $('#editbtn').innerHTML = editOn ? '<span class="lg">ปิดโหมดแก้ไข</span><span class="sh">ปิดแก้ไข</span>' : '<span class="lg">โหมดแก้ไข</span><span class="sh">✏️ แก้ไข</span>'; $('#editbtn').classList.toggle('on', editOn);
   const sx = window.scrollX, sy = window.scrollY;
-  if (UI.view === 'scan') { const sig = SC.mode + '|' + anyEdit() + '|' + mode; if ($('#scanapp') && $('#main').dataset.sig === sig) { scRefresh(); return; } $('#main').innerHTML = vScan(); $('#main').dataset.view = 'scan'; $('#main').dataset.sig = sig; scMount(); return; }
+  if (UI.view === 'scan') { const sig = SC.mode + '|' + SC.input + '|' + anyEdit() + '|' + mode; if ($('#scanapp') && $('#main').dataset.sig === sig) { scRefresh(); return; } $('#main').innerHTML = vScan(); $('#main').dataset.view = 'scan'; $('#main').dataset.sig = sig; scMount(); return; }
   $('#main').dataset.sig = '';
   if (mode === 'connecting' && !Object.keys(S.events).length) { $('#main').innerHTML = '<p class="muted">กำลังโหลดข้อมูลการแข่งขัน…</p>'; return; }
   if (!Object.keys(S.events).length && !['admin', 'teams'].includes(UI.view)) { $('#main').innerHTML = emptyState(); return; }
@@ -3138,8 +3149,8 @@ function fillBadgePhoto() { const el = $('#bvph'); const pid = el?.dataset.pid; 
 
 /* ===================== แอปสแกน (PWA) · #scan ===================== */
 const SCK = 'gem-scan';
-const SC = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem(SCK) || '{}'); } catch (e) { } return { mode: o.mode || 'ci', lock: o.lock || '', jlock: o.jlock || '', venue: o.venue || '', auto: o.auto !== false, res: null, log: [], last: new Map() }; })();
-const scSave = () => { try { localStorage.setItem(SCK, JSON.stringify({ mode: SC.mode, lock: SC.lock, jlock: SC.jlock, venue: SC.venue, auto: SC.auto })); } catch (e) { } };
+const SC = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem(SCK) || '{}'); } catch (e) { } return { mode: o.mode || 'ci', input: o.input === 'hw' ? 'hw' : 'cam', lock: o.lock || '', jlock: o.jlock || '', venue: o.venue || '', auto: o.auto !== false, res: null, ov: false, log: [], last: new Map() }; })();
+const scSave = () => { try { localStorage.setItem(SCK, JSON.stringify({ mode: SC.mode, input: SC.input, lock: SC.lock, jlock: SC.jlock, venue: SC.venue, auto: SC.auto })); } catch (e) { } };
 const scDay = () => todayISO();
 const nowHM = () => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); };
 const hm2min = s => { const m = String(s || '').match(/(\d{1,2})[:.](\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };
@@ -3165,11 +3176,12 @@ function ciWrite(t, add) { const d = scDay(); const st = { ciBy: ME.id || '', ci
 const scBeep = ok => { try { beep(ok); navigator.vibrate?.(ok ? 40 : [80, 60, 80]); } catch (e) { } };
 function scShow(r) { SC.res = r; if (r.log) { SC.log.unshift({ ...r.log, at: Date.now() }); SC.log = SC.log.slice(0, 30); } scRefresh(); const el = $('#scares'); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
 /* ประมวลผลค่าที่สแกน/พิมพ์ */
-function scHandle(raw) {
+function scHandle(raw, src) {
+  if (SC.ov && src === 'cam') return; /* การ์ดผลตรวจบัตรเปิดอยู่: หยุดอ่านจากกล้องจนกว่าจะแตะปิด (เครื่องสแกนแบบปุ่มกดอ่านใบถัดไปได้เลย) */
   const b = parseBadge(raw); const key0 = b ? (b.k === 'A' ? 'A' + b.sid : b.no) : String(raw); const now = Date.now(); if (SC.last.get(key0) > now - 3000) return; SC.last.set(key0, now);
-  if (!b) { scBeep(false); scShow({ k: 'bad', t: 'อ่านบัตรไม่ได้', s: 'QR นี้ไม่ใช่บัตรของการแข่งขัน' }); return; }
+  if (!b) { scBeep(false); if (SC.mode === 'badge') SC.ov = true; scShow({ k: 'bad', t: 'อ่านบัตรไม่ได้', s: 'QR นี้ไม่ใช่บัตรของการแข่งขัน', card: SC.mode === 'badge' }); return; }
   if (SC.mode === 'badge') { UI.badge = b.k === 'A' ? 'A-' + b.sid + (b.c != null ? '~' + b.c : '') : b.no; const h = vBadge(); const ok = /bvst ok/.test(h), bad = /bvst bad/.test(h); scBeep(!bad);
-    scShow({ k: ok ? 'ok' : bad ? 'bad' : 'unk', html: h, log: { t: b.k === 'A' ? 'A-' + b.sid : b.no, s: ok ? 'บัตรถูกต้อง' : bad ? 'ไม่ผ่าน' : 'ตรวจแล้ว', k: ok ? 'ok' : bad ? 'bad' : 'unk' } }); return; }
+    SC.ov = true; scShow({ k: ok ? 'ok' : bad ? 'bad' : 'unk', html: h, card: true, log: { t: b.k === 'A' ? 'A-' + b.sid : b.no, s: ok ? 'บัตรถูกต้อง' : bad ? 'ไม่ผ่าน' : 'ตรวจแล้ว', k: ok ? 'ok' : bad ? 'bad' : 'unk' } }); return; }
   if (SC.mode === 'judge') { if (b.k !== 'S') { scBeep(false); scShow({ k: 'bad', t: 'นี่คือบัตรนักกีฬา', s: 'โหมดกรรมการรับเฉพาะบัตรบุคลากร (สลับไป “รายงานตัว” เพื่อเช็คนักกีฬา)' }); return; }
     const p = findStaffNo(b.no); if (!p) { scBeep(false); scShow({ k: 'bad', t: 'ไม่พบบัตรนี้', s: `${b.no} ไม่อยู่ในทะเบียนบุคลากร`, log: { t: b.no, s: 'ไม่พบ', k: 'bad' } }); return; }
     const [eid, mid] = SC.jlock.split('|'); if (!eid || !S.events[eid]) { scBeep(true); UI.badge = b.no; scShow({ k: 'ok', html: vBadge(), log: { t: stripPre(p.name), s: 'เปิดรายการหน้าที่', k: 'ok' } }); return; }
@@ -3191,9 +3203,9 @@ function scHandle(raw) {
   scShow({ k: 'ok', who, t: '✓ รายงานตัวแล้ว', s: `${pick.time ? pick.time + ' น. · ' : ''}${pick.label}${pick.venue ? ' · ' + pick.venue : ''}`, L: ciTargets(c, key, scDay()), undo: pick, log: { t: who.name, s: `${pick.time} ${pick.label}`, k: 'ok', undo: pick } });
 }
 /* ---------- หน้าจอ ---------- */
-function scResHTML() { const r = SC.res;
+function scResHTML(forCard) { const r = forCard ? SC.res : SC.res?.card ? null : SC.res;
   if (!r) return `<div class="scr idle"><b>${SC.mode === 'ci' ? 'สแกนบัตรนักกีฬาเพื่อรายงานตัว' : SC.mode === 'badge' ? 'สแกนบัตรเพื่อตรวจสิทธิ์' : 'สแกนบัตรกรรมการ'}</b><span>${SC.mode === 'ci' ? (SC.lock ? 'ล็อกนัดไว้ · สแกนได้ต่อเนื่อง' : 'ระบบหานัดที่ใกล้ที่สุดของวันนี้ให้อัตโนมัติ') : SC.mode === 'judge' ? (SC.jlock ? 'สแกนแล้วลงชื่อเป็นกรรมการของนัดที่เลือกทันที' : 'เลือกนัดก่อน หรือสแกนเพื่อดูหน้าที่ของกรรมการ') : 'ผลจะแสดงที่นี่'}</span></div>`;
-  if (r.html) return `<div class="scr html">${r.html.replace(/<section class="hero">[\s\S]*?<\/section>/, '').replace(/<form class="bvtool"[\s\S]*?<\/form>/, '')}</div>`;
+  if (r.html) return `<div class="scr html${forCard ? ' card' : ''}">${r.html.replace(/<section class="hero">[\s\S]*?<\/section>/, '').replace(/<form class="bvtool"[\s\S]*?<\/form>/, '')}</div>`;
   const who = r.who ? `<div class="scw"><div class="scph" id="scph" data-pid="${esc(r.who.pid || '')}">${PH_SIL}</div><div><b>${esc(r.who.name)}</b><span>${chip(r.who.c)} ม.${esc(r.who.cls)} · ${esc(r.who.sid)}</span></div></div>` : '';
   const list = r.L && r.L.length ? `<div class="scl">${r.L.map(t => `<div class="sct${t.done ? ' done' : ''}"><span class="num">${esc(t.time || '–')}</span><span>${esc(t.label)}${t.venue ? `<small>${esc(t.venue)}</small>` : ''}</span>${t.done ? '<b class="okt">✓ มาแล้ว</b>' : editOn && canScore(t.ev.sport) ? `<button class="btn sm" data-scci="${t.eid}|${t.mid || ''}|${t.k}|${t.pid}">รายงานตัว</button>` : ''}</div>`).join('')}</div>` : '';
   return `<div class="scr ${r.k}"><div class="scrh"><b>${esc(r.t)}</b>${r.s ? `<span>${esc(r.s)}</span>` : ''}</div>${who}${r.undo ? `<button class="btn sm ghost scundo" data-scun="${r.undo.eid}|${r.undo.mid || ''}|${r.undo.k}|${r.undo.pid}">ยกเลิกการรายงานตัวนี้</button>` : ''}${list}</div>`; }
@@ -3214,17 +3226,24 @@ function vScan() {
     <div class="seg scam">${[['ci', 'รายงานตัว'], ['badge', 'ตรวจบัตร'], ['judge', 'กรรมการ']].map(([k, t]) => `<button data-scmode="${k}" class="${SC.mode === k ? 'on' : ''}">${t}</button>`).join('')}</div>
     <div id="scctx">${need ? '' : scCtxHTML()}</div>
     ${need ? `<div class="scr bad"><div class="scrh"><b>ต้องเข้าสู่ระบบก่อน</b><span>โหมดนี้ใช้ได้เฉพาะครู/กรรมการที่มีสิทธิ์บันทึก</span></div><button class="btn" data-act="login">เข้าสู่ระบบ</button></div>` : `
-    <div class="scav"><video id="scv" playsinline muted></video><i class="scaf" aria-hidden="true"></i><p id="cistat" class="sm"></p></div>
+    <div class="scsrc"><button type="button" data-scin="cam" class="${SC.input === 'cam' ? 'on' : ''}">📷 กล้อง</button><button type="button" data-scin="hw" class="${SC.input === 'hw' ? 'on' : ''}">🔫 ปุ่มสแกนที่ตัวเครื่อง</button></div>
+    ${SC.input === 'hw' ? `<label class="scahw" for="schw"><b>พร้อมสแกน</b><span>กดปุ่มสแกนที่ตัวเครื่อง แล้วเล็งไปที่ QR บนบัตร</span><input id="schw" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="รับค่าจากเครื่องสแกน"><small id="schwst" class="muted">กำลังรอรับค่าจากเครื่องสแกน</small></label>` : `<div class="scav"><video id="scv" playsinline muted></video><i class="scaf" aria-hidden="true"></i><p id="cistat" class="sm"></p></div>`}
     <div id="scares" class="scares">${scResHTML()}</div>
     <form id="scaform" class="bvtool" autocomplete="off"><input id="scaq" placeholder="พิมพ์หมายเลขบัตร เช่น A-41308" enterkeyhint="go" inputmode="text"><button class="btn ghost">ตกลง</button></form>
     <div id="sclog" class="sclog"></div>`}
-    <p class="muted sm scinst" id="scinst"></p></div>`;
+    <p class="muted sm scinst" id="scinst"></p>
+    <div id="scov" class="scov" hidden role="dialog" aria-label="ผลตรวจบัตร"></div></div>`;
 }
 function scLogHTML() { return SC.log.length ? `<h3 class="sub">สแกนล่าสุด (เครื่องนี้)</h3>${SC.log.map(x => `<div class="scli ${x.k}"><span class="num">${hhmm(x.at)}</span><b>${esc(x.t)}</b><span>${esc(x.s)}</span></div>`).join('')}` : ''; }
-function scRefresh() { if (!$('#scanapp')) return; $('#scnet').innerHTML = scNetHTML(); const r = $('#scares'); if (r) r.innerHTML = scResHTML(); const l = $('#sclog'); if (l) l.innerHTML = scLogHTML();
+function scCard() { const ov = $('#scov'); if (!ov) return; const show = SC.ov && SC.res?.card; ov.hidden = !show; document.body.classList.toggle('scovopen', !!show);
+  if (show) { ov.className = 'scov ' + SC.res.k; ov.innerHTML = `${scResHTML(true)}<p class="scovtap">แตะที่ใดก็ได้เพื่อปิด แล้วสแกนใบถัดไป</p>`; ov.scrollTop = 0; } }
+function scCloseCard() { SC.ov = false; scCard(); SC.last.clear(); if (SC.input === 'hw') setTimeout(() => $('#schw')?.focus({ preventScroll: true }), 0); }
+function scRefresh() { if (!$('#scanapp')) return; scCard(); $('#scnet').innerHTML = scNetHTML(); const r = $('#scares'); if (r) r.innerHTML = scResHTML(); const l = $('#sclog'); if (l) l.innerHTML = scLogHTML();
   const ph = $('#scph'); if (ph?.dataset.pid) getPhoto(ph.dataset.pid).then(img => { if (img && $('#scph')?.dataset.pid === ph.dataset.pid) $('#scph').innerHTML = `<img src="${img}" alt="">`; }).catch(() => { });
   const ctx = $('#scctx'); if (ctx && !ctx.contains(document.activeElement)) ctx.innerHTML = anyEdit() || SC.mode === 'badge' ? scCtxHTML() : ''; }
-function scMount() { const v = $('#scv'); if (!v) return; startScan(v, scHandle, (t, bad) => { const st = $('#cistat'); if (st) { st.textContent = t; st.className = 'sm' + (bad ? ' err' : ''); } }); scRefresh(); scInstallHint(); }
+function scMount() { scCard();
+  const hw = $('#schw'); if (hw) { stopScan(); hw.focus({ preventScroll: true }); scRefresh(); scInstallHint(); return; }
+  const v = $('#scv'); if (!v) return; startScan(v, c => scHandle(c, 'cam'), (t, bad) => { const st = $('#cistat'); if (st) { st.textContent = t; st.className = 'sm' + (bad ? ' err' : ''); } }); scRefresh(); scInstallHint(); }
 /* วิธีติดตั้งเป็นแอป */
 let INSTALL_EV = null; window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL_EV = e; scInstallHint(); });
 function scInstallHint() { const el = $('#scinst'); if (!el) return; const sa = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone;
@@ -5410,7 +5429,7 @@ window.addEventListener('scroll', hideTip, { passive: true });
 /* ===================== เหตุการณ์ ===================== */
 document.addEventListener('click', e => {
   if (e.target.id === 'modal') { tryClose(); return; }
-  const el = e.target.closest('[data-scmode],[data-scci],[data-scun],[data-rprint],[data-rbadge],[data-jd],[data-jdall],[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
+  const el = e.target.closest('[data-scin],[data-scmode],[data-scci],[data-scun],[data-rprint],[data-rbadge],[data-jd],[data-jdall],[data-res],[data-evres],[data-round],[data-open],[data-day],[data-ciday],[data-msport],[data-mev],[data-mf],[data-regst],[data-regpf],[data-stff],[data-stfed],[data-stfrm],[data-stedit],[data-psel],[data-pselclr],[data-rmpin],[data-schv],[data-ath],[data-regc],[data-roster],[data-ci],[data-cie],[data-adsport],[data-editsport],[data-delsport],[data-addev],[data-athsched],[data-editev],[data-delev],[data-draw],[data-sched],[data-mlist],[data-rmday],[data-agrm],[data-undo],[data-tvp],[data-user],[data-rmuser],[data-mapv],[data-mapbg],[data-wstep],[data-close],[data-act],[data-role],[data-rmrole],[data-orient],[data-clrev],[data-start],[data-forf],[data-vday],[data-editvenue],[data-ttab],[data-judge],[data-rmst],#editbtn');
   if (!el || (el.closest('#modal') && !el.matches('[data-close],[data-undo],[data-wstep],[data-rprint],[data-rbadge]'))) return;
   const d = el.dataset; el.closest('details.menu')?.removeAttribute('open');
   if (d.wstep) { const [k, id] = d.wstep.split('|'); goStep(k, id); return; }
@@ -5443,7 +5462,8 @@ document.addEventListener('click', e => {
   else if (d.rprint) printRosterReport(d.rprint);
   else if (d.rbadge) printRosterBadges(d.rbadge);
   else if (d.act === 'bvscan') openBadgeScan();
-  else if (d.scmode) { SC.mode = d.scmode; SC.res = null; scSave(); render(); }
+  else if (d.scmode) { SC.mode = d.scmode; SC.res = null; SC.ov = false; scSave(); render(); }
+  else if (d.scin) { SC.input = d.scin; SC.res = null; SC.ov = false; scSave(); render(); }
   else if (d.scci || d.scun) { const [eid, mid, k, pid] = (d.scci || d.scun).split('|'); const ev = evById(eid); const m = mid ? mOf(ev, mid) : null; const t = { eid, mid: mid || null, ev, m, k, pid };
     if (!canScore(ev.sport)) { toast('บัญชีนี้บันทึกรายการนี้ไม่ได้'); return; } ciWrite(t, !!d.scci); scBeep(true);
     if (d.scun) { SC.res = { k: 'info', t: 'ยกเลิกการรายงานตัวแล้ว', s: evTitle(ev) + (m ? ' · คู่ ' + m.no : '') }; SC.log.unshift({ t: 'ยกเลิก', s: evTitle(ev), k: 'info', at: Date.now() }); }
@@ -5610,6 +5630,16 @@ if (window.visualViewport) { const vv = window.visualViewport; const upd = () =>
 document.addEventListener('focusin', e => { if (window.innerWidth > 720 || !e.target.matches?.('#modal input:not([type=checkbox]):not([type=radio]), #modal textarea, #modal select')) return; setTimeout(() => { try { e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (x) { } }, 300); });
 window.addEventListener('hashchange', () => setAcct(false));
 ['online', 'offline'].forEach(t => window.addEventListener(t, () => { if (UI.view === 'scan') scRefresh(); }));
+/* การ์ดผลตรวจบัตร: แตะ 1 ครั้งเพื่อปิด (ยกเว้นแตะปุ่ม/ลิงก์ในการ์ด) */
+document.addEventListener('click', e => { const ov = e.target.closest?.('#scov'); if (!ov) return; if (e.target.closest('button,a,select,input')) return; e.preventDefault(); scCloseCard(); });
+/* เครื่องสแกนแบบปุ่มกด (เช่น Sunmi): ส่งค่าเหมือนพิมพ์คีย์บอร์ดแล้วกด Enter */
+document.addEventListener('keydown', e => { if (UI.view !== 'scan' || SC.input !== 'hw') return;
+  if (e.target.id === 'schw') { if (e.key === 'Enter') { e.preventDefault(); const v = e.target.value.trim(); e.target.value = ''; if (v) { if (SC.ov) SC.ov = false; SC.last.clear(); scHandle(v, 'hw'); const st = $('#schwst'); if (st) st.textContent = 'อ่านล่าสุด ' + hhmm(Date.now()) + ' น.'; } } return; }
+  if (e.target.closest?.('input,select,textarea')) return;
+  /* ไม่มีช่องใดถูกเลือก: ส่งตัวอักษรเข้าช่องรับค่าเครื่องสแกน */
+  const hw = $('#schw'); if (hw && e.key.length === 1) { hw.focus({ preventScroll: true }); } else if (hw && e.key === 'Enter' && SC.ov) { e.preventDefault(); scCloseCard(); } });
+/* โหมดเครื่องสแกน: คืนโฟกัสให้ช่องรับค่าเสมอเมื่อแตะพื้นที่ว่าง */
+document.addEventListener('focusout', () => { if (UI.view !== 'scan' || SC.input !== 'hw') return; setTimeout(() => { const a = document.activeElement; if (!a || a === document.body) $('#schw')?.focus({ preventScroll: true }); }, 50); });
 /* ติดตั้งเป็นแอป (PWA): ลงทะเบียน service worker เมื่อเปิดผ่าน https */
 if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
 window.addEventListener('hashchange', route);
