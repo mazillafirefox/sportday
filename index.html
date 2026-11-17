@@ -782,6 +782,7 @@ body:has(#modal:not([hidden])) #toast{bottom:auto;top:16px}
 .athm{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.athm td{padding:4px 6px;border-top:1px solid #EEF1F6;white-space:nowrap}.athm td:nth-child(3){white-space:normal}
 .okt{color:#15803D;font-weight:600}.badt{color:#B91C1C;font-weight:600}.medp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;color:#fff}.medp.g{background:#C79A0B}.medp.s{background:#8A94A6}.medp.b{background:#A0612F}
 @media(max-width:600px){.athprof .aphead{flex-direction:column;align-items:center;text-align:center}.athprof .maphead{justify-content:center}.apstat{justify-content:center}.athm td:first-child{display:none}.pselbar .pprint{margin-left:0;width:100%}.pselbar .pprint select{flex:1}}
+.btn.danger-t{color:#B91C1C}
 </style>
 </head>
 <body>
@@ -881,8 +882,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.24.1', APP_DATE = '2026-11-16';
+const APP_VERSION = '1.24.2', APP_DATE = '2026-11-16';
 const CHANGELOG = [
+  ['1.24.2', 'ค้นหานักกีฬาด้วยรหัสประจำตัว · ปุ่มเปลี่ยนรูป/ลบรูปในหน้าประวัตินักกีฬาชัดขึ้น'],
   ['1.24.1', 'บัตรห้อยคอ: ชื่อ/สกุลแยกบรรทัด ไม่มีคำนำหน้า · ด้านหลังมีกำหนดการ แผนที่สนาม และความหมายรหัสบัตร · แก้ไขข้อมูลนักเรียนได้จากหน้าประวัติและหน้านักเรียน'],
   ['1.24.0', 'หน้าประวัตินักกีฬา (ผลงาน ผลการแข่ง วินัย รูป) · บัตรนักกีฬาแบบห้อยคอ · เกียรติบัตร · ตารางนักกีฬาค้นหาและเลือกพิมพ์บัตร · แผนที่สนามเต็มความกว้าง · “ถัดไป” เฉพาะคู่ที่ใกล้เวลา'],
   ['1.23.0', 'เช็คชื่อด้วย QR: เลือกวิธีติ๊กรายชื่อ/สแกน QR/พิมพ์รหัส · พิมพ์บัตร QR นักกีฬาจากรหัสประจำตัวนักเรียน'],
@@ -1624,7 +1626,7 @@ function athleteIndex(c) {
     const sp = S.sports[ev.sport] || {};
     (r.players || []).forEach(p => {
       const k = normName(p.name) + '|' + String(p.cls || '').replace(/\s/g, ''); if (!normName(p.name)) return;
-      (idx[k] = idx[k] || { name: p.name, cls: p.cls, sports: new Set(), ath: new Set(), evs: [] });
+      (idx[k] = idx[k] || { name: p.name, cls: p.cls, sports: new Set(), ath: new Set(), evs: [] }); if (p.sid && !idx[k].sid) idx[k].sid = normSid(p.sid);
       if (sp.isAthletics) idx[k].ath.add(eid); else if (!sp.isActivity) idx[k].sports.add(ev.sport);
       idx[k].evs.push(eid);
     });
@@ -2847,7 +2849,7 @@ function openAthlete(c, key) {
   modal(`<div class="dlg xwide athprof"><div class="aphead"><div class="aphoto" id="aph">${PH_SIL}</div>
       <div class="apinfo"><div class="maphead"><div><h3>${esc(a.name)}</h3><p class="muted sm">ชั้น ม.${esc(a.cls)}${sid ? ` · เลขประจำตัว ${esc(sid)}` : ''} · ลง ${evs.length} รายการ · กีฬา ${a.sports.size}/${maxS} ชนิด · กรีฑา ${a.ath.size}/${maxA} ประเภท</p></div>${chip(c)}</div>
       <div class="apstat"><span><b class="num">${meds.g}</b>ทอง</span><span><b class="num">${meds.s}</b>เงิน</span><span><b class="num">${meds.b}</b>ทองแดง</span><span><b class="num">${W}–${L}</b>ชนะ–แพ้</span><span><b class="num">${cards.length}</b>วินัย</span></div>
-      <div class="actions m0">${canPh ? `<label class="btn sm ghost">📷 ${'เพิ่ม/เปลี่ยนรูป'}<input type="file" id="aphf" accept="image/*" hidden></label><button class="btn sm ghost" id="aphx" hidden>ลบรูป</button>` : ''}
+      <div class="actions m0">${canPh ? `<label class="btn sm ghost"><span id="aphl">📷 เพิ่มรูป</span><input type="file" id="aphf" accept="image/*" hidden></label><button class="btn sm ghost danger-t" id="aphx" hidden>🗑 ลบรูป</button>` : ''}
         ${isAdmin() ? '<button class="btn sm ghost" id="apedit">✏️ แก้ไขข้อมูลนักเรียน</button>' : ''}<button class="btn sm ghost" id="apcard">🪪 พิมพ์บัตรนักกีฬา</button><button class="btn sm ghost" id="apcert">📜 พิมพ์เกียรติบัตร</button></div><p class="err" id="aperr"></p></div></div>
     ${ban ? '<p class="warn">ถูกตัดสิทธิ์ทุกรายการตามข้อ 6</p>' : ''}${overS ? `<p class="warn">ลงกีฬาเกิน ${maxS} ชนิด (${[...a.sports].map(sportName).join(', ')}) ต้องเอาออกจากบางรายการ</p>` : ''}${overA ? `<p class="warn">ลงกรีฑาเกิน ${maxA} ประเภท</p>` : ''}
     ${cl.map(([p, q]) => `<p class="warn">เวลาชน ${fmtDate(p.date)}: ${p.time} ${esc(p.label)} กับ ${q.time} ${esc(q.label)} — เปลี่ยนตัวในรายการใดรายการหนึ่ง</p>`).join('')}
@@ -2855,9 +2857,9 @@ function openAthlete(c, key) {
     <h4 class="subh">วินัย</h4>${cards.length ? cards.map(y => `<div class="cdrow"><span class="cdf ${y.cd.type === 'Y' ? 'y' : 'r'}"></span><small><b>${CARD_N[y.cd.type] || 'ใบแดง'}</b> · ${esc(y.label)}${y.date ? ' · ' + fmtDate(y.date) : ''}${y.cd.note ? ' · ' + esc(y.cd.note) : ''}</small></div>`).join('') : '<p class="muted sm">ไม่มีบันทึกวินัย</p>'}
     ${items.length ? `<h4 class="subh">นัดที่รอแข่ง</h4>${items.map(i => `<div class="feed sm"><span class="fl num">${fmtDate(i.date)} ${i.time}</span><span class="muted sm">${esc(i.label)}${i.venue ? ' · ' + esc(i.venue) : ''}</span></div>`).join('')}` : ''}
     <div class="actions"><button class="btn ghost" data-close>ปิด</button></div></div>`);
-  getPhoto(pid).then(img => { const el = $('#aph'); if (!el) return; if (img) { el.innerHTML = `<img src="${img}" alt="รูป ${esc(a.name)}">`; $('#aphx') && ($('#aphx').hidden = false); } });
+  getPhoto(pid).then(img => { const el = $('#aph'); if (!el) return; if (img) { el.innerHTML = `<img src="${img}" alt="รูป ${esc(a.name)}">`; $('#aphx') && ($('#aphx').hidden = false); $('#aphl') && ($('#aphl').textContent = '📷 เปลี่ยนรูป'); } });
   $('#aphf')?.addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; $('#aperr').textContent = 'กำลังบันทึกรูป…';
-    try { const img = await fileToPhoto(f); await setPhoto(pid, img); $('#aph').innerHTML = `<img src="${img}" alt="">`; $('#aphx').hidden = false; $('#aperr').textContent = ''; logIt('เพิ่มรูปนักกีฬา', `${a.name} · ${COLORS[c].n}`); toast('บันทึกรูปแล้ว'); }
+    try { const img = await fileToPhoto(f); await setPhoto(pid, img); $('#aph').innerHTML = `<img src="${img}" alt="">`; $('#aphx').hidden = false; $('#aphl').textContent = '📷 เปลี่ยนรูป'; $('#aperr').textContent = ''; logIt('เพิ่มรูปนักกีฬา', `${a.name} · ${COLORS[c].n}`); toast('บันทึกรูปแล้ว'); }
     catch (x) { $('#aperr').textContent = 'บันทึกรูปไม่ได้: ' + (x?.code || x?.message || x); } });
   $('#aphx')?.addEventListener('click', () => ask(`ลบรูปของ ${a.name}?`, async () => { try { await setPhoto(pid, null); logIt('ลบรูปนักกีฬา', a.name); toast('ลบรูปแล้ว'); } catch (x) { toast('ลบไม่ได้'); } openAthlete(c, key); }, 'ลบรูป'));
   $('#apcard').onclick = () => printBadges([{ c, key }], 'badge');
@@ -2867,8 +2869,8 @@ function openAthlete(c, key) {
     if (location.hash !== '#register') { location.hash = '#register'; setTimeout(() => openRoster(eid, k.join('~')), 120); } else { render(); openRoster(eid, k.join('~')); } };
 }
 function vAthletes() {
-  return `<section class="hero"><h1>ค้นหานักกีฬา</h1><p class="muted">พิมพ์ชื่อหรือห้อง (เช่น 3/6) แล้วกดชื่อเพื่อเปิดประวัตินักกีฬา: รายการที่ลง ผลการแข่ง วินัย รูป และพิมพ์บัตร/เกียรติบัตร</p></section>
-  <div class="filters"><label class="fld grow"><span class="vh">ค้นหา</span>${qbox('aq', UI.q, 'ชื่อ หรือ ห้อง เช่น สมชาย / 3/6')}</label>
+  return `<section class="hero"><h1>ค้นหานักกีฬา</h1><p class="muted">พิมพ์ชื่อ ห้อง (เช่น 3/6) หรือรหัสประจำตัว แล้วกดชื่อเพื่อเปิดประวัตินักกีฬา: รายการที่ลง ผลการแข่ง วินัย รูป และพิมพ์บัตร/เกียรติบัตร</p></section>
+  <div class="filters"><label class="fld grow"><span class="vh">ค้นหา</span>${qbox('aq', UI.q, 'ชื่อ ห้อง หรือรหัส เช่น สมชาย / 3/6 / 41390')}</label>
   <label class="ck"><input type="checkbox" id="aclash" ${UI.onlyClash ? 'checked' : ''}> แสดงเฉพาะคนที่เวลาชน/ถูกตัดสิทธิ์</label></div>
   <div id="athres">${athleteResults()}</div>`;
 }
@@ -2877,7 +2879,7 @@ function athleteResults() {
   COLORS.forEach((_, c) => {
     const idx = athleteIndex(c); const sched = athleteSchedule(c);
     Object.entries(idx).forEach(([k, a]) => {
-      if (q && !(a.name.toLowerCase().includes(q) || String(a.cls).replace(/\s/g, '') === q.replace(/\s/g, ''))) return;
+      if (q && !(a.name.toLowerCase().includes(q) || String(a.cls).replace(/\s/g, '') === q.replace(/\s/g, '') || (a.sid && /^\d+$/.test(q.replace(/\s/g, '')) && a.sid.includes(normSid(q))))) return;
       const items = (sched[k] || []).slice().sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time)); const cl = clashesOf(items); const ban = B.get(c + '|' + fnv(k));
       const cards = []; Object.entries(S.events).forEach(([eid, e]) => (e.matches || []).forEach(m => (m.cards || []).forEach(cd => { if (cd.c === c && cardH(cd) === fnv(k)) cards.push({ cd, label: `${evTitle({ id: eid, ...e })} คู่ ${m.no}` }); })));
       if (UI.onlyClash && !cl.length && !ban) return;
@@ -2886,7 +2888,7 @@ function athleteResults() {
   });
   if (!q && !UI.onlyClash) return `<p class="muted">พบนักกีฬาที่ส่งชื่อแล้ว ${out.length} คน พิมพ์เพื่อค้นหา</p>`;
   if (!out.length) return '<p class="muted">ไม่พบนักกีฬาที่ตรงกับคำค้น</p>';
-  return `<div class="athgrid">${out.slice(0, 60).map(x => `<section class="card ath${x.cl.length || x.ban ? ' flag' : ''}"><div class="maphead"><div><h2><a href="#" class="plink" data-ath="${x.c}~${esc(pkey(x.a))}">${esc(x.a.name)}</a></h2><p class="muted sm">ชั้น ${esc(x.a.cls)} · ${[...new Set(x.a.evs.map(id => S.events[id] ? evTitle({ id, ...S.events[id] }) : ''))].map(esc).join(', ')}</p></div>${chip(x.c)}</div>
+  return `<div class="athgrid">${out.slice(0, 60).map(x => `<section class="card ath${x.cl.length || x.ban ? ' flag' : ''}"><div class="maphead"><div><h2><a href="#" class="plink" data-ath="${x.c}~${esc(pkey(x.a))}">${esc(x.a.name)}</a></h2><p class="muted sm">ชั้น ${esc(x.a.cls)}${x.a.sid ? ' · รหัส ' + esc(x.a.sid) : ''} · ${[...new Set(x.a.evs.map(id => S.events[id] ? evTitle({ id, ...S.events[id] }) : ''))].map(esc).join(', ')}</p></div>${chip(x.c)}</div>
     ${x.ban ? '<p class="warn">ถูกตัดสิทธิ์ทุกรายการตามข้อ 6</p>' : ''}
     ${x.cl.map(([p, q]) => `<p class="warn">เวลาชน ${fmtDate(p.date)}: ${p.time} ${esc(p.label)} กับ ${q.time} ${esc(q.label)}</p>`).join('')}
     ${x.items.length ? x.items.slice(0, 6).map(i => `<div class="feed sm"><span class="fl num">${fmtDate(i.date)} ${i.time}</span><span class="muted sm">${esc(i.label)}${i.venue ? ' · ' + esc(i.venue) : ''}</span></div>`).join('') : '<p class="muted sm">ไม่มีนัดที่รอแข่ง</p>'}
