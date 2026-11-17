@@ -892,8 +892,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.26.9', APP_DATE = '2026-11-17';
+const APP_VERSION = '1.26.10', APP_DATE = '2026-11-17';
 const CHANGELOG = [
+  ['1.26.10', 'โปรแกรม & ผล: กลุ่ม “จบแล้ว” ย่อ/ขยายได้ทุกวัน (วันที่ผ่านมาเปิดไว้ให้ก่อน)'],
   ['1.26.9', 'รายงานตัว: รายการแข่งพร้อมกัน (เช่น Free Fire) ที่จบแล้วย้ายไปกลุ่ม “จบแล้ว” · รายงานตัวแยกรายวัน · แสดงเวลารอบ'],
   ['1.26.8', 'ส่งรายชื่อ: เลือกนักเรียนแล้วช่องค้นหาล้างอัตโนมัติ · รายงานตัวแบบสแกน/พิมพ์รหัส: ครบทุกคนแล้วบันทึกอัตโนมัติ'],
   ['1.26.7', 'ครูคณะสี: ช่องค้นหาในแท็บนักเรียนค้นได้เฉพาะนักเรียนคณะของตัวเอง'],
@@ -2163,11 +2164,11 @@ function vSchedule() {
     others.forEach(e => { const rs = dayRounds(e, d);
       if (rs.length) { rs.forEach(({ r, i }) => G[e.res?.rounds?.[i] ? 'done' : slot(r.time)].push({ t: r.time || '', h: rdRow(e, i) })); return; }
       const t = evDayTime(e, d); const k = evDayDone(e, d) ? 'done' : evDayLive(e, d) ? 'live' : slot(t); G[k].push({ t, h: evRow(e) }); });
-    const sec = (k, title, sub, open = true) => { const l = G[k].sort((p, q) => p.t.localeCompare(q.t)); if (!l.length) return '';
+    const sec = (k, title, sub, fold) => { const l = G[k].sort((p, q) => p.t.localeCompare(q.t)); if (!l.length) return '';
       const hd = `<span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small>`;
-      return open ? `<section class="card stgrp ${k}"><h2 class="cih">${hd}</h2>${l.map(x => x.h).join('')}</section>` : `<details class="card stgrp ${k}"><summary class="cih">${hd}</summary>${l.map(x => x.h).join('')}</details>`; };
-    body = isT ? sec('live', '● กำลังแข่ง · ต้องบันทึกผล', 'กด “บันทึกผล” เมื่อจบเกม') + sec('now', '🔔 ถึงเวลาแข่ง · รอเริ่ม', 'รายงานตัว/เริ่มแข่ง หรือปรับแพ้') + sec('soon', 'ใกล้ถึงเวลา', 'ภายใน 1 ชั่วโมง') + sec('later', 'ภายหลังวันนี้', '') + sec('done', '✓ จบแล้ว', '', false)
-      : sec('live', '● กำลังแข่ง · ต้องบันทึกผล', '') + sec('now', 'ยังไม่จบ', '') + sec('soon', 'นัดในวันนั้น', '') + sec('later', d < todayStr() ? 'ยังไม่มีผล' : 'นัดในวันนั้น', '') + sec('done', '✓ จบแล้ว', '', d < todayStr());
+      return !fold ? `<section class="card stgrp ${k}"><h2 class="cih">${hd}</h2>${l.map(x => x.h).join('')}</section>` : `<details class="card stgrp ${k}"${fold === 'open' ? ' open' : ''}><summary class="cih">${hd}</summary>${l.map(x => x.h).join('')}</details>`; };
+    body = isT ? sec('live', '● กำลังแข่ง · ต้องบันทึกผล', 'กด “บันทึกผล” เมื่อจบเกม') + sec('now', '🔔 ถึงเวลาแข่ง · รอเริ่ม', 'รายงานตัว/เริ่มแข่ง หรือปรับแพ้') + sec('soon', 'ใกล้ถึงเวลา', 'ภายใน 1 ชั่วโมง') + sec('later', 'ภายหลังวันนี้', '') + sec('done', '✓ จบแล้ว', '', 'closed')
+      : sec('live', '● กำลังแข่ง · ต้องบันทึกผล', '') + sec('now', 'ยังไม่จบ', '') + sec('soon', 'นัดในวันนั้น', '') + sec('later', d < todayStr() ? 'ยังไม่มีผล' : 'นัดในวันนั้น', '') + sec('done', '✓ จบแล้ว', '', d < todayStr() ? 'open' : 'closed');
   } else if (others.length) body += `<section class="card"><h2>รายการจัดอันดับ / สะสมคะแนน</h2>${others.sort((a, b) => a.order - b.order).map(evRows).join('')}</section>`;
   return `<section class="hero"><h1>โปรแกรมและผลการแข่งขัน</h1><p class="muted">${editOn ? 'แตะที่นัดเพื่อบันทึกผล ผู้ชนะจะถูกส่งเข้านัดถัดไปอัตโนมัติ' : 'เปิดโหมดแก้ไขเพื่อบันทึกผล (เฉพาะผู้มีสิทธิ์)'}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-day="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div>
@@ -2509,12 +2510,12 @@ function vCheckin() {
     if (st.k === 'done') g.done.push(x); else if (st.k === 'live') g.live.push(x); else if (NOW.includes(st.k)) g.now.push(x);
     else if (isToday && ciAt - now <= 60) g.soon.push(x); else g.later.push(x); });
   const URG = { forfeit: 0, waiting: 1, delay: 2, hold: 3, checkin: 4, ready: 5 }; g.now.sort((x, y) => (URG[mState(x.ev, x.m).k] - URG[mState(y.ev, y.m).k]) || (x.m.time || '').localeCompare(y.m.time || ''));
-  const sec = (k, title, sub, l, open = true) => l.length ? (open ? `<div class="cigrp ${k}"><h3 class="cih"><span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small></h3>${l.map(row).join('')}</div>`
-    : `<details class="cigrp ${k}"><summary class="cih"><span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small></summary>${l.map(row).join('')}</details>`) : '';
+  const sec = (k, title, sub, l, open = true) => l.length ? (open === true ? `<div class="cigrp ${k}"><h3 class="cih"><span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small></h3>${l.map(row).join('')}</div>`
+    : `<details class="cigrp ${k}"${open === 'open' ? ' open' : ''}><summary class="cih"><span>${title}</span><small class="muted num">${l.length} นัด${sub ? ' · ' + sub : ''}</small></summary>${l.map(row).join('')}</details>`) : '';
   const body = isToday
     ? sec('now', '🔔 ต้องรายงานตัวตอนนี้', 'เปิดรายงานตัวแล้ว หรือถึงเวลาแข่ง', g.now) + sec('soon', 'ใกล้ถึงเวลารายงานตัว', 'ภายใน 1 ชั่วโมง', g.soon)
       + sec('live', 'กำลังแข่ง', '', g.live, g.live.length <= 4) + sec('later', 'ภายหลังวันนี้', '', g.later) + sec('done', 'จบแล้ว', '', g.done, false)
-    : sec('later', d < todayStr() ? 'นัดในวันนั้น' : 'นัดทั้งหมดของวัน', '', [...g.now, ...g.soon, ...g.live, ...g.later]) + sec('done', 'จบแล้ว', '', g.done, d < todayStr());
+    : sec('later', d < todayStr() ? 'นัดในวันนั้น' : 'นัดทั้งหมดของวัน', '', [...g.now, ...g.soon, ...g.live, ...g.later]) + sec('done', 'จบแล้ว', '', g.done, d < todayStr() ? 'open' : false);
   return `<section class="hero"><h1>รายงานตัวนักกีฬา</h1><p class="muted">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${mins} นาที ไม่มาภายใน 10 นาทีหลังเวลาแข่งถือว่าสละสิทธิ์ · ตัวเลขคือ รายงานตัวแล้ว/ตัวจริงขั้นต่ำ${editOn ? ' · แตะนัดเพื่อเช็คชื่อ' : ''}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-ciday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div></div>
   <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button>${anyEdit() ? (myColor() == null ? '<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาทุกคณะ</button>' : `<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาคณะ${esc(COLORS[myColor()].n)}</button>`) : ''}</div>
