@@ -855,6 +855,16 @@ body.scanmode #main{padding:0;max-width:640px;margin:0 auto}
 .scov .bvst{padding:20px 18px}.scov .bvst b{font-size:30px}.scov .bvst span{font-size:16px}
 .scovtap{position:sticky;bottom:0;max-width:max-content;margin:14px auto 0;padding:10px 18px;border-radius:99px;background:rgba(15,23,42,.85);text-align:center;color:#fff;font-size:15px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 body.scovopen{overflow:hidden}
+#nav{overflow:visible!important;position:relative;flex-wrap:nowrap}
+.navmw{position:relative;flex:none;margin-left:auto;display:flex}
+.navmore{border:0;background:none;padding:9px 10px;font:500 14px var(--display);color:var(--blue-d,#1F2E78);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+.navmore[aria-expanded=true]{color:var(--blue)}
+.navmenu{position:absolute;right:0;top:100%;min-width:220px;display:flex;flex-direction:column;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(20,33,90,.2);z-index:40}
+.navmenu[hidden]{display:none}
+.navmenu small{padding:8px 10px 4px;font-size:11px;color:var(--muted);letter-spacing:.3px}
+.navmenu a{padding:10px 12px!important;border:0!important;border-radius:9px;font-size:15px!important;white-space:nowrap}.navmenu a:hover{background:var(--panel2)}
+.scnow{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:14px;background:#EEF2FF;border:2px solid #4F46E5}.scnow small{color:#4F46E5;font-weight:700;font-size:12px;letter-spacing:.3px}.scnow b{font-size:17px;color:var(--ink)}.scnow span{font-size:13px;color:var(--muted)}
+.scnow.none{background:#FEF3C7;border-color:#D97706}.scnow.none b{color:#92400E}
 /* หน้าตรวจบัตร */
 .bvtool{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bvtool input{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
 .bv{display:flex;flex-direction:column;gap:12px;max-width:760px}
@@ -980,8 +990,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.31.2', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.32.0', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.32.0', 'แอปสแกน (รายงานตัว): ต้องเลือกนัดก่อนสแกน · ไม่อยู่ในรายชื่อนัดนี้แจ้งนัดอื่นวันนี้/นัดถัดไป · แสดงจำนวนที่มาแล้ว · เมนูบาร์ด้านบนพอดีจอ (รายการที่ล้นย้ายไปที่ “เพิ่มเติม ▾”)'],
   ['1.31.2', 'แอปสแกน: แสดงรูปนักเรียน/บุคลากรในการ์ดตรวจบัตร ผลรายงานตัว และโหมดกรรมการ'],
   ['1.31.1', 'แอปสแกน: ตรวจบัตรแสดงผลเป็นการ์ดเต็มจอ แตะ 1 ครั้งเพื่อปิดแล้วสแกนต่อ (กล้องหยุดอ่านระหว่างเปิดการ์ด) · รองรับเครื่องสแกนแบบปุ่มกด (Sunmi ฯลฯ) ที่ส่งค่าแบบคีย์บอร์ด ไม่ต้องเปิดกล้อง'],
   ['1.31.0', 'แอปสแกน (PWA ติดตั้งลงมือถือได้): รายงานตัวที่จุดกลางหานัดให้อัตโนมัติ/ล็อกนัด · ตรวจบัตร · ลงชื่อกรรมการ · กล้องเปิดค้างสแกนต่อเนื่อง · บันทึกแบบรวมไม่ทับเครื่องอื่น · ค้างส่งเมื่อออฟไลน์แล้วส่งให้เอง'],
@@ -2136,8 +2147,7 @@ function render() { DATA_TICK++;
   const priv = mode === 'shared' && !canWrite;
   if (priv && ['register', 'checkin', 'athletes', 'admin', 'teams'].includes(UI.view)) UI.view = 'medals';
   let sep = false;
-  $('#nav').innerHTML = VIEWS.filter(([k]) => (k !== 'admin' || isAdmin()) && !(priv && STAFF_VIEWS.includes(k))).map(([k, n]) => { const pre = !sep && STAFF_VIEWS.includes(k) ? (sep = true, '<span class="navsep" aria-hidden="true"></span><span class="navlbl">สำหรับครู/กรรมการ</span>') : ''; return `${pre}<a href="#${k}" class="${k === UI.view ? 'on' : ''}${STAFF_VIEWS.includes(k) ? ' staff' : ''}">${n}</a>`; }).join('');
-  { const nv = $('#nav'), on = nv.querySelector('a.on'); if (on && nv.scrollWidth > nv.clientWidth) { const l = on.offsetLeft - nv.offsetLeft; if (l < nv.scrollLeft || l + on.offsetWidth > nv.scrollLeft + nv.clientWidth) nv.scrollLeft = l - 24; } }
+  renderNav(priv);
   renderStatus();
   $('#foot').innerHTML = `<span data-tip="version">เวอร์ชัน ${APP_VERSION} · ปรับปรุง ${fmtDate(APP_DATE, true)}</span><span>${esc(evName())}${evYear() ? ' ปีการศึกษา ' + esc(evYear()) : ''} · ${esc(evSchool())}</span>`;
   const nLive = mode === 'connecting' ? 0 : liveList().length;
@@ -2160,6 +2170,26 @@ function render() { DATA_TICK++;
   if (UI.view === 'venues' && UI.vScroll) { UI.vScroll = false; setTimeout(() => $('.venue.focus')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); }
   if (keepScroll) window.scrollTo(sx, sy);
 }
+/* เมนูบาร์: แสดงเท่าที่พอดีความกว้างจอ ที่เหลือย้ายไป “เพิ่มเติม ▾” (หน้าที่เปิดอยู่แสดงเสมอ) */
+function renderNav(priv) {
+  const nv = $('#nav'); if (!nv) return; const items = VIEWS.filter(([k]) => (k !== 'admin' || isAdmin()) && !(priv && STAFF_VIEWS.includes(k))).map(([k, n]) => ({ k, n, staff: STAFF_VIEWS.includes(k) }));
+  const link = x => `<a href="#${x.k}" class="${x.k === UI.view ? 'on' : ''}${x.staff ? ' staff' : ''}">${x.n}</a>`;
+  const build = (vis, more) => { let sep = false; const h = vis.map(x => { const pre = !sep && x.staff && vis.some(y => !y.staff) ? (sep = true, '<span class="navsep" aria-hidden="true"></span>') : ''; return pre + link(x); }).join('');
+    if (!more.length) return h; const grp = (st, t) => { const l = more.filter(x => x.staff === st); return l.length ? `<small>${t}</small>${l.map(link).join('')}` : ''; };
+    return h + `<span class="navmw"><button type="button" id="navmore" class="navmore" aria-expanded="false" aria-haspopup="true">เพิ่มเติม ▾</button><div class="navmenu" id="navmenu" hidden>${grp(false, 'ทั่วไป')}${grp(true, 'สำหรับครู/กรรมการ')}</div></span>`; };
+  nv.innerHTML = build(items, []) + '<span class="navmw"><button type="button" class="navmore">เพิ่มเติม ▾</button></span>';
+  const W = nv.clientWidth - 24; const as = [...nv.querySelectorAll(':scope > a')]; const mw = nv.querySelector('.navmore').offsetWidth + 8; const sepW = 14;
+  const ws = as.map(a => a.offsetWidth); const total = ws.reduce((a, b) => a + b, 0) + sepW;
+  if (W <= 0 || total <= W) { nv.innerHTML = build(items, []); return; }
+  const on = items.findIndex(x => x.k === UI.view); let used = mw + sepW + (on >= 0 ? ws[on] : 0); const keep = new Set(on >= 0 ? [on] : []);
+  items.forEach((x, i) => { if (keep.has(i)) return; if (used + ws[i] <= W) { keep.add(i); used += ws[i]; } else used = Infinity; });
+  nv.innerHTML = build(items.filter((_, i) => keep.has(i)), items.filter((_, i) => !keep.has(i)));
+}
+document.addEventListener('click', e => { const b = e.target.closest('#navmore'); const m = $('#navmenu');
+  if (b && m) { m.hidden = !m.hidden; b.setAttribute('aria-expanded', String(!m.hidden)); return; }
+  if (m && !m.hidden && (!e.target.closest('#navmenu') || e.target.closest('a'))) { m.hidden = true; $('#navmore')?.setAttribute('aria-expanded', 'false'); } });
+{ let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => renderNav(mode === 'shared' && !canWrite), 120); }); }
+if (document.fonts?.ready) document.fonts.ready.then(() => renderNav(mode === 'shared' && !canWrite));
 function emptyState() {
   const V = VIEWS.find(v => v[0] === UI.view)?.[1] || '';
   return `<section class="card empty"><div class="emp-i" aria-hidden="true">${sIcon('trophy', 'tile lg')}</div><div><h2>${esc(V)}: ยังไม่มีรายการแข่งขัน</h2>
@@ -3156,6 +3186,11 @@ const scDay = () => todayISO();
 const nowHM = () => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); };
 const hm2min = s => { const m = String(s || '').match(/(\d{1,2})[:.](\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };
 /* นัดวันนี้ทั้งหมด (คู่ + รายการแข่งพร้อมกัน) สำหรับตัวเลือก “ล็อกคู่” */
+/* นัดที่เลือกไว้ (ต้องเป็นนัดวันนี้ที่ยังแข่งไม่จบ ไม่เช่นนั้นถือว่ายังไม่ได้เลือก) */
+/* จำนวนที่รายงานตัวแล้วของนัดที่เลือก */
+function scLockCount(x) { const d = scDay(); const sides = x.m ? (() => { const t = teamsOf(x.ev, x.m); return [['a', t.a], ['b', t.b]]; })() : (x.ev.teams || []).map(c => [String(c), c]);
+  const ci = x.m ? (x.m.ci || {}) : evCi(x.ev, d); let got = 0, all = 0; sides.forEach(([k, c]) => { if (c < 0) return; const ps = rosterOf(x.ev.id, c).players || []; all += ps.length; got += ps.filter(p => (ci[k] || []).includes(p.id)).length; }); return all ? { got, all } : null; }
+function scLockItem() { if (!SC.lock) return null; const it = scItems(scDay()).find(x => scKey(x) === SC.lock); if (!it) SC.lock = ''; return it || null; }
 function scItems(d) { return dayItems(d, SC.venue || '').filter(x => x.m ? !sideWin(x.m) : !evDayDone(x.ev, d)); }
 const scKey = x => x.ev.id + '|' + (x.m ? x.m.id : '');
 const scLabel = x => `${x.m?.time || evDayTime(x.ev, scDay()) || '–'} · ${evTitle(x.ev)}${x.m ? ' · คู่ ' + x.m.no : ''}`;
@@ -3193,29 +3228,31 @@ function scHandle(raw, src) {
   const f = findAthSid(b.sid); if (!f) { scBeep(false); scShow({ k: 'bad', t: 'ไม่พบนักกีฬา', s: `เลขประจำตัว ${b.sid} ไม่อยู่ในรายชื่อนักกีฬา`, log: { t: 'A-' + b.sid, s: 'ไม่พบ', k: 'bad' } }); return; }
   const { c, key, a } = f; const who = { name: stripPre(a.name), c, cls: a.cls, pid: photoId(c, key), sid: b.sid };
   if (isBanned(c, a, bannedSet())) { scBeep(false); scShow({ k: 'bad', who, t: 'ถูกตัดสิทธิ์', s: 'นักกีฬาคนนี้ถูกตัดสิทธิ์การแข่งขัน', log: { t: who.name, s: 'ถูกตัดสิทธิ์', k: 'bad' } }); return; }
-  let L = ciTargets(c, key, scDay()); if (SC.lock) L = L.filter(t => t.eid + '|' + (t.mid || '') === SC.lock);
-  if (!L.length) { scBeep(false); const nx = (athleteSchedule(c)[key] || []).filter(i => i.date > scDay()).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))[0];
-    scShow({ k: 'bad', who, t: SC.lock ? 'ไม่อยู่ในรายชื่อนัดนี้' : 'ไม่มีนัดแข่งวันนี้', s: SC.lock ? 'นักกีฬาคนนี้ไม่ได้อยู่ในรายชื่อของนัดที่ล็อกไว้' : nx ? `นัดถัดไป ${fmtDate(nx.date)} ${nx.time} น. · ${nx.label}` : 'ไม่มีนัดที่รอแข่ง', log: { t: who.name, s: 'ไม่มีนัด', k: 'bad' } }); return; }
-  const pick = SC.lock ? L.find(t => !t.done) : ciPick(L);
-  if (!pick) { scBeep(true); scShow({ k: 'info', who, t: 'รายงานตัวแล้ว', s: L.map(t => `${t.time} ${t.label}`).join(' · '), L, log: { t: who.name, s: 'รายงานตัวแล้ว (ซ้ำ)', k: 'info' } }); return; }
-  if (!canScore(pick.ev.sport)) { scBeep(false); scShow({ k: 'bad', who, t: 'ไม่มีสิทธิ์', s: `บัญชีนี้รายงานตัว${sportName(pick.ev.sport)}ไม่ได้`, L }); return; }
-  if (!SC.auto && !SC.lock && L.filter(t => !t.done).length > 1) { scBeep(true); scShow({ k: 'ask', who, t: 'เลือกนัดที่จะรายงานตัว', s: '', L, pick }); return; }
-  ciWrite(pick, true); scBeep(true);
-  scShow({ k: 'ok', who, t: '✓ รายงานตัวแล้ว', s: `${pick.time ? pick.time + ' น. · ' : ''}${pick.label}${pick.venue ? ' · ' + pick.venue : ''}`, L: ciTargets(c, key, scDay()), undo: pick, log: { t: who.name, s: `${pick.time} ${pick.label}`, k: 'ok', undo: pick } });
+  /* ต้องเลือกนัดก่อนเสมอ: รายงานตัวคือมาแสดงตัวที่สนามของนัดนั้น (ไม่เดานัดให้ กันกรณีลงหลายรายการในวันเดียว) */
+  const lk = scLockItem(); if (!lk) { scBeep(false); scShow({ k: 'unk', who, t: 'เลือกนัดก่อน', s: 'เลือกรายการแข่งที่กำลังรับรายงานตัวจากช่องด้านบน แล้วจึงสแกน' }); return; }
+  const L = ciTargets(c, key, scDay()); const t = L.find(x => x.eid + '|' + (x.mid || '') === SC.lock);
+  const nextTxt = () => { const nx = (athleteSchedule(c)[key] || []).filter(i => i.date > scDay() || (i.date === scDay() && i.time >= nowHM())).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time)).find(i => !(i.eid === lk.ev.id)); return nx ? `นัดถัดไป: ${nx.date === scDay() ? 'วันนี้' : fmtDate(nx.date)} ${nx.time} น. · ${nx.label}${nx.venue ? ' · ' + nx.venue : ''}` : 'ไม่มีนัดที่รอแข่ง'; };
+  if (!t) { scBeep(false); const others = L.filter(x => x.eid + '|' + (x.mid || '') !== SC.lock);
+    scShow({ k: 'bad', who, t: 'ไม่ได้แข่งนัดนี้', s: others.length ? 'วันนี้นักกีฬาคนนี้แข่งนัดอื่น (ไปรายงานตัวที่สนามของนัดนั้น)' : `ไม่ได้แข่งวันนี้ · ${nextTxt()}`, L: others, noBtn: true, log: { t: who.name, s: 'ไม่อยู่ในรายชื่อนัดนี้', k: 'bad' } }); return; }
+  if (t.done) { scBeep(true); scShow({ k: 'info', who, t: 'รายงานตัวแล้ว', s: `${t.time ? t.time + ' น. · ' : ''}${t.label}`, log: { t: who.name, s: 'รายงานตัวแล้ว (ซ้ำ)', k: 'info' } }); return; }
+  if (!canScore(t.ev.sport)) { scBeep(false); scShow({ k: 'bad', who, t: 'ไม่มีสิทธิ์', s: `บัญชีนี้รายงานตัว${sportName(t.ev.sport)}ไม่ได้` }); return; }
+  ciWrite(t, true); scBeep(true);
+  scShow({ k: 'ok', who, t: '✓ รายงานตัวแล้ว', s: `${t.time ? t.time + ' น. · ' : ''}${t.label}${t.venue ? ' · ' + t.venue : ''}`, undo: t, log: { t: who.name, s: `${t.time} ${t.label}`, k: 'ok', undo: t } });
 }
 /* ---------- หน้าจอ ---------- */
 function scResHTML(forCard) { const r = forCard ? SC.res : SC.res?.card ? null : SC.res;
-  if (!r) return `<div class="scr idle"><b>${SC.mode === 'ci' ? 'สแกนบัตรนักกีฬาเพื่อรายงานตัว' : SC.mode === 'badge' ? 'สแกนบัตรเพื่อตรวจสิทธิ์' : 'สแกนบัตรกรรมการ'}</b><span>${SC.mode === 'ci' ? (SC.lock ? 'ล็อกนัดไว้ · สแกนได้ต่อเนื่อง' : 'ระบบหานัดที่ใกล้ที่สุดของวันนี้ให้อัตโนมัติ') : SC.mode === 'judge' ? (SC.jlock ? 'สแกนแล้วลงชื่อเป็นกรรมการของนัดที่เลือกทันที' : 'เลือกนัดก่อน หรือสแกนเพื่อดูหน้าที่ของกรรมการ') : 'ผลจะแสดงที่นี่'}</span></div>`;
+  if (!r) return `<div class="scr idle"><b>${SC.mode === 'ci' ? 'สแกนบัตรนักกีฬาเพื่อรายงานตัว' : SC.mode === 'badge' ? 'สแกนบัตรเพื่อตรวจสิทธิ์' : 'สแกนบัตรกรรมการ'}</b><span>${SC.mode === 'ci' ? (scLockItem() ? 'สแกนได้ต่อเนื่อง · รับเฉพาะนักกีฬาในรายชื่อนัดนี้' : 'เลือกนัดที่รับรายงานตัวก่อน') : SC.mode === 'judge' ? (SC.jlock ? 'สแกนแล้วลงชื่อเป็นกรรมการของนัดที่เลือกทันที' : 'เลือกนัดก่อน หรือสแกนเพื่อดูหน้าที่ของกรรมการ') : 'ผลจะแสดงที่นี่'}</span></div>`;
   if (r.html) return `<div class="scr html${forCard ? ' card' : ''}">${r.html.replace(/<section class="hero">[\s\S]*?<\/section>/, '').replace(/<form class="bvtool"[\s\S]*?<\/form>/, '')}</div>`;
   const who = r.who ? `<div class="scw"><div class="scph" id="scph" data-pid="${esc(r.who.pid || '')}">${PH_SIL}</div><div><b>${esc(r.who.name)}</b><span>${chip(r.who.c)} ม.${esc(r.who.cls)} · ${esc(r.who.sid)}</span></div></div>` : '';
-  const list = r.L && r.L.length ? `<div class="scl">${r.L.map(t => `<div class="sct${t.done ? ' done' : ''}"><span class="num">${esc(t.time || '–')}</span><span>${esc(t.label)}${t.venue ? `<small>${esc(t.venue)}</small>` : ''}</span>${t.done ? '<b class="okt">✓ มาแล้ว</b>' : editOn && canScore(t.ev.sport) ? `<button class="btn sm" data-scci="${t.eid}|${t.mid || ''}|${t.k}|${t.pid}">รายงานตัว</button>` : ''}</div>`).join('')}</div>` : '';
+  const list = r.L && r.L.length ? `<div class="scl">${r.L.map(t => `<div class="sct${t.done ? ' done' : ''}"><span class="num">${esc(t.time || '–')}</span><span>${esc(t.label)}${t.venue ? `<small>${esc(t.venue)}</small>` : ''}</span>${t.done ? '<b class="okt">✓ มาแล้ว</b>' : !r.noBtn && editOn && canScore(t.ev.sport) ? `<button class="btn sm" data-scci="${t.eid}|${t.mid || ''}|${t.k}|${t.pid}">รายงานตัว</button>` : ''}</div>`).join('')}</div>` : '';
   return `<div class="scr ${r.k}"><div class="scrh"><b>${esc(r.t)}</b>${r.s ? `<span>${esc(r.s)}</span>` : ''}</div>${who}${r.undo ? `<button class="btn sm ghost scundo" data-scun="${r.undo.eid}|${r.undo.mid || ''}|${r.undo.k}|${r.undo.pid}">ยกเลิกการรายงานตัวนี้</button>` : ''}${list}</div>`; }
 function scCtxHTML() {
   const d = scDay(); const its = scItems(d); const vs = [...new Set(dayItems(d).map(x => x.m ? venueOf(x.ev, x.m) : x.ev.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
   const vsel = `<select id="scven" aria-label="สนาม"><option value="">ทุกสนาม</option>${vs.map(v => `<option ${v === SC.venue ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
   const lsel = (id, cur, first) => `<select id="${id}" aria-label="นัด"><option value="">${first}</option>${its.map(x => `<option value="${scKey(x)}" ${scKey(x) === cur ? 'selected' : ''}>${esc(scLabel(x))}</option>`).join('')}</select>`;
   if (!days().includes(d)) return `<p class="muted sm">วันนี้ไม่ใช่วันแข่งขัน (${esc(dayRange())}) · รายงานตัวได้เฉพาะวันแข่ง</p>`;
-  if (SC.mode === 'ci') return `<div class="scctx">${vsel}${lsel('sclock', SC.lock, 'ทุกนัดวันนี้ (หานัดให้อัตโนมัติ)')}<label class="ck"><input type="checkbox" id="scauto" ${SC.auto ? 'checked' : ''}> บันทึกทันที</label></div>`;
+  if (SC.mode === 'ci') { const lk = scLockItem(); const t = lk ? (lk.m?.time || evDayTime(lk.ev, d) || '') : '';
+    return `<div class="scctx">${vsel}${lsel('sclock', SC.lock, '— เลือกนัดที่รับรายงานตัว —')}</div>${lk ? `<div class="scnow"><small>กำลังรับรายงานตัว</small><b>${esc(t ? t + ' น. · ' : '')}${esc(evTitle(lk.ev))}${lk.m ? ' · คู่ ' + lk.m.no : ''}</b><span>${esc((lk.m ? venueOf(lk.ev, lk.m) : lk.ev.venue) || '')}${(() => { const n = scLockCount(lk); return n ? ` · มาแล้ว ${n.got}/${n.all} คน` : ''; })()}</span></div>` : `<div class="scnow none"><b>ยังไม่ได้เลือกนัด</b><span>เลือกรายการแข่งของวันนี้ก่อน แล้วจึงสแกนบัตรนักกีฬาที่มาแสดงตัวที่สนาม</span></div>`}`; }
   if (SC.mode === 'judge') return `<div class="scctx">${vsel}${lsel('scjlock', SC.jlock, 'เลือกนัดที่จะลงชื่อกรรมการ')}</div>`;
   return '';
 }
