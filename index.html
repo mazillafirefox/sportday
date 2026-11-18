@@ -901,6 +901,14 @@ body.scovopen{overflow:hidden}
 .sfname{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) minmax(0,1fr);gap:8px}.sfdlg .fld{min-width:0}.sfdlg .fld input,.sfdlg .fld select{width:100%;min-width:0;box-sizing:border-box}.sfrow{display:flex;flex-wrap:wrap;gap:8px 10px}.sfrow .fld{flex:1 1 180px;margin:0}.sfrow .fld.grow{flex:2 1 260px}
 .sfsp{margin-top:8px}.sfsp summary{cursor:pointer;font-weight:600}.sfrole{display:flex;flex-wrap:wrap;width:auto;margin:4px 0}.sfrole label{cursor:pointer;padding:6px 12px;border-radius:999px;font-size:13px}.sfrole label.on{background:var(--blue,#1E5BC6);color:#fff}.sfrole input{position:absolute;opacity:0;pointer-events:none}
 @media(max-width:600px){.sftop{flex-direction:column;align-items:stretch}.sfph{align-self:center}.sfbody{width:100%}.sfname{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sfname .fld:first-child{grid-column:1/-1}}
+.ciaddb{align-self:flex-start;margin-top:4px}
+.ciadd{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:10px;border:1px dashed var(--line,#C9D3E3);border-radius:10px;background:var(--panel,#fff)}
+.ciadd input[type=search]{width:100%}.ciahits{display:flex;flex-direction:column;gap:2px;max-height:220px;overflow:auto}
+.cscl{display:flex;flex-direction:column;gap:6px;margin:8px 0}.cscrow{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:#FFF4E5}
+@media(max-width:600px){.cscrow{grid-template-columns:1fr}}
+.cscopt{align-items:flex-start;gap:8px;padding:6px 0}.cscopt span{display:flex;flex-direction:column;gap:2px}
+.brwarn b{display:block;margin-bottom:2px}.brcard .brrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-top:1px solid var(--line,#E3E8F0)}.brcard .brrow:hover{background:var(--panel2,#F4F6FA)}
+.rplayed{grid-column:1/-1;font-size:12px}.x.sure{width:auto;padding:0 8px;background:var(--bad,#C8102E);color:#fff;border-radius:8px;font-size:12px}
 </style>
 </head>
 <body>
@@ -1000,8 +1008,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.7', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.34.0', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.34.0', 'ตรวจสาย: เตือน (ไม่ห้าม) เมื่อสีลงในสายซ้ำ/มีสีที่ไม่อยู่ในสาย/คู่ที่สีเดียวกันพบกัน ที่ผังการแข่งขัน หน้าจัดการ (การ์ดรวม) แถวคู่แข่ง และหน้าต่างเริ่มแข่ง/บันทึกผล · แก้ผลย้อนหลังที่กระทบคู่ที่แข่งแล้ว: ผู้ดูแลเลือก “คงผลตามที่แข่งจริง (ล็อกทีม)” หรือ “ล้างผลให้แข่งใหม่” พร้อมเหตุผลและ PIN · รายงานตัว: เพิ่มนักกีฬาที่ไม่มีในรายชื่อได้หน้าสนาม (เต็มแล้วต้องเลือกคนที่ยังไม่ลงแข่งออก) · คนที่ลงแข่งแล้วลบออกจากรายชื่อไม่ได้ (ผู้ดูแลต้องยืนยัน)'],
   ['1.33.7', 'ปุ่มเริ่มแข่ง: ทึบ = พร้อมเริ่ม · ขอบ = ยังเริ่มไม่ได้ พร้อมบอกเหตุผลบนปุ่ม (สนามเต็ม / รอคิว) · คู่ที่กำลังแข่งมีปุ่ม “+ รายงานตัว” สำหรับนักกีฬาที่มาหลังเริ่มแข่ง'],
   ['1.33.6', 'แอปสแกน: แสดงเลขเวอร์ชันที่หัวแอป · โหมดตรวจบัตรไม่มีตัวเลือกสนาม/นัด (ใช้ได้ทุกวัน) · โหมดกรรมการบอกชัดว่าเลือกนัด = ลงชื่อ ไม่เลือก = ดูหน้าที่'],
   ['1.33.5', 'ปิดหน้าต่าง: รูปนักกีฬาที่บันทึกทันทีไม่ถูกถามว่ายังไม่บันทึกอีก · หน้าต่างพิมพ์เอกสาร/สำรองข้อมูล/ล้างข้อมูล และตัวกรอง/ตัวเลือกในรายชื่อไม่ถือเป็นข้อมูลค้าง · ฟอร์มบุคลากรบอกว่ารูปจะบันทึกเมื่อกดบันทึก (ลบรูปก็ถามก่อนปิด) · สแกนรายงานตัวในหน้าต่างแล้วปิดโดยไม่บันทึก ระบบเตือนก่อน'],
@@ -1417,11 +1426,68 @@ function medalTable() {
   return t;
 }
 function lastAt(ev) { return Math.max(ev.res?.at || 0, ...(ev.matches || []).map(m => m.at || 0)); }
-function dupColors(ev) {
-  if (ev.format !== 'ko') return [];
-  const seen = {}, out = new Set();
-  (ev.matches || []).forEach(m => [m.a, m.b].forEach(s => { if (s && Number.isInteger(s.c)) { if (seen[s.c]) out.add(s.c); seen[s.c] = 1; } }));
-  return [...out];
+function dupColors(ev) { return bracketIssues(ev).dup.map(x => x.c); }
+/* ตรวจสาย (เตือนเท่านั้น ไม่ห้ามดำเนินการ — การจัดอาจเป็นไปตามสูจิบัตรที่ประกาศแล้ว)
+   dup: สีที่ลงในสายแบบแบ่งสายมากกว่า 1 ช่อง · miss: สีที่ไม่มีในสายเลยเมื่อมีสีซ้ำ · same: คู่ที่ทั้งสองฝั่งเป็นคณะเดียวกัน */
+function bracketIssues(ev) {
+  const out = { dup: [], miss: [], same: [] }; if (!ev) return out;
+  (ev.matches || []).forEach(m => { const t = teamsOf(ev, m); if (t.a >= 0 && t.a === t.b) out.same.push({ m, c: t.a }); });
+  if (ev.format === 'ko') {
+    const at = {}; (ev.matches || []).forEach(m => ['a', 'b'].forEach(sd => { const sl = m[sd]; if (sl && Number.isInteger(sl.c) && !sl.was) (at[sl.c] = at[sl.c] || []).push(m.no); }));
+    out.dup = Object.entries(at).filter(([, l]) => l.length > 1).map(([c, l]) => ({ c: +c, nos: l }));
+    if (out.dup.length) out.miss = COLORS.map((_, i) => i).filter(c => !at[c]);
+  }
+  return out;
+}
+const hasBracketIssue = ev => { const b = bracketIssues(ev); return b.dup.length || b.same.length; };
+function bracketWarnHTML(ev, cls = 'warn') { const b = bracketIssues(ev); if (!b.dup.length && !b.same.length) return '';
+  return `<div class="${cls} brwarn"><b>⚠ ตรวจสายการแข่งขัน</b>${b.dup.map(x => `<div class="sm">คณะ${esc(COLORS[x.c].n)} อยู่ในสาย ${x.nos.length} ช่อง (คู่ ${x.nos.join(', ')})</div>`).join('')}${b.miss.length ? `<div class="sm">ไม่มีในสาย: ${b.miss.map(c => 'คณะ' + esc(COLORS[c].n)).join(', ')}</div>` : ''}${b.same.map(x => `<div class="sm"><b>คู่ ${x.m.no}${x.m.round ? ' ' + esc(x.m.round) : ''}: คณะ${esc(COLORS[x.c].n)} พบคณะ${esc(COLORS[x.c].n)}</b></div>`).join('')}<div class="muted sm">ระบบเตือนเท่านั้น ไม่ห้ามแข่งหรือบันทึกผล ถ้าคณะกรรมการตัดสินให้แก้สาย แก้ทีมในคู่นั้นได้ที่หน้าจัดการแข่งขัน</div></div>`; }
+/* คำเตือนในหน้าต่างเริ่มแข่ง/บันทึกผล: สีเดียวกันพบกัน · ทีมที่ล็อกไว้ · นัดแข่งใหม่ */
+function matchWarnHTML(ev, m) { const t = teamsOf(ev, m); let h = '';
+  if (t.a >= 0 && t.a === t.b) h += `<div class="qwarn"><b>⚠ คณะ${esc(COLORS[t.a].n)} พบคณะ${esc(COLORS[t.a].n)}</b><div class="sm">สายการแข่งขันทำให้ทีมเดียวกันมาพบกันเอง ตรวจกับคณะกรรมการก่อนแข่ง ระบบไม่ห้ามดำเนินการ</div></div>`;
+  ['a', 'b'].forEach(sd => { const sl = m[sd]; if (sl?.was) h += `<p class="muted sm">🔒 ฝั่ง${sd === 'a' ? 'ซ้าย' : 'ขวา'} ล็อกเป็นคณะ${esc(COLORS[sl.c].n)} ตามที่แข่งจริง (เดิม: ${esc(slotLabel(ev, sl.was))})${sl.why ? ' · ' + esc(sl.why) : ''}</p>`; });
+  if (m.replay && !sideWin(m)) h += `<p class="warn sm">↻ นัดแข่งใหม่ หลังแก้ผลคู่ก่อนหน้า${m.replay.why ? ': ' + esc(m.replay.why) : ''}</p>`;
+  return h; }
+const sameColorPill = (ev, m) => { const t = teamsOf(ev, m); return t.a >= 0 && t.a === t.b ? `<span class="pill bad" title="ทั้งสองฝั่งเป็นคณะเดียวกัน ตรวจกับคณะกรรมการ">⚠ สีเดียวกัน</span>` : ''; };
+
+/* ---- แก้ผลย้อนหลังที่กระทบคู่ที่แข่งไปแล้ว ----
+   ทีมในรอบถัดไปคำนวณจากผลคู่ก่อนหน้าเสมอ ถ้าเปลี่ยนผู้ชนะ/ผู้แพ้ของคู่ที่ส่งทีมไปคู่ที่แข่งแล้ว
+   คะแนนของคู่นั้นจะไปตกกับทีมที่ไม่ได้ลงแข่งจริง จึงต้องให้ผู้ดูแลเลือกวิธีจัดการก่อน */
+const MATCH_RESULT_KEYS = ['w', 'auto', 'sa', 'sb', 'sets', 'note', 'endedAt', 'startedAt', 'live', 'liveAt', 'forfeit', 'ci', 'ciOk', 'ciLate', 'ciPost', 'ciBy', 'ciAt', 'ciDay', 'startedBy', 'jd', 'skipQ'];
+function cascadeOf(eid, mid, set, unset) {
+  const ev0 = evById(eid); const played = x => started(x) || !!sideWin(x);
+  const T = e => Object.fromEntries((e.matches || []).map(x => [x.id, teamsOf(e, x)]));
+  const t0 = T(ev0); const ev1 = clone(ev0); const m1 = mOf(ev1, mid); (unset || []).forEach(k => delete m1[k]); Object.assign(m1, set || {});
+  const changed = e => { const t1 = T(e); return (e.matches || []).filter(x => x.id !== mid && played(x) && (t1[x.id].a !== t0[x.id].a || t1[x.id].b !== t0[x.id].b)).map(x => ({ id: x.id, no: x.no, round: x.round || '', from: t0[x.id], to: t1[x.id] })); };
+  const direct = changed(ev1);
+  /* ทางเลือก “แข่งใหม่”: ล้างผลคู่ที่กระทบ แล้วไล่ต่อไปยังคู่ถัดไปที่ทีมเปลี่ยนตาม */
+  const ev2 = clone(ev1); const clear = []; for (let i = 0; i < 30; i++) { const l = changed(ev2).filter(x => !clear.some(y => y.id === x.id)); if (!l.length) break; l.forEach(x => { clear.push(x); const mm = mOf(ev2, x.id); MATCH_RESULT_KEYS.forEach(k => delete mm[k]); }); }
+  return { direct, clear };
+}
+function guardCascade(eid, mid, set, unset, go, what, plain = go) {
+  const ev = evById(eid); const cs = cascadeOf(eid, mid, set, unset); if (!cs.direct.length) { plain(); return; }
+  const tl = t => `${chip(t.a, { ph: '?' })} <span class="muted">พบ</span> ${chip(t.b, { ph: '?' })}`;
+  const rows = cs.direct.map(x => `<div class="cscrow"><b>คู่ ${x.no}${x.round ? ' · ' + esc(x.round) : ''}</b><span>แข่งจริง: ${tl(x.from)}</span><span>ถ้าแก้ผล: ${tl(x.to)}</span></div>`).join('');
+  const extra = cs.clear.filter(x => !cs.direct.some(y => y.id === x.id));
+  modal(`<div class="dlg wide"><h3>⚠ ${esc(what)} กระทบคู่ที่แข่งไปแล้ว</h3>
+    <p>ผลคู่นี้ส่งทีมไปยังคู่ที่<b>เริ่มแข่งหรือมีผลแล้ว</b> ถ้าแก้ผลโดยไม่จัดการ คะแนนของคู่นั้นจะไปเป็นของทีมที่ไม่ได้ลงแข่งจริง</p>
+    <div class="cscl">${rows}</div>
+    ${isAdmin() ? `<fieldset class="win"><legend>เลือกวิธีจัดการตามมติคณะกรรมการ</legend>
+      <label class="ck cscopt"><input type="radio" name="csc" value="keep" checked><span><b>คงผลคู่ที่แข่งไปแล้วไว้</b><small class="muted">ล็อกทีมในคู่ ${cs.direct.map(x => x.no).join(', ')} ตามที่ลงแข่งจริง ผลและคะแนนเดิมไม่เปลี่ยน · ทีมที่ได้ผลใหม่จะไม่ถูกส่งเข้าคู่นั้น (ตรวจสายอีกครั้งหลังแก้)</small></span></label>
+      <label class="ck cscopt"><input type="radio" name="csc" value="replay"><span><b>ล้างผลให้แข่งใหม่</b><small class="muted">ล้างผล การเริ่มแข่ง และการรายงานตัวของคู่ ${cs.clear.map(x => x.no).join(', ')}${extra.length ? ` (รวมคู่ ${extra.map(x => x.no).join(', ')} ที่ใช้ผลต่อกัน)` : ''} ทีมใหม่จะเข้าคู่แทน แล้วนัดแข่งใหม่ · ใบเหลือง/แดงที่ให้ไปแล้วยังคงอยู่</small></span></label>
+    </fieldset><label class="fld">เหตุผล / มติคณะกรรมการ<input id="cscwhy" placeholder="เช่น มติกรรมการ 18 พ.ย. แก้ผลคู่ 2 ตามคำร้อง"></label>` : '<p class="err">แก้ผลนี้ได้เฉพาะผู้ดูแลระบบ ตามมติคณะกรรมการจัดการแข่งขัน</p>'}
+    <p class="err" id="err"></p><div class="actions">${isAdmin() ? '<button class="btn" id="cscgo">ดำเนินการต่อ</button>' : ''}<button class="btn ghost" data-close>ยกเลิก</button></div></div>`);
+  $('#cscgo')?.addEventListener('click', () => { const how = document.querySelector('[name=csc]:checked')?.value; const why = $('#cscwhy').value.trim();
+    if (!why) { $('#err').textContent = 'ใส่เหตุผลหรือมติคณะกรรมการก่อน'; return; }
+    const l = (how === 'keep' ? cs.direct : cs.clear).map(x => 'คู่ ' + x.no).join(', ');
+    askFinal(`<b>${esc(what)}: ${esc(evTitle(ev))} คู่ ${mOf(ev, mid).no}</b><div>${how === 'keep' ? `คงผล ${l} ตามที่แข่งจริง (ล็อกทีม)` : `ล้างผล ${l} ให้แข่งใหม่`}</div><div class="muted sm">${esc(why)}</div>`, () => {
+      const at = Date.now(), by = myStamp();
+      if (how === 'keep') cs.direct.forEach(x => { const mm = mOf(evById(eid), x.id); const set = {}; ['a', 'b'].forEach(sd => { if (x.from[sd] !== x.to[sd] && x.from[sd] >= 0) set[sd] = { c: x.from[sd], was: mm[sd], pinAt: at, pinBy: by, why }; });
+        recUndo('ล็อกทีมตามที่แข่งจริง', `${evTitle(ev)} คู่ ${x.no} · ${why}`, patchEv({ eid, mid: x.id, set })); });
+      else cs.clear.forEach(x => recUndo('ล้างผลให้แข่งใหม่', `${evTitle(ev)} คู่ ${x.no} · ${why}`, patchEv({ eid, mid: x.id, unset: MATCH_RESULT_KEYS, set: { replay: { at, by, why, from: x.from } } })));
+      go();
+    }, 'ยืนยัน', { forcePin: true, word: 'ยืนยัน' });
+  });
 }
 
 /* ===================== ตัวจับคู่อัตโนมัติ ===================== */
@@ -1862,8 +1928,10 @@ function bannedSet() {
   return b;
 }
 const isBanned = (c, p, B) => (B || bannedSet()).has(c + '|' + fnv(pkey(p)));
-function matchFlags(m) {
-  let f = '';
+function matchFlags(m, ev) {
+  let f = ev ? sameColorPill(ev, m) : '';
+  if ((m.a?.was || m.b?.was)) f += `<span class="pill" title="ล็อกทีมตามที่แข่งจริง หลังแก้ผลคู่ก่อนหน้า${esc(' · ' + ((m.a?.was ? m.a : m.b).why || ''))}">🔒 ทีมตามที่แข่งจริง</span>`;
+  if (m.replay && !sideWin(m)) f += `<span class="pill warnp" title="${esc(m.replay.why || '')}">↻ แข่งใหม่</span>`;
   const reds = (m.cards || []).filter(c => c.type !== 'Y').length, yel = (m.cards || []).filter(c => c.type === 'Y').length;
   if (yel) f += `<span class="cdf y" title="ใบเหลือง">${yel}</span>`;
   if (reds) f += `<span class="cdf r" title="ใบแดง">${reds}</span>`;
@@ -2147,6 +2215,9 @@ function allStudents() { const out = []; Object.values(S.students || {}).forEach
 const stName = st => `${st.pre || ''}${st.fn || ''} ${st.ln || ''}`.trim();
 function colorOfRoom(cls) { const cl = S.meta.classes || {}; for (const k of Object.keys(cl)) if ((cl[k] || []).includes(cls)) return +k; return -1; }
 function roomsAll() { const set = new Set([...Object.values(S.students || {}).map(d => d.cls), ...(UI.extraRooms || [])]); Object.values(S.meta.classes || {}).forEach(l => (l || []).forEach(r => set.add(r))); return [...set].filter(r => /^\d\/\d+$/.test(r)).sort(clsSort); }
+/* นักกีฬาคนนี้รายงานตัว/ลงแข่งในรายการนี้ไปแล้วหรือยัง (ดูจากการรายงานตัวทุกคู่และทุกวัน) */
+function playedIn(ev, pid) { const inCi = ci => Object.values(ci || {}).some(l => (l || []).includes(pid));
+  return (ev.matches || []).some(m => inCi(m.ci)) || inCi(ev.ci) || Object.values(ev.ciDays || {}).some(inCi); }
 function eligible(ev, c) {
   const rooms = new Set(S.meta.classes?.[c] || []); const g = ev.age && chkOn('age') ? AGES()[ev.age] : null; const sex = chkOn('sex') && (ev.gender === 'ชาย' || ev.gender === 'หญิง') ? ev.gender : null;
   return allStudents().filter(st => (!chkOn('room') || !rooms.size || rooms.has(st.cls)) && (!g || g.includes(+st.cls.split('/')[0])) && (!sex || st.sex === sex));
@@ -2308,7 +2379,7 @@ function matchRow(ev, m, compact) {
   const t = teamsOf(ev, m); const s = sideWin(m); const st = mState(ev, m); const lv = st.k === 'live';
   const hasSc = m.sa !== undefined && m.sa !== '' || m.sb !== undefined && m.sb !== '';
   const score = s ? `<span class="sc num">${esc(m.sa ?? '')}<i>–</i>${esc(m.sb ?? '')}</span>` : lv && hasSc ? `<span class="sc num lvsc">${esc(m.sa || 0)}<i>–</i>${esc(m.sb || 0)}</span>` : '<span class="sc vs">VS</span>';
-  const ed = editOn && canScore(ev.sport); const flags = matchFlags(m); const btn = compact ? '' : rowButtons(ev, m, st);
+  const ed = editOn && canScore(ev.sport); const flags = matchFlags(m, ev); const btn = compact ? '' : rowButtons(ev, m, st);
   const nx = !['live', 'done'].includes(st.k) && isNext(ev, m); const nxp = nx ? '<span class="pill nextp">ถัดไป</span>' : '';
   const scls = compact && !['live', 'done'].includes(st.k) ? '' : STATE_CLS[st.k] || '';
   const pm = playedMin(m); const du = durOf(ev, venueOf(ev, m)); const over = lv && pm != null && pm > du + 5;
@@ -2426,7 +2497,7 @@ function vMap() {
     <div class="maptools">${ev.medal ? `<div class="pod">${medalLine(medalsOf(ev))}</div>` : ''}
       <div class="seg mini">${[['auto', 'อัตโนมัติ'], ['h', 'แนวนอน'], ['v', 'แนวตั้ง']].map(([k, n]) => `<button data-orient="${k}" class="${(UI.mapOrient || 'auto') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       <button class="btn sm ghost" data-act="fs">${document.fullscreenElement ? 'ออกจากเต็มจอ' : 'เต็มจอ'}</button></div></div>
-    ${dupColors(ev).length ? `<p class="warn">คณะ${dupColors(ev).map(c => COLORS[c].n).join(', ')} ปรากฏซ้ำในสายนี้ (ตรงกับสูจิบัตร) ตรวจกับฝ่ายจัดการแข่งขัน แล้วแก้ที่ “จัดการการแข่งขัน › ตารางคู่”</p>` : ''}
+    ${bracketWarnHTML(ev)}
     ${mindMap(ev)}${extraPanel(ev)}</section>` : '<p class="muted">ชนิดกีฬานี้ยังไม่มีรายการแข่งขัน</p>'}`;
 }
 /* ---- ผังแบบ mind map เดียวกันทุกรูปแบบ: การ์ดรายการอยู่กลาง → รอบ/คู่แข่งขัน → ทีม ---- */
@@ -2731,7 +2802,7 @@ function vCheckin() {
     <span class="tcol"><b class="tt num">${esc(m.time || '–')}</b><small class="pmin">รายงานตัว ${ciAt != null ? toTime(ciAt) : '–'}</small>${lv ? `<span class="tst live"><i></i>กำลังแข่ง</span>` : s ? '<span class="tst done">✓ จบแล้ว</span>' : ''}${pm != null ? `<small class="pmin">${lv ? 'แข่งมา' : 'ใช้เวลา'} ${pm} นาที</small>` : ''}</span>
     <span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b><small>คู่ ${m.no}${venueOf(ev, m) ? ' · ' + esc(venueOf(ev, m)) : ''}</small></span>
     <span class="ta">${side(ev, m, 'a', t.a)}</span>${sc}<span class="tb">${side(ev, m, 'b', t.b)}</span>
-    <span class="ncol">${soon ? `<span class="pill cip">เปิดรายงานตัวอีก ${ciAt - now} นาที</span>` : lv || s ? matchFlags(m) : statePill(ev, m, st)}</span>${ed ? `<span class="rbtns">${rowButtons(ev, m, st)}</span>` : ''}</div>`; };
+    <span class="ncol">${soon ? `<span class="pill cip">เปิดรายงานตัวอีก ${ciAt - now} นาที</span>` : lv || s ? matchFlags(m, ev) : sameColorPill(ev, m) + statePill(ev, m, st)}</span>${ed ? `<span class="rbtns">${rowButtons(ev, m, st)}</span>` : ''}</div>`; };
   /* แบ่งกลุ่ม: ต้องรายงานตัวตอนนี้ → ใกล้ถึงเวลา → กำลังแข่ง → ภายหลัง → จบแล้ว */
   const NOW = ['checkin', 'ready', 'waiting', 'delay', 'hold', 'forfeit'];
   const g = { now: [], soon: [], live: [], later: [], done: [] };
@@ -3768,6 +3839,12 @@ function goStep(k, eid, force) {
   closeModal(); resetModalHandlers(); WIZ = eid;
   ({ set: () => openEvent(eid), draw: () => openDraw(eid), time: () => openSchedule(eid), check: () => openMatchList(eid) })[k]?.();
 }
+/* รวมรายการที่สายแข่งมีสีซ้ำ หรือมีคู่ที่สีเดียวกันพบกัน (เตือนเท่านั้น) */
+function brAuditCard() {
+  const l = Object.entries(S.events).map(([id, e]) => ({ id, ...e })).filter(hasBracketIssue).sort((a, b) => (a.order || 0) - (b.order || 0)); if (!l.length) return '';
+  return `<section class="card brcard"><h2>⚠ ตรวจสายการแข่งขัน <small class="muted">${l.length} รายการ</small></h2><p class="muted sm">ระบบเตือนเท่านั้น ไม่ห้ามแข่งหรือบันทึกผล เพราะการจัดสายอาจเป็นไปตามสูจิบัตรที่ประกาศแล้ว ให้ตรวจกับคณะกรรมการ</p>
+    ${l.map(e => { const b = bracketIssues(e); return `<div class="brrow click" data-open="${e.id}" tabindex="0">${sIcon(e.sport, 'sm')}<b>${esc(sportName(e.sport))} ${esc(e.label)}</b><span class="sm">${b.same.map(x => `<b class="errt">คู่ ${x.m.no}: ${esc(COLORS[x.c].n)} พบ ${esc(COLORS[x.c].n)}</b>`).concat(b.dup.map(x => `${esc(COLORS[x.c].n)} อยู่ ${x.nos.length} ช่อง (คู่ ${x.nos.join(', ')})`)).concat(b.miss.length ? [`ไม่มี: ${b.miss.map(c => esc(COLORS[c].n)).join(', ')}`] : []).join(' · ')}</span></div>`; }).join('')}</section>`;
+}
 function vAdmin() {
   if (!isAdmin()) return '<p class="muted">หน้านี้สำหรับผู้ดูแลระบบ</p>';
   const sps = sportsList(); if (!UI.adSport || !S.sports[UI.adSport]) UI.adSport = sps[0]?.id;
@@ -3788,6 +3865,7 @@ function vAdmin() {
       ${mode === 'local' || (mode === 'shared' && !sb) ? `<label class="ck cbx"><input type="checkbox" id="pinCf" ${S.meta.pinConfirm === false ? '' : 'checked'}> ใส่ PIN ยืนยันเมื่อจบเกม/ยืนยันผล</label>` : ''}
     </div>
     <div class="actions"><button class="btn sm" data-act="savemeta">บันทึกกติกา</button><button class="btn sm ghost" data-act="gorules">กติกานักกีฬา (รุ่นอายุ · จำนวนรายการต่อคน)</button></div></section>
+  ${brAuditCard()}
   <div class="adgrid"><section class="card"><h2>ชนิดกีฬา</h2><div class="splist">${sps.map(s => `<div class="sprow ${s.id === UI.adSport ? 'on' : ''}" data-adsport="${s.id}" tabindex="0"><span>${sIcon(s.id)}${esc(s.name)}</span><span class="muted num">${eventsOf(s.id).length}</span></div>`).join('')}</div>
     <div class="actions"><button class="btn sm" data-act="addsport">+ เพิ่มชนิดกีฬา</button></div></section>
   <section class="card">${sp ? `<div class="maphead"><div><h2 class="sh">${sIcon(sp.id, 'tile')}${esc(sp.name)}</h2><p class="muted sm">${esc(scoringText(sp))} · ส่งรายชื่อได้ ${sp.rosterMax ?? 0} คน · ตัวจริง ${sp.starters ?? 0} คน${sp.dur ? ' · ' + sp.dur + ' นาทีต่อนัด' : ''}</p></div>
@@ -3796,7 +3874,7 @@ function vAdmin() {
       <ol class="howlist"><li><b>เพิ่มรายการ</b> ตั้งชื่อรุ่น เลือกรูปแบบการแข่งและคณะสีที่ร่วมแข่ง</li><li><b>จับคู่</b> ให้ระบบสุ่ม หรือกำหนดลำดับทีมเอง</li><li><b>จัดเวลา</b> ระบบไล่ใส่วัน เวลา และสนามให้ทุกคู่</li><li><b>ตรวจตารางคู่</b> แก้รายคู่ได้ แล้วกด “ยืนยันพร้อมแข่ง”</li></ol>
       <p class="muted sm">หลังกดเพิ่มรายการ ระบบจะพาไปทีละขั้นให้เอง และกลับมาทำขั้นที่ค้างได้จากปุ่ม “ขั้นต่อไป” ของแต่ละรายการ · รายการแบบจัดอันดับ (กรีฑา) และกรรมการให้คะแนน ไม่ต้องจับคู่ แค่กำหนดวันแข่ง</p></details>
     ${AF.html}<div class="evtable">${evs.map(e => { const nm = (e.matches || []).length; const noTime = (e.matches || []).filter(m => !m.date || !m.time).length; const nx = evSteps(e).find(x => !x.done); return `<div class="evrow">
-      <div><b>${esc(e.label)}</b><small class="muted"> · ${FORMATS[e.format]}${e.medal ? '' : ' · ไม่นับเหรียญ'} · ${(e.teams || []).length} ทีม${nm ? ` · ${nm} นัด` : ''}</small>${noTime ? `<small class="warnt"> · ${noTime} นัดยังไม่กำหนดเวลา</small>` : ''}${dupColors(e).length ? '<small class="warnt"> · สีซ้ำในสาย</small>' : ''}${stepper(e)}</div>
+      <div><b>${esc(e.label)}</b><small class="muted"> · ${FORMATS[e.format]}${e.medal ? '' : ' · ไม่นับเหรียญ'} · ${(e.teams || []).length} ทีม${nm ? ` · ${nm} นัด` : ''}</small>${noTime ? `<small class="warnt"> · ${noTime} นัดยังไม่กำหนดเวลา</small>` : ''}${hasBracketIssue(e) ? `<small class="warnt"> · ${bracketIssues(e).same.length ? 'มีคู่สีเดียวกันพบกัน' : 'สีซ้ำในสาย'}</small>` : ''}${stepper(e)}</div>
       <div class="evact">${nx ? `<button class="btn sm" ${nx.act} data-wiz="1">ขั้นต่อไป: ${nx.n}</button>` : '<span class="pill done big">พร้อมแข่ง</span>'}
       <details class="menu"><summary class="btn sm ghost">จัดการ ▾</summary><div class="menupop">
       ${['ko', 'rr', 'rrko'].includes(e.format) ? `<button data-draw="${e.id}">จับคู่ใหม่</button><button data-sched="${e.id}">จัดเวลาอัตโนมัติ</button><button data-mlist="${e.id}">ตารางคู่ (แก้รายคู่)</button>` : ''}
@@ -4247,7 +4325,7 @@ function tryClose() {
   closeModal(); resetModalHandlers();
 }
 /* ช่องที่ไม่ถือเป็น “ข้อมูลค้าง”: ช่องค้นหา ตัวกรอง ตัวเลือกก่อนเพิ่ม ช่องสแกน และหน้าต่างที่บันทึกทันที/พิมพ์อย่างเดียว (ติด data-nodirty ที่ตัวหน้าต่าง) */
-const NODIRTY = '#stpick,[type=search],#rsc,#cit,[data-pkf],[data-pksel],[data-pkall],[data-nodirty]';
+const NODIRTY = '#stpick,[type=search],#rsc,#cit,[name=ciasel],#ciaout,[data-pkf],[data-pksel],[data-pkall],[data-nodirty]';
 ['input', 'change'].forEach(t => $('#modal').addEventListener(t, e => { if (!e.target.closest(NODIRTY)) { mDirty = true; $('#dirtybar')?.remove(); } }, true));
 /* กันกดซ้ำ: ฟอร์มส่งได้ครั้งเดียวในช่วงสั้น ๆ และปุ่มหลักกดซ้ำเร็ว ๆ ไม่ได้ */
 $('#modal').addEventListener('submit', e => { const f = e.target; if (f.dataset.nobusy != null) return; if (f.dataset.busy) { e.preventDefault(); e.stopImmediatePropagation(); return; } f.dataset.busy = '1'; setTimeout(() => { if (f.querySelector('.err')?.textContent) delete f.dataset.busy; }, 0); setTimeout(() => { delete f.dataset.busy; }, 900); }, true);
@@ -4319,7 +4397,7 @@ function openResult(eid, mid) {
   const TYPES = { Y: 'ใบเหลือง', R: 'ใบแดง (ออกจากนัดนี้)', B: 'ใบแดง ตัดสิทธิ์ทุกรายการ (ข้อ 6)' };
   const cardList = () => cards.map((cd, i) => `<div class="cdrow"><span class="cdf ${cd.type === 'Y' ? 'y' : 'r'}"></span>${chip(cd.c)} ${esc(cardName(cd))} <small class="muted">${TYPES[cd.type]}${cd.note ? ' · ' + esc(cd.note) : ''}</small><button type="button" class="x" data-cdrm="${i}" aria-label="ลบ">×</button></div>`).join('') || '<p class="muted sm">ไม่มี</p>';
   const fz = m.forfeit && sideWin(m) ? t[m.forfeit] : null; const deps = fz != null ? depMatches(ev, mid) : [];
-  modal(`<form class="dlg wide" id="mf"><h3>${esc(evTitle(ev))} · คู่ ${m.no} ${esc(m.round || '')}</h3>
+  modal(`<form class="dlg wide" id="mf"><h3>${esc(evTitle(ev))} · คู่ ${m.no} ${esc(m.round || '')}</h3>${matchWarnHTML(ev, m)}
     ${m.protest?.status === 'upheld' && m.protest.outcome === 'edit' && !m.protest.editedAt ? `<div class="qwarn"><b>⚑ แก้ผลตามมติคณะกรรมการ</b><div class="sm">${esc(m.protest.decision || '')}</div><p class="muted sm">แก้คะแนน/ผู้ชนะด้านล่าง แล้วกด “บันทึกการแก้ไขผล” และยืนยันด้วย PIN</p></div>` : ''}
     ${fz != null ? `<div class="forfbox"><div><b>ปรับแพ้แล้ว:</b> ${chip(fz)} สละสิทธิ์${m.by ? ` · โดย ${esc(nameOf(m.by))}` : ''}${m.endedAt ? ` · ${new Date(m.endedAt).toTimeString().slice(0, 5)} น.` : ''}</div>
       ${deps.length ? `<p class="muted sm">ยกเลิกไม่ได้แล้ว: ${deps.map(x => 'คู่ ' + x.no).join(', ')} ที่ใช้ผลคู่นี้เริ่มแข่งหรือมีผลแล้ว</p>` : `<button type="button" class="btn sm ghost danger" id="unforf">ยกเลิกการปรับแพ้</button>`}</div>` : ''}
@@ -4386,9 +4464,10 @@ function openResult(eid, mid) {
     const f = extras({ w, auto, sa, sb, endedAt: m.endedAt || Date.now() });
     const nm = sd => t[sd] >= 0 ? 'คณะ' + esc(COLORS[t[sd]].n) : esc(slotLabel(ev, m[sd]));
     const sum = `<b>${sideWin(m) ? 'แก้ไขผล' : 'จบเกม'}: ${esc(evTitle(ev))} คู่ ${m.no}</b><div class="cfline">${chip(t.a, { ph: slotLabel(ev, m.a) })}<b class="num">${esc(sa || '–')} – ${esc(sb || '–')}</b>${chip(t.b, { ph: slotLabel(ev, m.b) })}</div><div>${w === 'd' ? 'ผล: <b>เสมอ</b>' : `ผู้ชนะ: <b>${nm(w)}</b>`}${SET ? ' (เซต)' : ''}${f.note ? ' · ' + esc(f.note) : ''}</div>`;
-    askFinal(sum, () => save(f, sideWin(m) ? 'แก้ไขผล' : 'จบเกม · บันทึกผล'), sideWin(m) ? 'ยืนยันแก้ไขผล' : 'ยืนยันจบเกม');
+    const doIt = () => askFinal(sum, () => save(f, sideWin(m) ? 'แก้ไขผล' : 'จบเกม · บันทึกผล'), sideWin(m) ? 'ยืนยันแก้ไขผล' : 'ยืนยันจบเกม');
+    if (sideWin(m)) guardCascade(eid, mid, f, ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], () => save(f, 'แก้ไขผล'), 'แก้ไขผล', doIt); else doIt();
   };
-  $('#clr')?.addEventListener('click', () => { const f = {}; if (cards.length) f.cards = cards; if (m.ci) f.ci = m.ci; save(f, 'ล้างผล'); });
+  $('#clr')?.addEventListener('click', () => { const f = {}; if (cards.length) f.cards = cards; if (m.ci) f.ci = m.ci; guardCascade(eid, mid, f, ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], () => save(f, 'ล้างผล'), 'ล้างผล'); });
   protestUI(eid, mid);
   $('#gostart')?.addEventListener('click', () => openStart(eid, mid));
   $('#goforf')?.addEventListener('click', () => openForfeit(eid, mid));
@@ -4479,7 +4558,7 @@ function openStart(eid, mid) {
     const pend = v && !full ? earlierPending(v, evById(eid), m2) : []; const queued = pend.length && busy.length + pend.length >= courtsOf(v); const blockQ = queued && !skipQ;
     const ph = protHold(evById(eid), m2);
     const ready = !full && !blockQ && !ph.length && ['a', 'b'].every(sd => ciInfo(evById(eid), m2, sd).ok || ok[sd]);
-    $('#modal').innerHTML = `<div class="dlg wide"><h3>เริ่มการแข่งขัน · ${esc(evTitle(ev))} คู่ ${m.no}</h3>
+    $('#modal').innerHTML = `<div class="dlg wide"><h3>เริ่มการแข่งขัน · ${esc(evTitle(ev))} คู่ ${m.no}</h3>${matchWarnHTML(evById(eid), m2)}
       <p class="muted sm">กติกาสูจิบัตร: นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${S.meta.checkinMin ?? 20} นาที · ต้องมีตัวจริงครบ ${starters(ev)} คนจึงเริ่มแข่งได้ · ไม่ลงแข่งภายใน ${S.meta.forfeitMin ?? 10} นาทีหลังคู่ก่อนหน้าจบ ถือว่าสละสิทธิ์ (ข้อ 4)</p>
       <div class="stgrid">${side('a')}${side('b')}</div>
       <p class="sm">${statePill(ev, m2, st)}${st.prev && !sideWin(st.prev.m) ? ` คู่ก่อนหน้าที่สนามนี้ (${esc(evTitle(st.prev.ev))} คู่ ${st.prev.m.no}) ยังไม่จบ` : ''}</p>
@@ -4614,7 +4693,7 @@ function openRoster(eid, focusKey) {
       ${ro ? '<p class="muted sm">ดูได้อย่างเดียว เฉพาะครูคณะสีนี้หรือผู้ดูแลที่แก้ไขได้</p>' : ''}
       ${r.players.some(p => p.sid || p.fromList) && !lock ? '<p class="muted sm">🔒 คนที่เลือกจากรายชื่อนักเรียน แก้ได้เฉพาะเบอร์เสื้อ ถ้าเลือกผิดคนให้กด × แล้วเลือกใหม่</p>' : ''}<div class="rtable">${r.players.map((p, i) => `<div class="rline${p.sid || p.fromList ? ' fromlist' : ''}${focusKey && pkey(p) === focusKey ? ' focus' : ''}"><span class="num muted">${i + 1}</span><input data-pf="${i}|name" value="${esc(p.name)}" placeholder="ชื่อ-สกุล" aria-label="ชื่อ-สกุล" ${lock ? 'disabled' : p.sid || p.fromList ? 'readonly tabindex="-1" title="ข้อมูลจากรายชื่อนักเรียน แก้ไม่ได้ ถ้าเลือกผิดคนให้ลบแล้วเลือกใหม่"' : ''}><input data-pf="${i}|cls" class="num" value="${esc(p.cls)}" placeholder="ชั้น 3/6" aria-label="ชั้น" ${lock ? 'disabled' : p.sid || p.fromList ? 'readonly tabindex="-1"' : ''}><input data-pf="${i}|num" class="num" value="${esc(p.num ?? '')}" placeholder="เบอร์" aria-label="เบอร์เสื้อ" ${lock ? 'disabled' : ''}>
         <select data-pf="${i}|sex" aria-label="เพศ" ${lock || p.sid || p.fromList ? 'disabled' : ''}><option value="">เพศ</option><option ${p.sex === 'ชาย' ? 'selected' : ''}>ชาย</option><option ${p.sex === 'หญิง' ? 'selected' : ''}>หญิง</option></select>
-        ${lock ? '<span></span>' : `<button class="x" data-prm="${i}" aria-label="ลบแถว">×</button>`}${errsAll[i].length ? `<small class="errt">${errsAll[i].map(esc).join(' · ')}</small>` : ''}${clashTxt(p)}</div>`).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
+        ${lock ? '<span></span>' : `<button class="x" data-prm="${i}" aria-label="ลบแถว">×</button>`}${errsAll[i].length ? `<small class="errt">${errsAll[i].map(esc).join(' · ')}</small>` : ''}${clashTxt(p)}${p.id && playedIn(ev, p.id) ? '<small class="okt rplayed">✓ รายงานตัว/ลงแข่งแล้ว</small>' : ''}${p.late ? `<small class="muted rplayed">เพิ่มหน้าสนาม${p.late.out ? ' แทน ' + esc(p.late.out) : ''}</small>` : ''}</div>`).join('') || '<p class="muted">ยังไม่มีรายชื่อ</p>'}</div>
       ${lock || !allStudents().length ? '' : `<div class="picker"><label class="fld"><span>เลือกจากรายชื่อนักเรียนคณะ${COLORS[c].n}${ev.age ? ` (ม.${AGES()[ev.age].join(', ')})` : ''}${gendered ? ' · ' + ev.gender : ''}</span>${qbox('stpick', UI.pickq, 'พิมพ์ชื่อ ห้อง หรือเลขประจำตัว')}</label><div id="pickhits">${pickHits()}</div></div>`}
       ${lock ? '' : `<div class="actions"><button class="btn sm ghost" id="addp">+ เพิ่มแถวพิมพ์เอง</button></div>
       <details class="mt"><summary>วางรายชื่อจาก Excel</summary><p class="muted sm">คอลัมน์: ชื่อ-สกุล · ชั้น · เบอร์เสื้อ · เพศ (คั่นด้วยแท็บหรือจุลภาค) หนึ่งคนต่อบรรทัด ถ้าชื่อมีคำนำหน้า (ด.ช./ด.ญ./นาย/นางสาว) ระบบเติมเพศให้</p><textarea id="paste" rows="5"></textarea><button class="btn sm" id="dopaste">เพิ่มจากข้อความ</button></details>`}
@@ -4682,7 +4761,10 @@ function openRoster(eid, focusKey) {
     if (dd.pkall != null) { const on = e.target.checked; document.querySelectorAll('#pickhits [data-pksel]:not(:disabled)').forEach(x => on ? PSEL.add(x.dataset.pksel) : PSEL.delete(x.dataset.pksel)); repick(); return; }
     if (e.target.dataset.pf) setTimeout(() => { const a = document.activeElement?.dataset?.pf; draw(); if (a) $(`#modal [data-pf="${a}"]`)?.focus(); }, 0); };
   $('#modal').onclick = e => {
-    const b = e.target.closest('[data-prm]'); if (b) { r.players.splice(+b.dataset.prm, 1); draw(); mDirty = true; return; }
+    const b = e.target.closest('[data-prm]'); if (b) { const i = +b.dataset.prm; const pl = r.players[i]; const rm = () => { r.players.splice(i, 1); draw(); mDirty = true; };
+      if (pl?.id && playedIn(evById(eid), pl.id)) { if (!isAdmin()) { toast(`${pl.name} รายงานตัว/ลงแข่งรายการนี้แล้ว ลบออกไม่ได้ (ติดต่อผู้ดูแลระบบ)`); return; }
+        if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.classList.add('sure'); b.textContent = 'ยืนยันลบ'; toast(`${pl.name} ลงแข่งรายการนี้แล้ว ถ้าลบ ประวัติรายงานตัวของคนนี้จะหายจากคู่ที่แข่งไปแล้ว · กด “ยืนยันลบ” อีกครั้ง`); return; } }
+      rm(); return; }
     const tr = e.target.closest('.pktable tbody tr'); if (tr && e.target.tagName !== 'INPUT') { const cb = tr.querySelector('[data-pksel]:not(:disabled)'); if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); } return; }
     const pv = e.target.closest('[data-pkv]'); if (pv) { UI.pickView = pv.dataset.pkv; repick(); return; }
     if (e.target.closest('[data-pkclr]')) { PSEL.clear(); repick(); return; }
@@ -4772,8 +4854,23 @@ function openCheckin(eid, mid) {
     const ps = rosterOf(eid, c).players || []; const set = new Set(ci[k] || []); const B = bannedSet();
     return `<div class="cicol">${chip(c)} <small class="num muted">${set.size}/${starters(ev)} ตัวจริงขั้นต่ำ</small>
       ${ps.length ? `<label class="ck all"><input type="checkbox" data-all="${k}" ${ps.every(p => set.has(p.id)) ? 'checked' : ''} ${ro ? 'disabled' : ''}> ทั้งทีม</label>` + ps.map(p => { const ban = isBanned(c, p, B); return `<label class="ck${ban ? ' banned' : ''}"><input type="checkbox" data-ck="${k}|${p.id}" ${set.has(p.id) ? 'checked' : ''} ${ban || ro ? 'disabled' : ''}>${(() => { const f = set.has(p.id) ? flagOf(k, p.id) : ''; return f ? ` <small class="ciflag${f === 'มาช้า' ? '' : ' post'}">${f}</small>` : ''; })()} <span class="num muted">${esc(p.num || '')}</span> ${esc(p.name)} <small class="muted">${esc(p.cls)}${ban ? ' · ถูกตัดสิทธิ์' : ''}</small></label>`; }).join('') : '<p class="muted sm">คณะนี้ยังไม่ส่งรายชื่อ</p>'}
+      ${canLateAdd(c) && !ro ? (addK === k ? lateAddHTML(k, c) : `<button type="button" class="btn sm ghost ciaddb" data-ciadd="${k}">+ เพิ่มนักกีฬาที่ไม่มีในรายชื่อ</button>`) : ''}
       ${m && !sideWin(m) && canScore(ev.sport) ? `<button class="btn sm danger" data-forfeit="${k}">${COLORS[c].n} สละสิทธิ์</button>` : ''}</div>`;
   };
+  /* เพิ่มนักกีฬาหน้าสนาม: คนที่ไม่อยู่ในรายชื่อที่คณะสีส่ง → เพิ่มเข้ารายชื่อ (ถ้าเต็มต้องเลือกคนที่ยังไม่ได้ลงแข่งออก 1 คน) แล้วติ๊กรายงานตัว */
+  const canLateAdd = c => canRoster(c) || canScore(ev.sport);
+  let addK = null, addQ = '', addSel = '', addOut = '';
+  const lateAddHTML = (k, c) => { const r = rosterOf(eid, c); const ps = r.players || []; const max = rosterMax(ev); const full = max && ps.length >= max;
+    const have = new Set(ps.map(p => p.sid ? normSid(p.sid) : normName(p.name))); const q = addQ.trim();
+    const hits = q.length < 2 ? [] : eligible(ev, c).filter(st => !have.has(normSid(st.sid)) && (stName(st).includes(q) || String(st.sid).includes(q) || st.cls === q.replace(/^ม\./, ''))).slice(0, 8);
+    const outs = full ? ps.filter(p => !(ci[k] || []).includes(p.id) && !playedIn(ev, p.id)) : [];
+    return `<div class="ciadd"><b class="sm">เพิ่มนักกีฬาคณะ${esc(COLORS[c].n)}</b> <small class="muted">${ps.length}/${max || '–'} คน${full ? ' · รายชื่อเต็มแล้ว ต้องเลือกคนที่ออก' : ''}</small>
+      <input type="search" id="ciaq" value="${esc(addQ)}" placeholder="พิมพ์ชื่อ ห้อง หรือเลขประจำตัว" autocomplete="off">
+      <div class="ciahits">${q.length < 2 ? '<small class="muted">พิมพ์อย่างน้อย 2 ตัวอักษร</small>' : hits.length ? hits.map(st => `<label class="ck"><input type="radio" name="ciasel" value="${esc(st.sid)}" ${addSel === String(st.sid) ? 'checked' : ''}> ${esc(stName(st))} <small class="muted">ม.${esc(st.cls)} · ${esc(st.sid)}</small></label>`).join('') : '<small class="muted">ไม่พบนักเรียนคณะนี้ที่ลงรายการนี้ได้ (ตรวจรุ่นอายุ/เพศ/ห้อง)</small>'}</div>
+      ${(() => { const st = addSel && eligible(ev, c).find(x => String(x.sid) === addSel); if (!st) return ''; const w = checkPlayer(ev, c, { name: stName(st), cls: st.cls, sid: st.sid, sex: st.sex }, athleteIndex(c)); return w.length ? `<small class="errt">${w.map(esc).join(' · ')}</small>` : ''; })()}
+      ${full ? `<label class="fld sm">ให้ออกจากรายชื่อ (ยังไม่ได้รายงานตัว/ลงแข่ง)<select id="ciaout"><option value="">— เลือกคนที่ออก —</option>${outs.map(p => `<option value="${p.id}" ${addOut === p.id ? 'selected' : ''}>${esc(p.name)}${p.num ? ' · เบอร์ ' + esc(p.num) : ''}</option>`).join('')}</select></label>${outs.length ? '' : '<small class="errt">ทุกคนในรายชื่อรายงานตัว/ลงแข่งแล้ว เปลี่ยนตัวไม่ได้</small>'}` : ''}
+      <div class="actions m0"><button type="button" class="btn sm" data-ciaddgo="${k}">เพิ่มและติ๊กรายงานตัว</button><button type="button" class="btn sm ghost" data-ciaddx>ยกเลิก</button></div>
+      <small class="muted">ระบบเพิ่มชื่อเข้ารายชื่อของคณะทันที (บันทึกว่าเพิ่มหน้าสนาม) แล้วกด “บันทึกการรายงานตัว” ตามปกติ</small></div>`; };
   let meth = ciMethod(); let dirty = 0; const last = new Map(); let fb = null;
   /* หา sid ในรายชื่อทุกฝั่งของคู่นี้ */
   const findSid = code => { const sid = normSid(code); if (!sid) return null; for (const [k, c] of sides) { if (c < 0) continue; const p = (rosterOf(eid, c).players || []).find(p => normSid(p.sid) === sid || (p.num && normSid(p.num) === sid && false)); if (p) return { k, c, p }; } return { sid }; };
@@ -4819,7 +4916,21 @@ function openCheckin(eid, mid) {
     if (a) { const c = sides.find(s => s[0] === a)[1]; const B = bannedSet(); ci[a] = e.target.checked ? (rosterOf(eid, c).players || []).filter(p => !isBanned(c, p, B)).map(p => p.id) : []; draw(); }
     if (k) { const [s, id] = k.split('|'); const set = new Set(ci[s] || []); e.target.checked ? set.add(id) : set.delete(id); ci[s] = [...set]; draw(); }
   };
+  $('#modal').addEventListener('input', e => { if (e.target.id === 'ciaq') { addQ = e.target.value; addSel = ''; const pos = e.target.selectionStart; draw(); const el = $('#ciaq'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch { } } } });
+  $('#modal').addEventListener('change', e => { if (e.target.name === 'ciasel') { addSel = e.target.value; e.stopPropagation(); draw(); } else if (e.target.id === 'ciaout') { addOut = e.target.value; e.stopPropagation(); } }, true);
   $('#modal').onclick = e => {
+    const ca = e.target.closest('[data-ciadd]'); if (ca) { addK = ca.dataset.ciadd; addQ = addSel = addOut = ''; draw(); setTimeout(() => $('#ciaq')?.focus(), 30); return; }
+    if (e.target.closest('[data-ciaddx]')) { addK = null; draw(); return; }
+    const cg = e.target.closest('[data-ciaddgo]'); if (cg) { const k = cg.dataset.ciaddgo; const c = sides.find(s => s[0] === k)[1];
+      const st = eligible(ev, c).find(x => String(x.sid) === addSel); if (!st) { toast('เลือกนักเรียนที่จะเพิ่มก่อน'); return; }
+      const r = clone(rosterOf(eid, c)); r.players = r.players || []; const max = rosterMax(ev); let out = null;
+      if (max && r.players.length >= max) { out = r.players.find(p => p.id === addOut); if (!out) { toast('รายชื่อเต็มแล้ว เลือกคนที่ออกก่อน'); return; } if (playedIn(ev, out.id) || (ci[k] || []).includes(out.id)) { toast('คนที่เลือกรายงานตัว/ลงแข่งแล้ว เลือกคนอื่น'); return; } }
+      const p = { id: uid('p'), sid: st.sid, fromList: true, name: stName(st), cls: st.cls, num: '', sex: st.sex, late: { at: Date.now(), by: myStamp(), mid: mid || '', ...(out ? { out: out.name } : {}) } };
+      const go = () => { if (out) r.players = r.players.filter(x => x.id !== out.id); r.players.push(p); r.ev = eid; r.c = c; r.at = Date.now(); r.by = myStamp();
+        r.subs = [...(r.subs || []), { at: Date.now(), by: myStamp(), mid: mid || '', in: p.name, ...(out ? { out: out.name } : {}) }];
+        put('rosters', rosterId(eid, c), r); logIt('เพิ่มนักกีฬาหน้าสนาม', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''} · ${COLORS[c].n}: ${p.name}${out ? ' แทน ' + out.name : ''}`);
+        ci[k] = [...new Set([...(ci[k] || []), p.id])]; dirty++; addK = null; mDirty = true; toast(`เพิ่ม ${p.name} แล้ว · กด “บันทึกการรายงานตัว”`); draw(); };
+      go(); return; }
     const mb = e.target.closest('[data-cim]'); if (mb) { stopScan(); meth = mb.dataset.cim; setCiMethod(meth); fb = null; shell(); return; }
     if (e.target.closest('[data-close]')) stopScan();
     if (e.target.id === 'saveci') { if (ro) { toast(ciWinText(W)); return; } stopScan(); const n = Object.values(ci).reduce((s, l) => s + (l || []).length, 0);
