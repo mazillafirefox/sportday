@@ -1000,8 +1000,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.6', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.7', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.7', 'ปุ่มเริ่มแข่ง: ทึบ = พร้อมเริ่ม · ขอบ = ยังเริ่มไม่ได้ พร้อมบอกเหตุผลบนปุ่ม (สนามเต็ม / รอคิว) · คู่ที่กำลังแข่งมีปุ่ม “+ รายงานตัว” สำหรับนักกีฬาที่มาหลังเริ่มแข่ง'],
   ['1.33.6', 'แอปสแกน: แสดงเลขเวอร์ชันที่หัวแอป · โหมดตรวจบัตรไม่มีตัวเลือกสนาม/นัด (ใช้ได้ทุกวัน) · โหมดกรรมการบอกชัดว่าเลือกนัด = ลงชื่อ ไม่เลือก = ดูหน้าที่'],
   ['1.33.5', 'ปิดหน้าต่าง: รูปนักกีฬาที่บันทึกทันทีไม่ถูกถามว่ายังไม่บันทึกอีก · หน้าต่างพิมพ์เอกสาร/สำรองข้อมูล/ล้างข้อมูล และตัวกรอง/ตัวเลือกในรายชื่อไม่ถือเป็นข้อมูลค้าง · ฟอร์มบุคลากรบอกว่ารูปจะบันทึกเมื่อกดบันทึก (ลบรูปก็ถามก่อนปิด) · สแกนรายงานตัวในหน้าต่างแล้วปิดโดยไม่บันทึก ระบบเตือนก่อน'],
   ['1.33.4', 'ชื่อผู้บันทึก: ผู้ดูแลหลักบันทึกเป็น “owner” แทนอีเมล ทุกเครื่องเห็นเป็นชื่อในทะเบียนบุคลากร · ข้อมูลเก่าที่มีอีเมลผู้ดูแลหลักถูกแปลงอัตโนมัติเมื่อผู้ดูแลหลักเข้าสู่ระบบ (อีเมลไม่อยู่ในข้อมูลสาธารณะอีก)'],
@@ -2008,15 +2009,19 @@ function rowButtons(ev, m, st) {
   if (!(editOn && canScore(ev.sport))) return '';
   const id = `${ev.id}|${m.id}`;
   if (st.k === 'done') return `<button class="btn sm rowbtn ghost" data-res="${id}">แก้ผล</button>`;
-  if (st.k === 'live') return `<button class="btn sm rowbtn" data-res="${id}">บันทึกผล</button>`;
+  if (st.k === 'live') return `${S.meta.requireCheckin === false ? '' : `<button class="btn sm rowbtn ghost cib" data-ci="${id}" title="นักกีฬามาหลังเริ่มแข่ง: ติ๊กชื่อเพิ่ม ระบบบันทึกว่า “หลังเริ่มแข่ง”">+ รายงานตัว</button>`}<button class="btn sm rowbtn" data-res="${id}">บันทึกผล</button>`;
   if (st.k === 'tbd') return '';
   const ciA = st.A || ciInfo(ev, m, 'a'), ciB = st.B || ciInfo(ev, m, 'b'); const nOk = [ciA, ciB].filter(x => x.ok).length; const any = [ciA, ciB].some(x => x.n || x.manual);
   const ciT = nOk === 2 ? 'ทั้งสองทีมรายงานตัวครบแล้ว' : nOk === 1 || any ? `รายงานตัวแล้ว ${[ciA, ciB].map(x => x.manual ? 'ครบ' : x.n + '/' + x.need).join(' · ')}` : 'ยังไม่มีใครรายงานตัว';
   const ci = S.meta.requireCheckin === false ? '' : ciEarly(ev, m) ? `<button class="btn sm rowbtn ghost cib" disabled title="${esc(ciEarlyMsg(ev, m))}">รอวันแข่ง</button>` : `<button class="btn sm rowbtn ghost cib${nOk === 2 ? ' ok' : nOk || any ? ' part' : ''}" data-ci="${id}" title="${ciT}">${nOk === 2 ? '✓ เช็คชื่อครบ' : nOk || any ? `เช็คชื่อ ${nOk}/2 ทีม` : 'เช็คชื่อ'}</button>`;
   if (ciEarly(ev, m)) return `${ci}<button class="btn sm rowbtn startb" disabled title="ยังเริ่มแข่งไม่ได้ คู่นี้แข่ง ${esc(fmtDate(m.date, true))}">เริ่มแข่ง</button>`;
   if (st.k === 'forfeit') return `${ci}<button class="btn sm rowbtn startb notready" data-start="${id}">เริ่มแข่ง</button><button class="btn sm rowbtn forf" data-forf="${id}">ปรับแพ้</button>`;
-  const v = venueOf(ev, m); const q = v ? earlierPending(v, ev, m) : []; const qBlock = q.length && liveAtVenue(v, ev.id, m.id).length + q.length >= courtsOf(v);
-  return `${ci}<button class="btn sm rowbtn startb${st.both && !qBlock ? '' : ' notready'}" data-start="${id}"${qBlock ? ` title="รอคู่ ${q[0].m.time} น. ที่สนามนี้แข่งก่อน"` : ''}>เริ่มแข่ง</button>`;
+  /* ปุ่มทึบ = พร้อมเริ่มจริง · ปุ่มขอบ = ยังเริ่มไม่ได้ (บอกเหตุผลบนปุ่ม): สนามเต็ม / รอคู่ก่อนหน้า / ยังรายงานตัวไม่ครบ */
+  const v = venueOf(ev, m); const live = v ? liveAtVenue(v, ev.id, m.id) : []; const full = v && live.length >= courtsOf(v);
+  const q = v && !full ? earlierPending(v, ev, m) : []; const qBlock = q.length && live.length + q.length >= courtsOf(v);
+  const why = full ? ['สนามเต็ม', `${v} มี ${courtsOf(v)} คอร์ท กำลังแข่งอยู่ ${live.length} คู่: ${live.slice(0, 3).map(x => evTitle(x.ev) + ' คู่ ' + x.m.no).join(', ')} · รอให้จบก่อน`]
+    : qBlock ? ['รอคิว', `รอคู่ ${q[0].m.time} น. (${evTitle(q[0].ev)} คู่ ${q[0].m.no}) ที่สนามนี้แข่งก่อน`] : !st.both ? ['เริ่มแข่ง', 'ยังรายงานตัวไม่ครบ'] : null;
+  return `${ci}<button class="btn sm rowbtn startb${why ? ' notready' : ''}" data-start="${id}"${why ? ` title="${esc(why[1])}"` : ''}>${why ? why[0] : 'เริ่มแข่ง'}</button>`;
 }
 const STATE_CLS = { live: 'islive', delay: 'isdelay', hold: 'isdelay', waiting: 'iswait', forfeit: 'isforf', checkin: 'isci', ready: 'isready', done: 'isdone' };
 /* นัดถัดไปของแต่ละสนามในวันนั้น (ยังไม่เริ่ม ยังไม่มีผล เวลาเร็วสุด) */
