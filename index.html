@@ -828,6 +828,7 @@ body.scanmode #main{padding:0;max-width:640px;margin:0 auto}
 .sca{display:flex;flex-direction:column;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom));min-height:100dvh;box-sizing:border-box}
 .scah{display:flex;align-items:center;gap:10px}.scaback{width:40px;height:40px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:20px;text-decoration:none;color:var(--ink)}
 .scat{display:flex;flex-direction:column;min-width:0;flex:1}.scat b{font-size:18px}.scat small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scver{font-size:11px;font-weight:600;color:var(--muted);background:var(--soft,#EEF2F8);border:1px solid var(--line,#DDE3EC);border-radius:999px;padding:1px 7px;vertical-align:3px;font-variant-numeric:tabular-nums}.scjh{margin:4px 2px 0}
 .scnet{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 9px;border-radius:99px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}.scnet i{width:8px;height:8px;border-radius:50%;background:#16A34A}.scnet.q i{background:#F59E0B}.scnet.off i{background:#DC2626}.scnet.off{color:#B91C1C}
 .scam{display:grid!important;grid-template-columns:repeat(3,1fr)}.scam button{min-height:44px;font-size:15px}
 .scctx{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.scctx select{flex:1 1 140px;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font:inherit}
@@ -999,8 +1000,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.33.5', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.33.6', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.33.6', 'แอปสแกน: แสดงเลขเวอร์ชันที่หัวแอป · โหมดตรวจบัตรไม่มีตัวเลือกสนาม/นัด (ใช้ได้ทุกวัน) · โหมดกรรมการบอกชัดว่าเลือกนัด = ลงชื่อ ไม่เลือก = ดูหน้าที่'],
   ['1.33.5', 'ปิดหน้าต่าง: รูปนักกีฬาที่บันทึกทันทีไม่ถูกถามว่ายังไม่บันทึกอีก · หน้าต่างพิมพ์เอกสาร/สำรองข้อมูล/ล้างข้อมูล และตัวกรอง/ตัวเลือกในรายชื่อไม่ถือเป็นข้อมูลค้าง · ฟอร์มบุคลากรบอกว่ารูปจะบันทึกเมื่อกดบันทึก (ลบรูปก็ถามก่อนปิด) · สแกนรายงานตัวในหน้าต่างแล้วปิดโดยไม่บันทึก ระบบเตือนก่อน'],
   ['1.33.4', 'ชื่อผู้บันทึก: ผู้ดูแลหลักบันทึกเป็น “owner” แทนอีเมล ทุกเครื่องเห็นเป็นชื่อในทะเบียนบุคลากร · ข้อมูลเก่าที่มีอีเมลผู้ดูแลหลักถูกแปลงอัตโนมัติเมื่อผู้ดูแลหลักเข้าสู่ระบบ (อีเมลไม่อยู่ในข้อมูลสาธารณะอีก)'],
   ['1.33.3', 'แอปสแกน: ผลรายงานตัว/กรรมการขึ้นเป็นการ์ดเต็มจอทันที (สำเร็จปิดเองใน 2 วินาที · ไม่ผ่านค้างจนแตะ) · ปุ่มยกเลิกอยู่ในรายการสแกนล่าสุด · ออกจากหน้าแล้วล้างทั้งสนามและนัดที่เลือก'],
@@ -3309,17 +3311,18 @@ function scCtxHTML() {
   const d = scDay(); const its = scItems(d); const vs = [...new Set(dayItems(d).map(x => x.m ? venueOf(x.ev, x.m) : x.ev.venue).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
   const vsel = `<select id="scven" aria-label="สนาม"><option value="">ทุกสนาม</option>${vs.map(v => `<option ${v === SC.venue ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
   const lsel = (id, cur, first) => `<select id="${id}" aria-label="นัด"><option value="">${first}</option>${its.map(x => `<option value="${scKey(x)}" ${scKey(x) === cur ? 'selected' : ''}>${esc(scLabel(x))}</option>`).join('')}</select>`;
+  if (SC.mode === 'badge') return ''; /* ตรวจบัตรไม่ผูกกับสนาม/นัด */
   if (!days().includes(d)) return `<p class="muted sm">วันนี้ไม่ใช่วันแข่งขัน (${esc(dayRange())}) · รายงานตัวได้เฉพาะวันแข่ง</p>`;
   if (SC.mode === 'ci') { const lk = scLockItem(); const t = lk ? (lk.m?.time || evDayTime(lk.ev, d) || '') : '';
     return `<div class="scctx">${vsel}${lsel('sclock', SC.lock, '— เลือกนัดที่รับรายงานตัว —')}</div>${lk ? `<div class="scnow"><small>กำลังรับรายงานตัว</small><b>${esc(t ? t + ' น. · ' : '')}${esc(evTitle(lk.ev))}${lk.m ? ' · คู่ ' + lk.m.no : ''}</b><span>${esc((lk.m ? venueOf(lk.ev, lk.m) : lk.ev.venue) || '')}${(() => { const n = scLockCount(lk); return n ? ` · มาแล้ว ${n.got}/${n.all} คน` : ''; })()}</span>${(() => { const w = ciWin(lk.ev, lk.m, d); return `<em class="ciwin ${w.k}">${esc(ciWinText(w))}</em>`; })()}</div>` : `<div class="scnow none"><b>ยังไม่ได้เลือกนัด</b><span>เลือกรายการแข่งของวันนี้ก่อน แล้วจึงสแกนบัตรนักกีฬาที่มาแสดงตัวที่สนาม</span></div>`}`; }
-  if (SC.mode === 'judge') return `<div class="scctx">${vsel}${lsel('scjlock', SC.jlock, 'เลือกนัดที่จะลงชื่อกรรมการ')}</div>`;
+  if (SC.mode === 'judge') return `<div class="scctx">${vsel}${lsel('scjlock', SC.jlock, '— เลือกนัดที่จะลงชื่อกรรมการ —')}</div><p class="muted sm scjh">${SC.jlock ? 'สแกนบัตรกรรมการ = ลงชื่อปฏิบัติหน้าที่ในนัดนี้' : 'ยังไม่เลือกนัด: สแกนแล้วจะแสดงตารางหน้าที่ของกรรมการคนนั้น (ไม่ลงชื่อ)'}</p>`;
   return '';
 }
 function scNetHTML() { const q = OUTBOX.length; const on = navigator.onLine !== false; return `<span class="scnet ${!on ? 'off' : q ? 'q' : 'on'}"><i></i>${!on ? 'ออฟไลน์' : mode === 'shared' ? 'ออนไลน์' : 'โหมดในเครื่อง'}${q ? ` · ค้างส่ง ${q}` : ''}</span>`; }
 function vScan() {
   const need = SC.mode !== 'badge' && !anyEdit();
   return `<div id="scanapp" class="sca">
-    <div class="scah"><a class="scaback" href="#checkin" aria-label="กลับหน้าเว็บ">←</a><div class="scat"><b>สแกนบัตร</b><small>${esc(evName())} ${esc(evYear())}</small></div><span id="scnet">${scNetHTML()}</span></div>
+    <div class="scah"><a class="scaback" href="#checkin" aria-label="กลับหน้าเว็บ">←</a><div class="scat"><b>สแกนบัตร <span class="scver" title="เวอร์ชันของระบบ (${esc(APP_DATE)})">v${APP_VERSION}</span></b><small>${esc(evName())} ${esc(evYear())}</small></div><span id="scnet">${scNetHTML()}</span></div>
     <div class="seg scam">${[['ci', 'รายงานตัว'], ['badge', 'ตรวจบัตร'], ['judge', 'กรรมการ']].map(([k, t]) => `<button data-scmode="${k}" class="${SC.mode === k ? 'on' : ''}">${t}</button>`).join('')}</div>
     <div id="scctx">${need ? '' : scCtxHTML()}</div>
     ${need ? `<div class="scr bad"><div class="scrh"><b>ต้องเข้าสู่ระบบก่อน</b><span>โหมดนี้ใช้ได้เฉพาะครู/กรรมการที่มีสิทธิ์บันทึก</span></div><button class="btn" data-act="login">เข้าสู่ระบบ</button></div>` : `
