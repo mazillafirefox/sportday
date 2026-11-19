@@ -813,7 +813,7 @@ html,body{overflow-x:clip}
   /* หน้าต่างแบบแผ่นจากด้านล่าง: ปุ่มบันทึกอยู่ล่างจอเสมอ และหดตามคีย์บอร์ด */
   #modal{padding:0;place-items:end stretch;top:var(--vvt,0px);bottom:auto;height:var(--vvh,100dvh)}
   #modal .dlg{width:100%!important;max-width:100%;max-height:calc(var(--vvh,100dvh) - 12px);border-radius:18px 18px 0 0;padding:16px 14px 0;overscroll-behavior:contain;overflow-x:hidden}
-  #modal .dlg>.actions:last-child,#modal .dlg>form>.actions:last-child,#modal form.dlg>.actions:last-child,#modal .dlg>#cibody>.actions:last-child{position:sticky;bottom:0;margin:12px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);z-index:4;flex-wrap:wrap}
+  #modal .dlg>.actions:last-child,#modal .dlg>form>.actions:last-child,#modal form.dlg>.actions:last-child,#modal .dlg>#cibody>.actions:last-child,#modal .actions.stickact{position:sticky;bottom:0;margin:12px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);z-index:4;flex-wrap:wrap}
   #modal .dlg>*:last-child:not(.actions){margin-bottom:calc(14px + env(safe-area-inset-bottom))}
   #modal .dlg .actions .btn{flex:1 1 auto;min-height:46px;font-size:16px}
   .rline{grid-template-columns:20px minmax(0,1fr) 64px 32px!important}.rline>*{min-width:0;max-width:100%}.rline input,.rline select{width:100%}
@@ -1012,8 +1012,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.35.2', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.35.3', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.35.3', 'มือถือ: ปุ่มบันทึก/ยืนยันของทุกหน้าต่างติดล่างจอ (เดิมบางหน้าต่าง เช่น บันทึกผลการแข่งขัน ปุ่มอยู่ท้ายฟอร์ม ต้องเลื่อนหา)'],
   ['1.35.2', 'เปลี่ยนตัวหน้าสนาม: เลือกคนที่เคยรายงานตัวคู่ก่อน (เช่น ตัวสำรองที่ติ๊กทั้งทีมไว้) ให้ออกได้ ระบบถอนชื่อเก็บประวัติไว้ · เดิมรายการที่ติ๊กทั้งทีมทุกคู่จะเปลี่ยนตัวไม่ได้เลย'],
   ['1.35.1', 'เพิ่มนักกีฬาหน้าสนาม: เลือกแล้วช่องค้นหาล้างเอง แสดงคนที่เลือก · เปลี่ยนตัวเมื่อรายชื่อเต็ม: คนที่ติ๊กออกในคู่นี้เลือกให้ออกได้ (เดิมระบบนับว่าเคยรายงานตัวแล้ว) และเลือกให้อัตโนมัติถ้ามีคนเดียว · ข้อความหลังเริ่มแข่งบอกชัดว่าติ๊ก/เพิ่มได้ แต่สแกนไม่ได้'],
   ['1.35.0', 'ทีมในคู่ถัดไปเปลี่ยนเมื่อแก้ผล: แจ้งในหน้ายืนยันก่อนบันทึก บันทึกที่คู่นั้น (ป้าย ⇄ เปลี่ยนทีม พร้อมเหตุผล ผู้แก้ เวลา) และในประวัติ · ผู้ดูแลเปลี่ยนทีมในคู่ที่ยังไม่แข่งตามมติคณะกรรมการได้ (ใส่เหตุผล + PIN, คืน “ตามสาย” ได้)'],
@@ -1451,6 +1452,13 @@ function bracketIssues(ev) {
 const hasBracketIssue = ev => { const b = bracketIssues(ev); return b.dup.length || b.same.length; };
 function bracketWarnHTML(ev, cls = 'warn') { const b = bracketIssues(ev); if (!b.dup.length && !b.same.length) return '';
   return `<div class="${cls} brwarn"><b>⚠ ตรวจสายการแข่งขัน</b>${b.dup.map(x => `<div class="sm">คณะ${esc(COLORS[x.c].n)} อยู่ในสาย ${x.nos.length} ช่อง (คู่ ${x.nos.join(', ')})</div>`).join('')}${b.miss.length ? `<div class="sm">ไม่มีในสาย: ${b.miss.map(c => 'คณะ' + esc(COLORS[c].n)).join(', ')}</div>` : ''}${b.same.map(x => `<div class="sm"><b>คู่ ${x.m.no}${x.m.round ? ' ' + esc(x.m.round) : ''}: คณะ${esc(COLORS[x.c].n)} พบคณะ${esc(COLORS[x.c].n)}</b></div>`).join('')}<div class="muted sm">ระบบเตือนเท่านั้น ไม่ห้ามแข่งหรือบันทึกผล ถ้าคณะกรรมการตัดสินให้แก้สาย แก้ทีมในคู่นั้นได้ที่หน้าจัดการแข่งขัน</div></div>`; }
+/* ทุกหน้าต่าง: แถวปุ่มหลัก (.actions สุดท้ายระดับบนของหน้าต่าง) ติดล่างจอบนมือถือ · ข้อความอธิบายที่อยู่ใต้ปุ่มย้ายขึ้นไปไว้เหนือปุ่ม */
+let STICK_Q = 0;
+function stickActions() { STICK_Q = 0; const root = document.querySelector('#modal .dlg'); if (!root) return;
+  const l = [...root.querySelectorAll(':scope > .actions, :scope > form > .actions, :scope > #cibody > .actions, :scope > div > .actions')].filter(a => !a.classList.contains('m0') && !a.closest('.ciadd,.rwdask,.cfbox'));
+  const a = l.pop(); root.querySelectorAll('.stickact').forEach(x => { if (x !== a) x.classList.remove('stickact'); }); if (!a) return; a.classList.add('stickact');
+  let n = a.nextElementSibling; while (n) { const nx = n.nextElementSibling; if (/^(P|SMALL)$/.test(n.tagName) && !n.querySelector('input,select,textarea,button')) a.before(n); n = nx; } }
+new MutationObserver(() => { if (!STICK_Q) { STICK_Q = 1; requestAnimationFrame(stickActions); } }).observe(document.getElementById('modal'), { childList: true, subtree: true });
 /* คำเตือนในหน้าต่างเริ่มแข่ง/บันทึกผล: สีเดียวกันพบกัน · ทีมที่ล็อกไว้ · นัดแข่งใหม่ */
 function matchWarnHTML(ev, m) { const t = teamsOf(ev, m); let h = '';
   if (t.a >= 0 && t.a === t.b) h += `<div class="qwarn"><b>⚠ คณะ${esc(COLORS[t.a].n)} พบคณะ${esc(COLORS[t.a].n)}</b><div class="sm">สายการแข่งขันทำให้ทีมเดียวกันมาพบกันเอง ตรวจกับคณะกรรมการก่อนแข่ง ระบบไม่ห้ามดำเนินการ</div></div>`;
