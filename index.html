@@ -1012,8 +1012,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.35.1', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.35.2', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.35.2', 'เปลี่ยนตัวหน้าสนาม: เลือกคนที่เคยรายงานตัวคู่ก่อน (เช่น ตัวสำรองที่ติ๊กทั้งทีมไว้) ให้ออกได้ ระบบถอนชื่อเก็บประวัติไว้ · เดิมรายการที่ติ๊กทั้งทีมทุกคู่จะเปลี่ยนตัวไม่ได้เลย'],
   ['1.35.1', 'เพิ่มนักกีฬาหน้าสนาม: เลือกแล้วช่องค้นหาล้างเอง แสดงคนที่เลือก · เปลี่ยนตัวเมื่อรายชื่อเต็ม: คนที่ติ๊กออกในคู่นี้เลือกให้ออกได้ (เดิมระบบนับว่าเคยรายงานตัวแล้ว) และเลือกให้อัตโนมัติถ้ามีคนเดียว · ข้อความหลังเริ่มแข่งบอกชัดว่าติ๊ก/เพิ่มได้ แต่สแกนไม่ได้'],
   ['1.35.0', 'ทีมในคู่ถัดไปเปลี่ยนเมื่อแก้ผล: แจ้งในหน้ายืนยันก่อนบันทึก บันทึกที่คู่นั้น (ป้าย ⇄ เปลี่ยนทีม พร้อมเหตุผล ผู้แก้ เวลา) และในประวัติ · ผู้ดูแลเปลี่ยนทีมในคู่ที่ยังไม่แข่งตามมติคณะกรรมการได้ (ใส่เหตุผล + PIN, คืน “ตามสาย” ได้)'],
   ['1.34.1', 'ส่งรายชื่อ: คนที่ลงแข่งแล้ว “ถอนชื่อ” แทนการลบ (ยืนยันในกล่องใต้ชื่อ) ไม่นับในจำนวนและไม่ต้องรายงานตัวคู่ต่อไป แต่ประวัติการแข่ง/รายงานตัว/เกียรติบัตรของคู่ที่ผ่านมายังอยู่ · คืนชื่อได้'],
@@ -4921,7 +4922,7 @@ function openCheckin(eid, mid) {
   const lateAddHTML = (k, c) => { const r = rosterOf(eid, c); const ps = r.players || []; const max = rosterMax(ev); const full = max && ps.length >= max;
     const have = new Set(ps.map(p => p.sid ? normSid(p.sid) : normName(p.name))); const q = addQ.trim();
     const hits = q.length < 2 ? [] : eligible(ev, c).filter(st => !have.has(normSid(st.sid)) && (stName(st).includes(q) || String(st.sid).includes(q) || st.cls === q.replace(/^ม\./, ''))).slice(0, 8);
-    const outs = full ? ps.filter(p => !(ci[k] || []).includes(p.id) && !playedIn(ev, p.id, mid || '__ev')) : [];
+    const outs = full ? ps.filter(p => !(ci[k] || []).includes(p.id)) : []; /* คนที่เคยรายงานตัวคู่ก่อนก็ออกได้ — ถอนชื่อไป r.gone ประวัติยังอยู่ */
     if (full && outs.length === 1 && !addOut) addOut = outs[0].id; /* ติ๊กออกไว้คนเดียว → เลือกให้เลย */
     const st = addSel && eligible(ev, c).find(x => String(x.sid) === addSel); const w = st ? checkPlayer(ev, c, { name: stName(st), cls: st.cls, sid: st.sid, sex: st.sex }, athleteIndex(c)) : [];
     return `<div class="ciadd"><b class="sm">เพิ่มนักกีฬาคณะ${esc(COLORS[c].n)}</b> <small class="muted">ในรายชื่อ ${ps.length}/${max || '–'} คน</small>
@@ -4929,8 +4930,9 @@ function openCheckin(eid, mid) {
         : `<input type="search" id="ciaq" value="${esc(addQ)}" placeholder="ค้นหาชื่อ ห้อง หรือเลขประจำตัว" autocomplete="off">
       <div class="ciahits">${q.length < 2 ? '<small class="muted">พิมพ์อย่างน้อย 2 ตัวอักษร แล้วแตะชื่อเพื่อเลือก</small>' : hits.length ? hits.map(st => `<label class="ck"><input type="radio" name="ciasel" value="${esc(st.sid)}"> ${esc(stName(st))} <small class="muted">ม.${esc(st.cls)} · ${esc(st.sid)}</small></label>`).join('') : '<small class="muted">ไม่พบนักเรียนคณะนี้ที่ลงรายการนี้ได้ (ตรวจรุ่นอายุ/เพศ/ห้อง หรือมีชื่อในรายชื่ออยู่แล้ว)</small>'}</div>`}</div></div>
       ${full ? `<div class="ciastep"><span class="stepn">2</span><div><b class="sm">รายชื่อเต็ม ${max} คน ต้องมีคนออก 1 คน</b>
-        ${outs.length ? `<select id="ciaout"><option value="">— เลือกคนที่ออกจากรายชื่อ —</option>${outs.map(p => `<option value="${p.id}" ${addOut === p.id ? 'selected' : ''}>${esc(p.name)}${p.num ? ' · เบอร์ ' + esc(p.num) : ''}</option>`).join('')}</select>` : ''}
-        <small class="${outs.length ? 'muted' : 'errt'}">${outs.length ? 'เลือกได้เฉพาะคนที่ไม่ได้ติ๊กในคู่นี้และไม่เคยลงแข่งคู่อื่น' : 'ยังไม่มีคนที่ออกได้'} · ถ้าคนที่จะเปลี่ยนยังติ๊กอยู่ ให้เอาเครื่องหมายถูกหน้าชื่อออกก่อน · การติ๊กออกอย่างเดียวไม่ได้ลบชื่อออกจากรายชื่อ</small></div></div>` : ''}
+        ${outs.length ? `<select id="ciaout"><option value="">— เลือกคนที่ออกจากรายชื่อ —</option>${outs.map(p => `<option value="${p.id}" ${addOut === p.id ? 'selected' : ''}>${esc(p.name)}${p.num ? ' · เบอร์ ' + esc(p.num) : ''}${playedIn(ev, p.id, mid || '__ev') ? ' (เคยรายงานตัวคู่ก่อน)' : ''}</option>`).join('')}</select>` : ''}
+        ${(() => { const o = outs.find(p => p.id === addOut); return o && playedIn(ev, o.id, mid || '__ev') ? `<small class="warnt">${esc(o.name)} เคยรายงานตัวในคู่ก่อนของรายการนี้ → ระบบ “ถอนชื่อ” (ไม่นับในรายชื่อ ไม่ต้องรายงานตัวคู่ต่อไป) แต่ประวัติคู่ที่ผ่านมายังอยู่</small>` : ''; })()}
+        <small class="${outs.length ? 'muted' : 'errt'}">${outs.length ? 'เลือกได้เฉพาะคนที่ไม่ได้ติ๊กในคู่นี้' : 'ยังไม่มีคนที่ออกได้'} · ถ้าคนที่จะเปลี่ยนยังติ๊กอยู่ ให้เอาเครื่องหมายถูกหน้าชื่อออกก่อน · การติ๊กออกอย่างเดียวไม่ได้ลบชื่อออกจากรายชื่อ</small></div></div>` : ''}
       <div class="actions m0"><button type="button" class="btn sm" data-ciaddgo="${k}" ${!st || (full && !outs.length) ? 'disabled' : ''}>เพิ่ม${full ? ' (เปลี่ยนตัว)' : ''}และติ๊กรายงานตัว</button><button type="button" class="btn sm ghost" data-ciaddx>ยกเลิก</button></div>
       <small class="muted">${m && started(m) ? 'คู่นี้เริ่มแข่งแล้ว ระบบบันทึกว่า “หลังเริ่มแข่ง” · ' : ''}ระบบเพิ่มชื่อเข้ารายชื่อของคณะทันที แล้วกด “บันทึกการรายงานตัว” ตามปกติ</small></div>`; };
   let meth = ciMethod(); let dirty = 0; const last = new Map(); let fb = null;
@@ -4979,7 +4981,7 @@ function openCheckin(eid, mid) {
     if (k) { const [s, id] = k.split('|'); const set = new Set(ci[s] || []); e.target.checked ? set.add(id) : set.delete(id); ci[s] = [...set]; draw(); }
   };
   $('#modal').addEventListener('input', e => { if (e.target.id === 'ciaq') { addQ = e.target.value; addSel = ''; const pos = e.target.selectionStart; draw(); const el = $('#ciaq'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch { } } } });
-  $('#modal').addEventListener('change', e => { if (e.target.name === 'ciasel') { addSel = e.target.value; addQ = ''; e.stopPropagation(); draw(); } else if (e.target.id === 'ciaout') { addOut = e.target.value; e.stopPropagation(); } }, true);
+  $('#modal').addEventListener('change', e => { if (e.target.name === 'ciasel') { addSel = e.target.value; addQ = ''; e.stopPropagation(); draw(); } else if (e.target.id === 'ciaout') { addOut = e.target.value; e.stopPropagation(); draw(); } }, true);
   $('#modal').onclick = e => {
     const ca = e.target.closest('[data-ciadd]'); if (ca) { addK = ca.dataset.ciadd; addQ = addSel = addOut = ''; draw(); setTimeout(() => $('#ciaq')?.focus(), 30); return; }
     if (e.target.closest('[data-ciaddx]')) { addK = null; draw(); return; }
@@ -4987,9 +4989,9 @@ function openCheckin(eid, mid) {
     const cg = e.target.closest('[data-ciaddgo]'); if (cg) { const k = cg.dataset.ciaddgo; const c = sides.find(s => s[0] === k)[1];
       const st = eligible(ev, c).find(x => String(x.sid) === addSel); if (!st) { toast('เลือกนักเรียนที่จะเพิ่มก่อน'); return; }
       const r = clone(rosterOf(eid, c)); r.players = r.players || []; const max = rosterMax(ev); let out = null;
-      if (max && r.players.length >= max) { out = r.players.find(p => p.id === addOut); if (!out) { toast('รายชื่อเต็มแล้ว เลือกคนที่ออกก่อน'); return; } if (playedIn(ev, out.id, mid || '__ev') || (ci[k] || []).includes(out.id)) { toast('คนที่เลือกยังติ๊กรายงานตัวอยู่หรือเคยลงแข่งคู่อื่นแล้ว เลือกคนอื่น'); return; } }
+      if (max && r.players.length >= max) { out = r.players.find(p => p.id === addOut); if (!out) { toast('รายชื่อเต็มแล้ว เลือกคนที่ออกก่อน'); return; } if ((ci[k] || []).includes(out.id)) { toast('คนที่เลือกยังติ๊กรายงานตัวอยู่ในคู่นี้ เอาเครื่องหมายถูกออกก่อน'); return; } }
       const p = { id: uid('p'), sid: st.sid, fromList: true, name: stName(st), cls: st.cls, num: '', sex: st.sex, late: { at: Date.now(), by: myStamp(), mid: mid || '', ...(out ? { out: out.name } : {}) } };
-      const go = () => { if (out) r.players = r.players.filter(x => x.id !== out.id); r.players.push(p); r.ev = eid; r.c = c; r.at = Date.now(); r.by = myStamp();
+      const go = () => { if (out) { r.players = r.players.filter(x => x.id !== out.id); if (playedIn(ev, out.id, mid || '__ev')) r.gone = [...(r.gone || []), { ...out, goneAt: Date.now(), goneBy: myStamp() }]; } r.players.push(p); r.ev = eid; r.c = c; r.at = Date.now(); r.by = myStamp();
         r.subs = [...(r.subs || []), { at: Date.now(), by: myStamp(), mid: mid || '', in: p.name, ...(out ? { out: out.name } : {}) }];
         put('rosters', rosterId(eid, c), r); logIt('เพิ่มนักกีฬาหน้าสนาม', `${evTitle(ev)}${m ? ' คู่ ' + m.no : ''} · ${COLORS[c].n}: ${p.name}${out ? ' แทน ' + out.name : ''}`);
         ci[k] = [...new Set([...(ci[k] || []), p.id])]; dirty++; addK = null; mDirty = true; toast(`เพิ่ม ${p.name} แล้ว · กด “บันทึกการรายงานตัว”`); draw(); };
