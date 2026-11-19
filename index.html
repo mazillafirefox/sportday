@@ -814,6 +814,8 @@ html,body{overflow-x:clip}
   #modal{padding:0;place-items:end stretch;top:var(--vvt,0px);bottom:auto;height:var(--vvh,100dvh)}
   #modal .dlg{width:100%!important;max-width:100%;max-height:calc(var(--vvh,100dvh) - 12px);border-radius:18px 18px 0 0;padding:16px 14px 0;overscroll-behavior:contain;overflow-x:hidden}
   #modal .dlg>.actions:last-child,#modal .dlg>form>.actions:last-child,#modal form.dlg>.actions:last-child,#modal .dlg>#cibody>.actions:last-child,#modal .actions.stickact{position:sticky;bottom:0;margin:12px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);z-index:4;flex-wrap:wrap}
+  body.kbopen #modal .actions.stickact{position:static;margin:12px 0 calc(14px + env(safe-area-inset-bottom));padding:0;border-top:0}
+  #modal .cfbox{bottom:calc(env(safe-area-inset-bottom))}
   #modal .dlg>*:last-child:not(.actions){margin-bottom:calc(14px + env(safe-area-inset-bottom))}
   #modal .dlg .actions .btn{flex:1 1 auto;min-height:46px;font-size:16px}
   .rline{grid-template-columns:20px minmax(0,1fr) 64px 32px!important}.rline>*{min-width:0;max-width:100%}.rline input,.rline select{width:100%}
@@ -913,6 +915,7 @@ body.scovopen{overflow:hidden}
 .rgone{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--panel2,#F4F6FA)}.rgrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:3px 0}.rgrow .btn{margin-left:auto}
 .chgbox{border:1px solid #C9D6F2;background:#F2F6FF;border-radius:12px;padding:8px 12px;margin:8px 0;display:flex;flex-direction:column;gap:2px}.chtl{margin:4px 0 8px}
 .ciastep{display:flex;gap:8px;align-items:flex-start}.ciastep>div{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}.stepn{flex:none;width:22px;height:22px;border-radius:50%;background:var(--brand,#3949AB);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:6px}.ciachosen{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:#EAF7EE}.ciachosen .btn{margin-left:auto}
+#modal .actions.cfhide{display:none!important}
 </style>
 </head>
 <body>
@@ -1012,8 +1015,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.35.3', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.35.4', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.35.4', 'มือถือ: ระหว่างพิมพ์คะแนน (คีย์บอร์ดเปิด) แถวปุ่มไม่ลอยทับฟอร์ม · กล่องยืนยันจบเกม/PIN เปิดแล้วซ่อนปุ่มชุดเดิม ไม่มีปุ่มซ้ำ'],
   ['1.35.3', 'มือถือ: ปุ่มบันทึก/ยืนยันของทุกหน้าต่างติดล่างจอ (เดิมบางหน้าต่าง เช่น บันทึกผลการแข่งขัน ปุ่มอยู่ท้ายฟอร์ม ต้องเลื่อนหา)'],
   ['1.35.2', 'เปลี่ยนตัวหน้าสนาม: เลือกคนที่เคยรายงานตัวคู่ก่อน (เช่น ตัวสำรองที่ติ๊กทั้งทีมไว้) ให้ออกได้ ระบบถอนชื่อเก็บประวัติไว้ · เดิมรายการที่ติ๊กทั้งทีมทุกคู่จะเปลี่ยนตัวไม่ได้เลย'],
   ['1.35.1', 'เพิ่มนักกีฬาหน้าสนาม: เลือกแล้วช่องค้นหาล้างเอง แสดงคนที่เลือก · เปลี่ยนตัวเมื่อรายชื่อเต็ม: คนที่ติ๊กออกในคู่นี้เลือกให้ออกได้ (เดิมระบบนับว่าเคยรายงานตัวแล้ว) และเลือกให้อัตโนมัติถ้ามีคนเดียว · ข้อความหลังเริ่มแข่งบอกชัดว่าติ๊ก/เพิ่มได้ แต่สแกนไม่ได้'],
@@ -1457,6 +1461,9 @@ let STICK_Q = 0;
 function stickActions() { STICK_Q = 0; const root = document.querySelector('#modal .dlg'); if (!root) return;
   const l = [...root.querySelectorAll(':scope > .actions, :scope > form > .actions, :scope > #cibody > .actions, :scope > div > .actions')].filter(a => !a.classList.contains('m0') && !a.closest('.ciadd,.rwdask,.cfbox'));
   const a = l.pop(); root.querySelectorAll('.stickact').forEach(x => { if (x !== a) x.classList.remove('stickact'); }); if (!a) return; a.classList.add('stickact');
+  /* กล่องยืนยัน (จบเกม/PIN) เปิดอยู่ → ซ่อนแถวปุ่มเดิม ไม่ให้มีปุ่มซ้ำสองชุด */
+  a.classList.toggle('cfhide', !!root.querySelector('.cfbox'));
+  if (!matchMedia('(max-width:720px)').matches) return;
   let n = a.nextElementSibling; while (n) { const nx = n.nextElementSibling; if (/^(P|SMALL)$/.test(n.tagName) && !n.querySelector('input,select,textarea,button')) a.before(n); n = nx; } }
 new MutationObserver(() => { if (!STICK_Q) { STICK_Q = 1; requestAnimationFrame(stickActions); } }).observe(document.getElementById('modal'), { childList: true, subtree: true });
 /* คำเตือนในหน้าต่างเริ่มแข่ง/บันทึกผล: สีเดียวกันพบกัน · ทีมที่ล็อกไว้ · นัดแข่งใหม่ */
@@ -5943,6 +5950,13 @@ function setAcct(open) { const h = $('header.top'); h.classList.toggle('acct', o
 document.addEventListener('click', e => { if (e.target.closest('#acctbtn')) { setAcct(!$('header.top').classList.contains('acct')); return; }
   if ($('header.top').classList.contains('acct') && (!e.target.closest('#acctpanel') || e.target.closest('#acctpanel .btn'))) setTimeout(() => setAcct(false), 0); });
 /* หน้าต่างหดตามคีย์บอร์ด และเลื่อนช่องที่กำลังพิมพ์มาไว้กลางจอ */
+/* มือถือ: ระหว่างพิมพ์ (คีย์บอร์ดเปิด) แถวปุ่มไม่ติดล่างจอ จะได้เห็นช่องกรอกเต็มที่ · ปิดคีย์บอร์ดแล้วปุ่มกลับมาติดล่างจอ */
+const isTyping = el => el && el.closest?.('#modal') && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|file|range|color)$/.test(el.type)));
+/* ถือว่าคีย์บอร์ดเปิดเมื่อกำลังโฟกัสช่องพิมพ์ และพื้นที่จอที่มองเห็นเตี้ยลงชัดเจน (iOS โฟกัสอัตโนมัติไม่เปิดคีย์บอร์ด จึงต้องดูความสูงด้วย) */
+const kbCheck = () => { const vv = window.visualViewport; const short = vv ? vv.height < window.innerHeight - 150 : false; document.body.classList.toggle('kbopen', short && isTyping(document.activeElement)); };
+document.addEventListener('focusin', () => setTimeout(kbCheck, 350));
+document.addEventListener('focusout', () => setTimeout(kbCheck, 150));
+window.visualViewport?.addEventListener('resize', kbCheck);
 if (window.visualViewport) { const vv = window.visualViewport; const upd = () => { const r = document.documentElement.style; r.setProperty('--vvh', Math.round(vv.height) + 'px'); r.setProperty('--vvt', Math.round(vv.offsetTop) + 'px'); }; vv.addEventListener('resize', upd); vv.addEventListener('scroll', upd); upd(); }
 document.addEventListener('focusin', e => { if (window.innerWidth > 720 || !e.target.matches?.('#modal input:not([type=checkbox]):not([type=radio]), #modal textarea, #modal select')) return; setTimeout(() => { try { e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (x) { } }, 300); });
 window.addEventListener('hashchange', () => setAcct(false));
