@@ -911,6 +911,7 @@ body.scovopen{overflow:hidden}
 .rplayed{grid-column:1/-1;font-size:12px}
 .rwdask{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:10px;background:#FFF1F1;border:1px solid #F3C4C4;font-size:13px}.rwdask b{color:var(--bad,#B4232C)}
 .rgone{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--panel2,#F4F6FA)}.rgrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:3px 0}.rgrow .btn{margin-left:auto}
+.chgbox{border:1px solid #C9D6F2;background:#F2F6FF;border-radius:12px;padding:8px 12px;margin:8px 0;display:flex;flex-direction:column;gap:2px}.chtl{margin:4px 0 8px}
 </style>
 </head>
 <body>
@@ -1010,8 +1011,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.34.1', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.35.0', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.35.0', 'ทีมในคู่ถัดไปเปลี่ยนเมื่อแก้ผล: แจ้งในหน้ายืนยันก่อนบันทึก บันทึกที่คู่นั้น (ป้าย ⇄ เปลี่ยนทีม พร้อมเหตุผล ผู้แก้ เวลา) และในประวัติ · ผู้ดูแลเปลี่ยนทีมในคู่ที่ยังไม่แข่งตามมติคณะกรรมการได้ (ใส่เหตุผล + PIN, คืน “ตามสาย” ได้)'],
   ['1.34.1', 'ส่งรายชื่อ: คนที่ลงแข่งแล้ว “ถอนชื่อ” แทนการลบ (ยืนยันในกล่องใต้ชื่อ) ไม่นับในจำนวนและไม่ต้องรายงานตัวคู่ต่อไป แต่ประวัติการแข่ง/รายงานตัว/เกียรติบัตรของคู่ที่ผ่านมายังอยู่ · คืนชื่อได้'],
   ['1.34.0', 'ตรวจสาย: เตือน (ไม่ห้าม) เมื่อสีลงในสายซ้ำ/มีสีที่ไม่อยู่ในสาย/คู่ที่สีเดียวกันพบกัน ที่ผังการแข่งขัน หน้าจัดการ (การ์ดรวม) แถวคู่แข่ง และหน้าต่างเริ่มแข่ง/บันทึกผล · แก้ผลย้อนหลังที่กระทบคู่ที่แข่งแล้ว: ผู้ดูแลเลือก “คงผลตามที่แข่งจริง (ล็อกทีม)” หรือ “ล้างผลให้แข่งใหม่” พร้อมเหตุผลและ PIN · รายงานตัว: เพิ่มนักกีฬาที่ไม่มีในรายชื่อได้หน้าสนาม (เต็มแล้วต้องเลือกคนที่ยังไม่ลงแข่งออก) · คนที่ลงแข่งแล้วลบออกจากรายชื่อไม่ได้ (ผู้ดูแลต้องยืนยัน)'],
   ['1.33.7', 'ปุ่มเริ่มแข่ง: ทึบ = พร้อมเริ่ม · ขอบ = ยังเริ่มไม่ได้ พร้อมบอกเหตุผลบนปุ่ม (สนามเต็ม / รอคิว) · คู่ที่กำลังแข่งมีปุ่ม “+ รายงานตัว” สำหรับนักกีฬาที่มาหลังเริ่มแข่ง'],
@@ -1340,6 +1342,7 @@ function slotLabel(ev, slot) {
   if (!slot) return 'รอกำหนด';
   if (slot.m) { const m = mOf(ev, slot.m); return `${slot.r === 'l' ? 'ผู้แพ้' : 'ผู้ชนะ'}คู่ ${m ? m.no : '?'}`; }
   if (slot.seed) return `อันดับ ${slot.seed}`;
+  if (Number.isInteger(slot.c) && COLORS[slot.c]) return 'คณะ' + COLORS[slot.c].n;
   return 'รอกำหนด';
 }
 function standings(ev) {
@@ -1436,7 +1439,7 @@ function bracketIssues(ev) {
   const out = { dup: [], miss: [], same: [] }; if (!ev) return out;
   (ev.matches || []).forEach(m => { const t = teamsOf(ev, m); if (t.a >= 0 && t.a === t.b) out.same.push({ m, c: t.a }); });
   if (ev.format === 'ko') {
-    const at = {}; (ev.matches || []).forEach(m => ['a', 'b'].forEach(sd => { const sl = m[sd]; if (sl && Number.isInteger(sl.c) && !sl.was) (at[sl.c] = at[sl.c] || []).push(m.no); }));
+    const at = {}; (ev.matches || []).forEach(m => ['a', 'b'].forEach(sd => { const sl = m[sd]; if (sl && Number.isInteger(sl.c) && (!sl.was || Number.isInteger(sl.was.c))) (at[sl.c] = at[sl.c] || []).push(m.no); }));
     out.dup = Object.entries(at).filter(([, l]) => l.length > 1).map(([c, l]) => ({ c: +c, nos: l }));
     if (out.dup.length) out.miss = COLORS.map((_, i) => i).filter(c => !at[c]);
   }
@@ -1449,6 +1452,7 @@ function bracketWarnHTML(ev, cls = 'warn') { const b = bracketIssues(ev); if (!b
 function matchWarnHTML(ev, m) { const t = teamsOf(ev, m); let h = '';
   if (t.a >= 0 && t.a === t.b) h += `<div class="qwarn"><b>⚠ คณะ${esc(COLORS[t.a].n)} พบคณะ${esc(COLORS[t.a].n)}</b><div class="sm">สายการแข่งขันทำให้ทีมเดียวกันมาพบกันเอง ตรวจกับคณะกรรมการก่อนแข่ง ระบบไม่ห้ามดำเนินการ</div></div>`;
   ['a', 'b'].forEach(sd => { const sl = m[sd]; if (sl?.was) h += `<p class="muted sm">🔒 ฝั่ง${sd === 'a' ? 'ซ้าย' : 'ขวา'} ล็อกเป็นคณะ${esc(COLORS[sl.c].n)} ตามที่แข่งจริง (เดิม: ${esc(slotLabel(ev, sl.was))})${sl.why ? ' · ' + esc(sl.why) : ''}</p>`; });
+  if (m.chg?.length && !sideWin(m)) h += `<div class="chgbox sm"><b>⇄ ทีมในคู่นี้เคยเปลี่ยน</b>${m.chg.map(l => `<div>${new Date(l.at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${l.ch.map(c => `${c.from >= 0 ? esc(COLORS[c.from].n) : '?'} → <b>${c.to >= 0 ? esc(COLORS[c.to].n) : 'รอผล'}</b>`).join(', ')} <span class="muted">(${esc(l.why || '')}${l.by ? ' · ' + esc(nameOf(l.by)) : ''})</span></div>`).join('')}</div>`;
   if (m.replay && !sideWin(m)) h += `<p class="warn sm">↻ นัดแข่งใหม่ หลังแก้ผลคู่ก่อนหน้า${m.replay.why ? ': ' + esc(m.replay.why) : ''}</p>`;
   return h; }
 const sameColorPill = (ev, m) => { const t = teamsOf(ev, m); return t.a >= 0 && t.a === t.b ? `<span class="pill bad" title="ทั้งสองฝั่งเป็นคณะเดียวกัน ตรวจกับคณะกรรมการ">⚠ สีเดียวกัน</span>` : ''; };
@@ -1456,6 +1460,42 @@ const sameColorPill = (ev, m) => { const t = teamsOf(ev, m); return t.a >= 0 && 
 /* ---- แก้ผลย้อนหลังที่กระทบคู่ที่แข่งไปแล้ว ----
    ทีมในรอบถัดไปคำนวณจากผลคู่ก่อนหน้าเสมอ ถ้าเปลี่ยนผู้ชนะ/ผู้แพ้ของคู่ที่ส่งทีมไปคู่ที่แข่งแล้ว
    คะแนนของคู่นั้นจะไปตกกับทีมที่ไม่ได้ลงแข่งจริง จึงต้องให้ผู้ดูแลเลือกวิธีจัดการก่อน */
+/* บันทึกเมื่อทีมในคู่ที่ยังไม่แข่งเปลี่ยน (จากทีมที่รู้แล้ว → ทีมอื่น) เพราะแก้ผล/ล้างผล/เปลี่ยนทีม: เก็บใน m.chg และประวัติ ให้เห็นที่คู่นั้น */
+const teamSnap = eid => Object.fromEntries((evById(eid)?.matches || []).map(x => [x.id, teamsOf(evById(eid), x)]));
+function noteTeamChanges(eid, before, why, srcMid) {
+  const ev = evById(eid); if (!ev) return []; const out = [];
+  (ev.matches || []).forEach(x => { if (x.id === srcMid || started(x) || sideWin(x)) return; const t = teamsOf(ev, x), b = before[x.id] || {};
+    const ch = ['a', 'b'].filter(sd => b[sd] >= 0 && t[sd] !== b[sd]).map(sd => ({ sd, from: b[sd], to: t[sd] })); if (!ch.length) return;
+    const rec = { at: Date.now(), by: myStamp(), why, ch }; patchEv({ eid, mid: x.id, set: { chg: [...(x.chg || []), rec].slice(-5) } });
+    logIt('ทีมในคู่เปลี่ยน', `${evTitle(ev)} คู่ ${x.no}: ${ch.map(c => `${c.from >= 0 ? COLORS[c.from].n : '?'} → ${c.to >= 0 ? COLORS[c.to].n : 'รอผล'}`).join(', ')} (${why})`); out.push({ x, ch }); });
+  if (out.length) toast(`ทีมในคู่ถัดไปเปลี่ยน: ${out.map(o => `คู่ ${o.x.no} ${o.ch.map(c => `${c.from >= 0 ? COLORS[c.from].n : '?'}→${c.to >= 0 ? COLORS[c.to].n : 'รอผล'}`).join(', ')}`).join(' · ')}`);
+  return out;
+}
+/* เปลี่ยนทีมในคู่ที่ยังไม่แข่ง ตามมติคณะกรรมการ (เช่น แก้สายที่พิมพ์ผิด ตัดสิทธิ์/ถอนตัว ผลคำร้อง)
+   ทีมใหม่เก็บเป็น {c, was: ช่องเดิมในสาย} จึงคืนกลับ “ตามสาย” ได้ · ต้องใส่เหตุผล + PIN · บันทึกที่คู่และในประวัติ */
+function openChangeTeam(eid, mid) {
+  const ev = evById(eid), m = mOf(ev, mid); if (!isAdmin()) return toast('เฉพาะผู้ดูแลระบบ'); if (started(m) || sideWin(m)) return toast('คู่นี้เริ่มแข่ง/มีผลแล้ว ใช้การแก้ผลแทน');
+  const t = teamsOf(ev, m); const base = sd => m[sd]?.was || m[sd];
+  const sel = sd => { const b = base(sd); const cur = m[sd]?.was ? m[sd].c : ''; return `<label class="fld"><span>ฝั่ง${sd === 'a' ? 'ซ้าย' : 'ขวา'} · ตอนนี้ ${t[sd] >= 0 ? chip(t[sd]) : '<span class="muted">รอผล</span>'}</span><select id="cht_${sd}"><option value="">ตามสาย: ${esc(slotLabel(ev, b))}</option>${COLORS.map((c, i) => `<option value="${i}" ${cur === i ? 'selected' : ''}>คณะ${esc(c.n)}</option>`).join('')}</select></label>`; };
+  modal(`<div class="dlg"><h3>⇄ เปลี่ยนทีม · ${esc(evTitle(ev))} คู่ ${m.no} ${esc(m.round || '')}</h3>
+    <p class="muted sm">ใช้เมื่อคณะกรรมการมีมติ เช่น แก้สายที่ผิดจากสูจิบัตร ทีมถูกตัดสิทธิ์หรือถอนตัว หรือผลคำร้อง · เลือก “ตามสาย” เพื่อคืนเป็นทีมตามผลการแข่งขัน</p>
+    ${sel('a')}${sel('b')}
+    <label class="fld">เหตุผล / มติคณะกรรมการ<input id="chtwhy" placeholder="เช่น มติกรรมการ 19 พ.ย. แก้ช่องที่พิมพ์ซ้ำในสูจิบัตร"></label>
+    <p class="err" id="err"></p><div class="actions"><button class="btn" id="chtgo">บันทึก</button><button class="btn ghost" data-close>ยกเลิก</button></div></div>`);
+  $('#chtgo').addEventListener('click', () => {
+    const why = $('#chtwhy').value.trim(); if (!why) { $('#err').textContent = 'ใส่เหตุผลหรือมติคณะกรรมการก่อน'; return; }
+    const at = Date.now(), by = myStamp(); const set = {}, ch = [];
+    ['a', 'b'].forEach(sd => { const v = $('#cht_' + sd).value; const b = base(sd); const nv = v === '' ? b : { c: +v, was: b, pinAt: at, pinBy: by, why };
+      const to = v === '' ? (() => { const e2 = clone(ev); mOf(e2, mid)[sd] = b; return teamsOf(e2, mOf(e2, mid))[sd]; })() : +v;
+      if (JSON.stringify(nv) !== JSON.stringify(m[sd])) set[sd] = nv; if (to !== t[sd]) ch.push({ sd, from: t[sd], to }); });
+    if (!Object.keys(set).length) { closeModal(); return; }
+    const same = (() => { const e2 = clone(ev); Object.assign(mOf(e2, mid), set); const tt = teamsOf(e2, mOf(e2, mid)); return tt.a >= 0 && tt.a === tt.b; })();
+    askFinal(`<b>เปลี่ยนทีม ${esc(evTitle(ev))} คู่ ${m.no}</b><div>${ch.map(c => `${c.from >= 0 ? esc(COLORS[c.from].n) : '?'} → <b>${c.to >= 0 ? esc(COLORS[c.to].n) : 'รอผล'}</b>`).join(', ') || 'คืนเป็นตามสาย'}</div>${same ? '<div class="errt">⚠ ทั้งสองฝั่งจะเป็นคณะเดียวกัน</div>' : ''}<div class="muted sm">${esc(why)}</div>`, () => {
+      const rec = { at, by, why: 'มติกรรมการ: ' + why, ch: ch.map(({ sd, from, to }) => ({ sd, from, to })) };
+      recUndo('เปลี่ยนทีมในคู่', `${evTitle(ev)} คู่ ${m.no}: ${ch.map(c => `${c.from >= 0 ? COLORS[c.from].n : '?'} → ${c.to >= 0 ? COLORS[c.to].n : 'รอผล'}`).join(', ') || 'คืนตามสาย'} · ${why}`, patchEv({ eid, mid, set: { ...set, ...(ch.length ? { chg: [...(m.chg || []), rec].slice(-5) } : {}) } }));
+    }, 'ยืนยัน', { forcePin: true, word: 'ยืนยัน' });
+  });
+}
 const MATCH_RESULT_KEYS = ['w', 'auto', 'sa', 'sb', 'sets', 'note', 'endedAt', 'startedAt', 'live', 'liveAt', 'forfeit', 'ci', 'ciOk', 'ciLate', 'ciPost', 'ciBy', 'ciAt', 'ciDay', 'startedBy', 'jd', 'skipQ'];
 function cascadeOf(eid, mid, set, unset) {
   const ev0 = evById(eid); const played = x => started(x) || !!sideWin(x);
@@ -1463,9 +1503,10 @@ function cascadeOf(eid, mid, set, unset) {
   const t0 = T(ev0); const ev1 = clone(ev0); const m1 = mOf(ev1, mid); (unset || []).forEach(k => delete m1[k]); Object.assign(m1, set || {});
   const changed = e => { const t1 = T(e); return (e.matches || []).filter(x => x.id !== mid && played(x) && (t1[x.id].a !== t0[x.id].a || t1[x.id].b !== t0[x.id].b)).map(x => ({ id: x.id, no: x.no, round: x.round || '', from: t0[x.id], to: t1[x.id] })); };
   const direct = changed(ev1);
+  const t1 = T(ev1); const upcoming = (ev1.matches || []).filter(x => x.id !== mid && !played(x) && ['a', 'b'].some(sd => t0[x.id][sd] >= 0 && t1[x.id][sd] !== t0[x.id][sd])).map(x => ({ id: x.id, no: x.no, round: x.round || '', from: t0[x.id], to: t1[x.id] }));
   /* ทางเลือก “แข่งใหม่”: ล้างผลคู่ที่กระทบ แล้วไล่ต่อไปยังคู่ถัดไปที่ทีมเปลี่ยนตาม */
   const ev2 = clone(ev1); const clear = []; for (let i = 0; i < 30; i++) { const l = changed(ev2).filter(x => !clear.some(y => y.id === x.id)); if (!l.length) break; l.forEach(x => { clear.push(x); const mm = mOf(ev2, x.id); MATCH_RESULT_KEYS.forEach(k => delete mm[k]); }); }
-  return { direct, clear };
+  return { direct, clear, upcoming };
 }
 function guardCascade(eid, mid, set, unset, go, what, plain = go) {
   const ev = evById(eid); const cs = cascadeOf(eid, mid, set, unset); if (!cs.direct.length) { plain(); return; }
@@ -1934,6 +1975,7 @@ const isBanned = (c, p, B) => (B || bannedSet()).has(c + '|' + fnv(pkey(p)));
 function matchFlags(m, ev) {
   let f = ev ? sameColorPill(ev, m) : '';
   if ((m.a?.was || m.b?.was)) f += `<span class="pill" title="ล็อกทีมตามที่แข่งจริง หลังแก้ผลคู่ก่อนหน้า${esc(' · ' + ((m.a?.was ? m.a : m.b).why || ''))}">🔒 ทีมตามที่แข่งจริง</span>`;
+  if (m.chg?.length && !sideWin(m) && !started(m)) { const l = m.chg[m.chg.length - 1]; f += `<span class="pill warnp" title="${esc(l.ch.map(c => `${c.from >= 0 ? COLORS[c.from].n : '?'} → ${c.to >= 0 ? COLORS[c.to].n : 'รอผล'}`).join(', ') + ' · ' + (l.why || ''))}">⇄ เปลี่ยนทีม</span>`; }
   if (m.replay && !sideWin(m)) f += `<span class="pill warnp" title="${esc(m.replay.why || '')}">↻ แข่งใหม่</span>`;
   const reds = (m.cards || []).filter(c => c.type !== 'Y').length, yel = (m.cards || []).filter(c => c.type === 'Y').length;
   if (yel) f += `<span class="cdf y" title="ใบเหลือง">${yel}</span>`;
@@ -4402,7 +4444,7 @@ function openResult(eid, mid) {
   const TYPES = { Y: 'ใบเหลือง', R: 'ใบแดง (ออกจากนัดนี้)', B: 'ใบแดง ตัดสิทธิ์ทุกรายการ (ข้อ 6)' };
   const cardList = () => cards.map((cd, i) => `<div class="cdrow"><span class="cdf ${cd.type === 'Y' ? 'y' : 'r'}"></span>${chip(cd.c)} ${esc(cardName(cd))} <small class="muted">${TYPES[cd.type]}${cd.note ? ' · ' + esc(cd.note) : ''}</small><button type="button" class="x" data-cdrm="${i}" aria-label="ลบ">×</button></div>`).join('') || '<p class="muted sm">ไม่มี</p>';
   const fz = m.forfeit && sideWin(m) ? t[m.forfeit] : null; const deps = fz != null ? depMatches(ev, mid) : [];
-  modal(`<form class="dlg wide" id="mf"><h3>${esc(evTitle(ev))} · คู่ ${m.no} ${esc(m.round || '')}</h3>${matchWarnHTML(ev, m)}
+  modal(`<form class="dlg wide" id="mf"><h3>${esc(evTitle(ev))} · คู่ ${m.no} ${esc(m.round || '')}</h3>${matchWarnHTML(ev, m)}${isAdmin() && !started(m) && !sideWin(m) ? `<p class="sm chtl"><button type="button" class="btn sm ghost" data-chteam="${eid}|${mid}">⇄ เปลี่ยนทีมในคู่นี้ (มติคณะกรรมการ)</button></p>` : ''}
     ${m.protest?.status === 'upheld' && m.protest.outcome === 'edit' && !m.protest.editedAt ? `<div class="qwarn"><b>⚑ แก้ผลตามมติคณะกรรมการ</b><div class="sm">${esc(m.protest.decision || '')}</div><p class="muted sm">แก้คะแนน/ผู้ชนะด้านล่าง แล้วกด “บันทึกการแก้ไขผล” และยืนยันด้วย PIN</p></div>` : ''}
     ${fz != null ? `<div class="forfbox"><div><b>ปรับแพ้แล้ว:</b> ${chip(fz)} สละสิทธิ์${m.by ? ` · โดย ${esc(nameOf(m.by))}` : ''}${m.endedAt ? ` · ${new Date(m.endedAt).toTimeString().slice(0, 5)} น.` : ''}</div>
       ${deps.length ? `<p class="muted sm">ยกเลิกไม่ได้แล้ว: ${deps.map(x => 'คู่ ' + x.no).join(', ')} ที่ใช้ผลคู่นี้เริ่มแข่งหรือมีผลแล้ว</p>` : `<button type="button" class="btn sm ghost danger" id="unforf">ยกเลิกการปรับแพ้</button>`}</div>` : ''}
@@ -4431,10 +4473,12 @@ function openResult(eid, mid) {
     ${started(m) && !sideWin(m) ? '<p class="muted sm">“บันทึกคะแนนระหว่างแข่ง” อัปเดตคะแนนให้ผู้ชมเห็นโดยเกมยังไม่จบ · “จบเกม” สรุปผู้ชนะ ประกาศผล และส่งผู้ชนะเข้ารอบถัดไป</p>' : ''}</form>`);
   const save = (fields, msg) => {
     const pc = mOf(evById(eid), mid).protest; if (pc?.outcome === 'edit' && pc.status === 'upheld' && !pc.editedAt && fields.w) fields = { ...fields, protest: { ...pc, editedAt: Date.now(), editedBy: myStamp() } };
+    const before = teamSnap(eid);
     const r = patchEv({ eid, mid, unset: ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], set: { ...fields, by: myStamp(), at: Date.now() } });
-    closeModal(); recUndo(msg, `${evTitle(ev)} คู่ ${m.no}`, r);
+    closeModal(); recUndo(msg, `${evTitle(ev)} คู่ ${m.no}`, r); noteTeamChanges(eid, before, `${msg}คู่ ${m.no}`, mid);
   };
   $('#modal').onclick = e => {
+    const ct = e.target.closest('[data-chteam]'); if (ct) { const [a, b] = ct.dataset.chteam.split('|'); openChangeTeam(a, b); return; }
     if (e.target.id === 'cdadd') { const p = people[+$('#cdp').value]; cards.push({ c: p.c, h: fnv(p.key), type: $('#cdt').value, note: $('#cdn').value.trim() }); $('#cdn').value = ''; $('#cdl').innerHTML = cardList(); }
     const rm = e.target.closest('[data-cdrm]'); if (rm) { cards.splice(+rm.dataset.cdrm, 1); $('#cdl').innerHTML = cardList(); }
   };
@@ -4469,7 +4513,9 @@ function openResult(eid, mid) {
     const f = extras({ w, auto, sa, sb, endedAt: m.endedAt || Date.now() });
     const nm = sd => t[sd] >= 0 ? 'คณะ' + esc(COLORS[t[sd]].n) : esc(slotLabel(ev, m[sd]));
     const sum = `<b>${sideWin(m) ? 'แก้ไขผล' : 'จบเกม'}: ${esc(evTitle(ev))} คู่ ${m.no}</b><div class="cfline">${chip(t.a, { ph: slotLabel(ev, m.a) })}<b class="num">${esc(sa || '–')} – ${esc(sb || '–')}</b>${chip(t.b, { ph: slotLabel(ev, m.b) })}</div><div>${w === 'd' ? 'ผล: <b>เสมอ</b>' : `ผู้ชนะ: <b>${nm(w)}</b>`}${SET ? ' (เซต)' : ''}${f.note ? ' · ' + esc(f.note) : ''}</div>`;
-    const doIt = () => askFinal(sum, () => save(f, sideWin(m) ? 'แก้ไขผล' : 'จบเกม · บันทึกผล'), sideWin(m) ? 'ยืนยันแก้ไขผล' : 'ยืนยันจบเกม');
+    const upc = sideWin(m) ? cascadeOf(eid, mid, f, ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt']).upcoming : [];
+    const sum2 = sum + (upc.length ? `<div class="qwarn sm"><b>ทีมในคู่ที่ยังไม่แข่งจะเปลี่ยนตาม</b>${upc.map(x => `<div>คู่ ${x.no}${x.round ? ' ' + esc(x.round) : ''}: ${['a', 'b'].filter(sd => x.from[sd] !== x.to[sd]).map(sd => `${x.from[sd] >= 0 ? esc(COLORS[x.from[sd]].n) : '?'} → <b>${x.to[sd] >= 0 ? esc(COLORS[x.to[sd]].n) : 'รอผล'}</b>`).join(', ')}</div>`).join('')}<div class="muted">ระบบจะบันทึกการเปลี่ยนนี้ไว้ที่คู่นั้นและในประวัติ</div></div>` : '');
+    const doIt = () => askFinal(sum2, () => save(f, sideWin(m) ? 'แก้ไขผล' : 'จบเกม · บันทึกผล'), sideWin(m) ? 'ยืนยันแก้ไขผล' : 'ยืนยันจบเกม');
     if (sideWin(m)) guardCascade(eid, mid, f, ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], () => save(f, 'แก้ไขผล'), 'แก้ไขผล', doIt); else doIt();
   };
   $('#clr')?.addEventListener('click', () => { const f = {}; if (cards.length) f.cards = cards; if (m.ci) f.ci = m.ci; guardCascade(eid, mid, f, ['sets', 'w', 'sa', 'sb', 'auto', 'note', 'cards', 'liveAt', 'endedAt'], () => save(f, 'ล้างผล'), 'ล้างผล'); });
