@@ -1016,8 +1016,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.35.6', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.36.0', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.36.0', 'กรีฑา/รายการแข่งพร้อมกัน: หน้ารายงานตัวมีสถานะ (รายงานตัว n/6 คณะ · ครบ · กำลังแข่ง) และปุ่ม “รายงานตัว” “บันทึกผล” ในแถว ไม่ต้องไปผังการแข่งขัน · บันทึกผลแบบจัดอันดับ: เลือกได้เฉพาะคณะที่มีนักกีฬารายงานตัว (แสดงชื่อ) และคณะที่เลือกแล้วเลือกซ้ำในอันดับอื่นไม่ได้'],
   ['1.35.6', 'หน้ารายงานตัว: วันที่มีแต่รายการแข่งพร้อมกัน (เช่น กรีฑา) แบ่งกลุ่ม เปิดรายงานตัวแล้ว / ใกล้ถึงเวลา / ภายหลัง / จบแล้ว พร้อมเวลารายงานตัว และไม่ขึ้น “ไม่มีนัดแข่งขัน” อีก · หน้าต่างรายงานตัว: ชื่อนักกีฬาไม่ถูกบีบ ป้ายมาช้า/หลังเริ่มแข่งย้ายไปบรรทัดล่าง'],
   ['1.35.5', 'เปลี่ยนทีมในคู่: ยืนยัน PIN แล้วหน้าต่างปิดเองพร้อมแจ้งผล'],
   ['1.35.4', 'มือถือ: ระหว่างพิมพ์คะแนน (คีย์บอร์ดเปิด) แถวปุ่มไม่ลอยทับฟอร์ม · กล่องยืนยันจบเกม/PIN เปิดแล้วซ่อนปุ่มชุดเดิม ไม่มีปุ่มซ้ำ'],
@@ -2891,8 +2892,10 @@ function vCheckin() {
   <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button>${anyEdit() ? (myColor() == null ? '<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาทุกคณะ</button>' : `<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาคณะ${esc(COLORS[myColor()].n)}</button>`) : ''}</div>
   <section class="card">${body || (others.length ? '' : '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>')}
   ${others.length ? (() => { const orow = ev => { const ds = evDayState(ev, d); const ci = evCi(ev, d); const okE = editOn && canScore(ev.sport) && !ds.done;
-      return `<div class="mrow g2 ci${okE ? ' click' : ''}${ds.done ? ' done' : ''}" ${okE ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ds.time || '–')}</b>${ds.time && !ds.done ? `<small class="pmin">รายงานตัว ${toTime(toMin(ds.time) - mins)}</small>` : ''}${ds.done ? '<span class="tst done">✓ จบแล้ว</span>' : ''}</span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
-    <span class="span3 cimany">${(ev.teams || []).map(c => { const n = (ci[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span><span class="ncol">${ds.pill && !ds.done ? `<span class="pill">${esc(ds.pill)}</span>` : ''}</span></div>`; };
+      return `<div class="mrow g2 ci${editOn && canScore(ev.sport) ? ' ed' : ''}${okE ? ' click' : ''}${ds.done ? ' done' : ''}" ${okE ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ds.time || '–')}</b>${ds.time && !ds.done ? `<small class="pmin">รายงานตัว ${toTime(toMin(ds.time) - mins)}</small>` : ''}${ds.done ? '<span class="tst done">✓ จบแล้ว</span>' : ''}</span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
+    <span class="span3 cimany">${(ev.teams || []).map(c => { const n = (ci[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span><span class="ncol">${(() => { if (ds.done) return ''; const tm = (ev.teams || []).filter(c => (rosterOf(ev.id, c).players || []).length); const need = starters(ev); const okN = tm.filter(c => (ci[c] || []).length >= need).length;
+      const stt = ev.startedAt && ymdOf(ev.startedAt) === d; return `${stt ? '<span class="pill live">กำลังแข่ง</span>' : tm.length ? `<span class="pill ${okN === tm.length ? 'done' : okN ? 'warnp' : ''}">${okN === tm.length ? '✓ รายงานตัวครบ' : `รายงานตัว ${okN}/${tm.length} คณะ`}</span>` : ''}${ds.pill && !/รอบ$/.test(ds.pill) ? '' : ds.pill ? `<span class="pill">${esc(ds.pill)}</span>` : ''}`; })()}</span>
+    ${editOn && canScore(ev.sport) ? `<span class="rbtns">${ds.done ? '' : `<button class="btn sm ghost rowbtn" data-cie="${ev.id}">รายงานตัว</button>`}<button class="btn sm rowbtn" ${ev.format === 'points' ? `data-open="${ev.id}"` : `data-evres="${ev.id}"`}>${ds.done ? 'แก้ผล' : 'บันทึกผล'}</button></span>` : ''}</div>`; };
     /* แบ่งกลุ่มแบบเดียวกับนัดแข่ง: เปิดรายงานตัวแล้ว → ใกล้ถึงเวลา → ภายหลัง → จบแล้ว (เช่น วันกรีฑาที่มีแต่รายการแข่งพร้อมกัน) */
     const og = { now: [], soon: [], later: [], done: [] };
     others.forEach(ev => { const ds = evDayState(ev, d); if (ds.done) return og.done.push(ev); const t = ds.time ? toMin(ds.time) : null;
@@ -4695,9 +4698,15 @@ function openEvResult(eid) {
   const ev = evById(eid);
   if (ev.format === 'rank') {
     const p = ev.res?.p || [], pf = ev.res?.perf || [];
-    const sel = i => `<select id="p${i}">${colorOpts(p[i], '–')}</select>`;
-    modal(`<form class="dlg" id="af"><h3>${esc(evTitle(ev))}</h3>${['ที่ 1 · ทอง', 'ที่ 2 · เงิน', 'ที่ 3 · ทองแดง'].map((l, i) => `<div class="ov"><label class="fld">${l}${sel(i)}</label><label class="fld">สถิติ<input id="f${i}" value="${esc(pf[i] ?? '')}" placeholder="เช่น 12.45 วิ / 5.20 ม."></label></div>`).join('')}
+    /* ตัวเลือกอันดับ: เฉพาะคณะที่มีนักกีฬารายงานตัว (แสดงชื่อ) · คณะที่เลือกในอันดับอื่นแล้วเลือกซ้ำไม่ได้ */
+    const ciD = evCi(ev, ev.date || todayISO()); const teams = ev.teams?.length ? ev.teams : COLORS.map((_, i) => i);
+    const nm = c => { const r = rosterOf(eid, c); const ids = ciD[c] || []; return rosterAll(r).filter(x => ids.includes(x.id)).map(x => x.name); };
+    const came = teams.filter(c => nm(c).length); const useCi = came.length > 0; const pool = useCi ? [...new Set([...came, ...p.filter(c => c >= 0)])] : teams;
+    const sel = i => `<select id="p${i}" data-rk="${i}"><option value="">–</option>${pool.map(c => `<option value="${c}" ${p[i] === c ? 'selected' : ''}>คณะ${esc(COLORS[c].n)}${nm(c).length ? ' · ' + esc(nm(c).slice(0, 2).join(', ')) + (nm(c).length > 2 ? ` +${nm(c).length - 2}` : '') : useCi ? ' (ไม่ได้รายงานตัว)' : ''}</option>`).join('')}</select>`;
+    modal(`<form class="dlg" id="af"><h3>${esc(evTitle(ev))}</h3>${useCi ? `<p class="muted sm">แสดงเฉพาะคณะที่มีนักกีฬารายงานตัว ${came.length}/${teams.length} คณะ${teams.length > came.length ? ` · ไม่ได้รายงานตัว: ${teams.filter(c => !came.includes(c)).map(c => esc(COLORS[c].n)).join(', ')}` : ''}</p>` : '<p class="warn sm">ยังไม่มีการรายงานตัวในรายการนี้ จึงแสดงทุกคณะ</p>'}${['ที่ 1 · ทอง', 'ที่ 2 · เงิน', 'ที่ 3 · ทองแดง'].map((l, i) => `<div class="ov"><label class="fld">${l}${sel(i)}</label><label class="fld">สถิติ<input id="f${i}" value="${esc(pf[i] ?? '')}" placeholder="เช่น 12.45 วิ / 5.20 ม."></label></div>`).join('')}
       ${startLine(ev)}${judgeLine(ev)}${updLine(ev.res?.by, ev.res?.at)}<p class="err" id="err"></p><div class="actions"><button class="btn">บันทึกผล</button><button type="button" class="btn ghost" data-close>ยกเลิก</button></div></form>`);
+    const lockDup = () => { const v = [0, 1, 2].map(i => $('#p' + i).value); [0, 1, 2].forEach(i => [...$('#p' + i).options].forEach(o => { o.disabled = o.value !== '' && v.some((x, j) => j !== i && x === o.value); })); };
+    lockDup(); $('#af').addEventListener('change', e => { if (e.target.dataset.rk != null) lockDup(); });
     $('#af').onsubmit = e => {
       e.preventDefault(); const pp = [0, 1, 2].map(i => $('#p' + i).value === '' ? -1 : +$('#p' + i).value); const s = pp.filter(x => x >= 0);
       if (new Set(s).size !== s.length) { $('#err').textContent = 'คณะสีเดียวกันได้อันดับเดียวต่อรายการ'; return; }
