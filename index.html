@@ -1017,8 +1017,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.36.3', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.36.4', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.36.4', 'กิจกรรมคณะสี/รายการให้คะแนนโดยกรรมการ: เมื่อกรรมการทุกคนส่งคะแนนครบ ระบบถือว่าจบการแข่งขัน (ย้ายไปกลุ่ม “จบแล้ว” ในหน้ารายงานตัว/โปรแกรม นับในสรุปผล) — เดิมค้างเป็น “ล่าช้า”'],
   ['1.36.3', 'กรีฑา/รายการแข่งพร้อมกัน: แถวในหน้ารายงานตัวไฮไลต์ตามสถานะแบบเดียวกับนัดแข่ง (ถึงเวลารายงานตัว/พร้อมแข่ง/ล่าช้า/กำลังแข่ง/จบแล้ว) · หน้าต่างเริ่มแข่งและบันทึกผลแสดงสถานะรายงานตัวรายคณะ (ครบ/ยังไม่มา/ไม่ส่งรายชื่อ) พร้อมปุ่มไปรายงานตัว'],
   ['1.36.1', 'แอปสแกน: การ์ด “มาช้า” แสดงรายการ/เวลา/สนามที่รายงานตัวด้วย เหมือนการ์ดรายงานตัวปกติ'],
   ['1.36.0', 'กรีฑา/รายการแข่งพร้อมกัน: หน้ารายงานตัวมีสถานะ (รายงานตัว n/6 คณะ · ครบ · กำลังแข่ง) และปุ่ม “รายงานตัว” “บันทึกผล” ในแถว ไม่ต้องไปผังการแข่งขัน · บันทึกผลแบบจัดอันดับ: เลือกได้เฉพาะคณะที่มีนักกีฬารายงานตัว (แสดงชื่อ) และคณะที่เลือกแล้วเลือกซ้ำในอันดับอื่นไม่ได้'],
@@ -2135,7 +2136,9 @@ const ymdOf = ts => { const t = new Date(ts); return `${t.getFullYear()}-${Strin
 function evCiDays(ev) { return [...new Set([ev.date, ...(ev.rounds || []).map(r => r.date)].filter(Boolean))].sort(); }
 function evCi(ev, d) { if (evCiDays(ev).length <= 1) return ev.ci || {}; const cd = ev.ciDate || (ev.ciAt ? ymdOf(ev.ciAt) : ''); return cd === d ? ev.ci || {} : {}; }
 /* สถานะของรายการแข่งพร้อมกันในวัน d: จบแล้ว / รอบที่เหลือ */
-function evDayState(ev, d) { const pd = ptsDay(ev, d); if (pd) return { done: pd.all, time: pd.time || ev.time || '', pill: pd.all ? '✓ จบแล้ววันนี้' : pd.done ? `แข่งแล้ว ${pd.done}/${pd.n} รอบ` : `${pd.n} รอบ` }; const done = !!ev.res; return { done, time: ev.time || '', pill: done ? '✓ จบแล้ว' : '' }; }
+function evDayState(ev, d) { const pd = ptsDay(ev, d); if (pd) return { done: pd.all, time: pd.time || ev.time || '', pill: pd.all ? '✓ จบแล้ววันนี้' : pd.done ? `แข่งแล้ว ${pd.done}/${pd.n} รอบ` : `${pd.n} รอบ` }; const done = evResDone(ev); return { done, time: ev.time || '', pill: done ? '✓ จบแล้ว' : '' }; }
+/* รายการมีผลครบแล้ว: บันทึกผลแล้ว หรือ (ประเภทให้คะแนนโดยกรรมการ) กรรมการทุกคนส่งคะแนนครบ */
+function evResDone(ev) { return !!ev.res || (ev.format === 'score' && !!scoreTable(ev).complete); }
 function ciDateOf(ev, m) { if (m) return m.date || ''; const ds = [ev.date, ...(ev.rounds || []).map(r => r.date)].filter(Boolean).sort(); return ds[0] || ''; }
 /* ช่วงรับรายงานตัว (ใช้ทั้งหน้ารายงานตัวและแอปสแกน)
    ก่อนเปิด (ciOpenMin นาทีก่อนแข่ง) = early · ถึงกำหนด (checkinMin นาทีก่อนแข่ง) = ok · หลังกำหนดแต่ยังไม่กดเริ่มแข่ง = late (มาช้า)
@@ -5281,7 +5284,7 @@ function roundTop(e, i) { const row = e.res?.rounds?.[i]; if (!row) return ''; r
 function evDayDone(e, d) { const p = ptsDay(e, d); return p ? p.all : hasResults(e); }
 function evDayLive(e, d) { const p = ptsDay(e, d); return p ? p.done > 0 && !p.all : !!e.startedAt && !hasResults(e); }
 function evDayTime(e, d) { const p = ptsDay(e, d); return p ? p.time : (e.time || (e.rounds || []).find(r => r.date === d)?.time || ''); }
-function hasResults(ev) { return (ev.matches || []).some(m => m.w) || !!ev.res; }
+function hasResults(ev) { return (ev.matches || []).some(m => m.w) || evResDone(ev); }
 function openDraw(eid) {
   const ev = evById(eid); const teams = ev.teams || [];
   modal(`<form class="dlg" id="df">${stepper(ev, 'draw')}<h3>ขั้นที่ 2 · จับคู่ · ${esc(evTitle(ev))}</h3><p class="muted sm">รูปแบบ: ${FORMATS[ev.format]} · ${teams.length} คณะสี</p>
@@ -5400,7 +5403,7 @@ function openClasses() {
 /* ---------- สำรองอัตโนมัติ ---------- */
 const SNAP_KEY = 'gem-snaps', SNAP_N = 4;
 function snaps() { try { const x = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(x) ? x : []; } catch (e) { return []; } }
-function nResults() { return Object.values(S.events).reduce((a, e) => a + (e.matches || []).filter(m => m.w).length + (e.res ? 1 : 0), 0); }
+function nResults() { return Object.entries(S.events).map(([id, e]) => ({ id, ...e })).reduce((a, e) => a + (e.matches || []).filter(m => m.w).length + (evResDone(e) ? 1 : 0), 0); }
 function takeSnap(force) {
   if (!isAdmin() || mode === 'connecting' || !Object.keys(S.events).length) return;
   const list = snaps(); const last = list[0]; const nres = nResults();
