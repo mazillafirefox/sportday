@@ -916,6 +916,7 @@ body.scovopen{overflow:hidden}
 .chgbox{border:1px solid #C9D6F2;background:#F2F6FF;border-radius:12px;padding:8px 12px;margin:8px 0;display:flex;flex-direction:column;gap:2px}.chtl{margin:4px 0 8px}
 .ciastep{display:flex;gap:8px;align-items:flex-start}.ciastep>div{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}.stepn{flex:none;width:22px;height:22px;border-radius:50%;background:var(--brand,#3949AB);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:6px}.ciachosen{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:#EAF7EE}.ciachosen .btn{margin-left:auto}
 #modal .actions.cfhide{display:none!important}
+.cicol .ck{align-items:flex-start}.cicol .ck>input{margin-top:3px;flex:none}.cinm{display:flex;flex-direction:column;min-width:0;flex:1}.cin1{line-height:1.35;overflow-wrap:anywhere}.cin2{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.cin2 .ciflag{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1015,8 +1016,9 @@ const SCHOOL_IMG = {"w": 1748, "h": 604, "src": "data:image/webp;base64,UklGRvzv
                ถ้าปล่อยเป็น null ระบบจะเก็บข้อมูลในเบราว์เซอร์ของแต่ละเครื่อง (เหมาะกับทดลองใช้)
    - adminEmails: อีเมล Google ของผู้ดูแลหลัก (ต้องตรงกับในไฟล์ firestore.rules)
    ===================================================================== */
-const APP_VERSION = '1.35.5', APP_DATE = '2026-11-18';
+const APP_VERSION = '1.35.6', APP_DATE = '2026-11-18';
 const CHANGELOG = [
+  ['1.35.6', 'หน้ารายงานตัว: วันที่มีแต่รายการแข่งพร้อมกัน (เช่น กรีฑา) แบ่งกลุ่ม เปิดรายงานตัวแล้ว / ใกล้ถึงเวลา / ภายหลัง / จบแล้ว พร้อมเวลารายงานตัว และไม่ขึ้น “ไม่มีนัดแข่งขัน” อีก · หน้าต่างรายงานตัว: ชื่อนักกีฬาไม่ถูกบีบ ป้ายมาช้า/หลังเริ่มแข่งย้ายไปบรรทัดล่าง'],
   ['1.35.5', 'เปลี่ยนทีมในคู่: ยืนยัน PIN แล้วหน้าต่างปิดเองพร้อมแจ้งผล'],
   ['1.35.4', 'มือถือ: ระหว่างพิมพ์คะแนน (คีย์บอร์ดเปิด) แถวปุ่มไม่ลอยทับฟอร์ม · กล่องยืนยันจบเกม/PIN เปิดแล้วซ่อนปุ่มชุดเดิม ไม่มีปุ่มซ้ำ'],
   ['1.35.3', 'มือถือ: ปุ่มบันทึก/ยืนยันของทุกหน้าต่างติดล่างจอ (เดิมบางหน้าต่าง เช่น บันทึกผลการแข่งขัน ปุ่มอยู่ท้ายฟอร์ม ต้องเลื่อนหา)'],
@@ -2887,12 +2889,21 @@ function vCheckin() {
   return `<section class="hero"><h1>รายงานตัวนักกีฬา</h1><p class="muted">นักกีฬารายงานตัวก่อนแข่งอย่างน้อย ${mins} นาที ไม่มาภายใน 10 นาทีหลังเวลาแข่งถือว่าสละสิทธิ์ · ตัวเลขคือ รายงานตัวแล้ว/ตัวจริงขั้นต่ำ${editOn ? ' · แตะนัดเพื่อเช็คชื่อ' : ''}</p></section>
   <div class="filters"><div class="seg">${days().map(x => `<button data-ciday="${x}" class="${x === d ? 'on' : ''}">${fmtDate(x, true).replace(/ \d+$/, '')}</button>`).join('')}</div></div>
   <div class="actions m0"><button class="btn sm ghost" data-act="dlci">ดาวน์โหลดสรุปรายงานตัววันนี้ (CSV)</button>${anyEdit() ? (myColor() == null ? '<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาทุกคณะ</button>' : `<button class="btn sm ghost" data-act="qrcardsall">พิมพ์บัตร QR นักกีฬาคณะ${esc(COLORS[myColor()].n)}</button>`) : ''}</div>
-  <section class="card">${body || '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>'}
+  <section class="card">${body || (others.length ? '' : '<p class="muted">ไม่มีนัดแข่งขันในวันนี้</p>')}
   ${others.length ? (() => { const orow = ev => { const ds = evDayState(ev, d); const ci = evCi(ev, d); const okE = editOn && canScore(ev.sport) && !ds.done;
-      return `<div class="mrow g2 ci${okE ? ' click' : ''}${ds.done ? ' done' : ''}" ${okE ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ds.time || '–')}</b>${ds.done ? '<span class="tst done">✓ จบแล้ว</span>' : ''}</span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
+      return `<div class="mrow g2 ci${okE ? ' click' : ''}${ds.done ? ' done' : ''}" ${okE ? `data-cie="${ev.id}" tabindex="0"` : ''}><span class="tcol"><b class="tt num">${esc(ds.time || '–')}</b>${ds.time && !ds.done ? `<small class="pmin">รายงานตัว ${toTime(toMin(ds.time) - mins)}</small>` : ''}${ds.done ? '<span class="tst done">✓ จบแล้ว</span>' : ''}</span><span class="ml">${sIcon(ev.sport, 'sm')}<b class="sname">${esc(sportName(ev.sport))}</b> <b class="elab">${esc(ev.label)}</b>${ev.venue ? `<small>${esc(ev.venue)}</small>` : ''}</span>
     <span class="span3 cimany">${(ev.teams || []).map(c => { const n = (ci[c] || []).length; const need = starters(ev); return `<span class="cis ${n >= need ? 'ok' : n ? 'mid' : 'none'}">${chip(c)}<b class="num">${n}/${need}</b></span>`; }).join('')}</span><span class="ncol">${ds.pill && !ds.done ? `<span class="pill">${esc(ds.pill)}</span>` : ''}</span></div>`; };
-    const live = others.filter(ev => !evDayState(ev, d).done), fin = others.filter(ev => evDayState(ev, d).done);
-    return `${live.length ? `<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>${live.map(orow).join('')}` : ''}${fin.length ? `<details class="cigrp done"><summary class="cih"><span>รายการแข่งพร้อมกันที่จบแล้ว</span><small class="muted num">${fin.length} รายการ</small></summary>${fin.map(orow).join('')}</details>` : ''}`; })() : ''}</section>`;
+    /* แบ่งกลุ่มแบบเดียวกับนัดแข่ง: เปิดรายงานตัวแล้ว → ใกล้ถึงเวลา → ภายหลัง → จบแล้ว (เช่น วันกรีฑาที่มีแต่รายการแข่งพร้อมกัน) */
+    const og = { now: [], soon: [], later: [], done: [] };
+    others.forEach(ev => { const ds = evDayState(ev, d); if (ds.done) return og.done.push(ev); const t = ds.time ? toMin(ds.time) : null;
+      if (!isToday || t == null) return og.later.push(ev); const open = t - ciOpenMin(); if (now >= open) og.now.push(ev); else if (open - now <= 60) og.soon.push(ev); else og.later.push(ev); });
+    const tsort = l => l.sort((a, b) => (evDayState(a, d).time || '').localeCompare(evDayState(b, d).time || '') || (a.order || 0) - (b.order || 0));
+    Object.values(og).forEach(tsort);
+    const osec = (k, title, sub, l, fold) => !l.length ? '' : fold ? `<details class="cigrp ${k}"><summary class="cih"><span>${title}</span><small class="muted num">${l.length} รายการ${sub ? ' · ' + sub : ''}</small></summary>${l.map(orow).join('')}</details>`
+      : `<div class="cigrp ${k}"><h3 class="cih"><span>${title}</span><small class="muted num">${l.length} รายการ${sub ? ' · ' + sub : ''}</small></h3>${l.map(orow).join('')}</div>`;
+    const pre = items.length ? '<h3 class="sub">รายการที่แข่งพร้อมกันทุกคณะสี</h3>' : '';
+    return pre + (isToday ? osec('now', '🔔 เปิดรายงานตัวแล้ว', `ก่อนแข่ง ${ciOpenMin()} นาทีขึ้นไป`, og.now) + osec('soon', 'ใกล้ถึงเวลารายงานตัว', 'ภายใน 1 ชั่วโมง', og.soon) + osec('later', 'ภายหลังวันนี้', '', og.later, og.now.length + og.soon.length > 0)
+      : osec('later', d < todayStr() ? 'รายการในวันนั้น' : 'รายการทั้งหมดของวัน', '', og.later)) + osec('done', 'จบแล้ว', '', og.done, true); })() : ''}</section>`;
 }
 
 /* ---------- คณะสีและนักเรียน ---------- */
@@ -4929,7 +4940,7 @@ function openCheckin(eid, mid) {
     if (c < 0) return `<div class="cicol"><b>${esc(slotLabel(ev, m[k]))}</b><p class="muted sm">ยังไม่ทราบทีม</p></div>`;
     const R0 = rosterOf(eid, c); const ps = [...(R0.players || []), ...(R0.gone || []).filter(p => (ci[k] || []).includes(p.id)).map(p => ({ ...p, _gone: 1 }))]; const set = new Set(ci[k] || []); const B = bannedSet();
     return `<div class="cicol">${chip(c)} <small class="num muted">${set.size}/${starters(ev)} ตัวจริงขั้นต่ำ</small>
-      ${ps.length ? `<label class="ck all"><input type="checkbox" data-all="${k}" ${ps.every(p => set.has(p.id)) ? 'checked' : ''} ${ro ? 'disabled' : ''}> ทั้งทีม</label>` + ps.map(p => { const ban = isBanned(c, p, B); return `<label class="ck${ban ? ' banned' : ''}"><input type="checkbox" data-ck="${k}|${p.id}" ${set.has(p.id) ? 'checked' : ''} ${ban || ro ? 'disabled' : ''}>${(() => { const f = set.has(p.id) ? flagOf(k, p.id) : ''; return f ? ` <small class="ciflag${f === 'มาช้า' ? '' : ' post'}">${f}</small>` : ''; })()} <span class="num muted">${esc(p.num || '')}</span> ${esc(p.name)}${p._gone ? ' <small class="ciflag post">ถอนชื่อแล้ว</small>' : ''} <small class="muted">${esc(p.cls)}${ban ? ' · ถูกตัดสิทธิ์' : ''}</small></label>`; }).join('') : '<p class="muted sm">คณะนี้ยังไม่ส่งรายชื่อ</p>'}
+      ${ps.length ? `<label class="ck all"><input type="checkbox" data-all="${k}" ${ps.every(p => set.has(p.id)) ? 'checked' : ''} ${ro ? 'disabled' : ''}> ทั้งทีม</label>` + ps.map(p => { const ban = isBanned(c, p, B); return `<label class="ck${ban ? ' banned' : ''}"><input type="checkbox" data-ck="${k}|${p.id}" ${set.has(p.id) ? 'checked' : ''} ${ban || ro ? 'disabled' : ''}><span class="cinm"><span class="cin1">${p.num ? `<span class="num muted">${esc(p.num)}</span> ` : ''}${esc(p.name)}</span><span class="cin2"><small class="muted">${esc(p.cls)}${ban ? ' · ถูกตัดสิทธิ์' : ''}</small>${(() => { const f = set.has(p.id) ? flagOf(k, p.id) : ''; return f ? `<small class="ciflag${f === 'มาช้า' ? '' : ' post'}">${f}</small>` : ''; })()}${p._gone ? '<small class="ciflag post">ถอนชื่อแล้ว</small>' : ''}</span></span></label>`; }).join('') : '<p class="muted sm">คณะนี้ยังไม่ส่งรายชื่อ</p>'}
       ${canLateAdd(c) && !ro ? (addK === k ? lateAddHTML(k, c) : `<button type="button" class="btn sm ghost ciaddb" data-ciadd="${k}">+ เพิ่มนักกีฬาที่ไม่มีในรายชื่อ</button>`) : ''}
       ${m && !sideWin(m) && canScore(ev.sport) ? `<button class="btn sm danger" data-forfeit="${k}">${COLORS[c].n} สละสิทธิ์</button>` : ''}</div>`;
   };
